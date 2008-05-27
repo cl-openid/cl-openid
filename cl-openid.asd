@@ -15,7 +15,7 @@
   :components
   ((:module #:src
             :components ((:file "package"))))
-  :depends-on (#:hunchentoot #:drakma #:ironclad))
+  :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls))
 
 (defsystem #:cl-openid.test
   :version "0.1"

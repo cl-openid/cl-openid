@@ -25,6 +25,8 @@
    (drakma tarball-repo :source "http://weitz.de/files/drakma.tar.gz")
    (ironclad tarball-repo :source "http://www.method-combination.net/lisp/files/ironclad.tar.gz")
 
+   (xmls tarball-repo :source "http://common-lisp.net/project/xmls/xmls-1.2.tar.gz")
+
    ;; 5am testing
    (arnesi darcs-repo :source "http://common-lisp.net/project/bese/repos/arnesi_dev/")
    (fiveam darcs-repo :source "http://common-lisp.net/project/bese/repos/fiveam/"))
