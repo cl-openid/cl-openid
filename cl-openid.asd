@@ -14,15 +14,24 @@
 
   :components
   ((:module #:src
-            :components ((:file "package"))))
-  :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls))
+            :components ((:file "package")
+                         (:file "identifier" :depends-on ("package")))))
+  :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls
+                             #-allegro #:puri))
+
+#+allegro
+(defmethod asdf:perform :after ((op load-op)
+                                (component (eql (find-system :cl-openid))))
+  "Use Allegro's own version of ported libraries."
+  (require 'uri))
 
 (defsystem #:cl-openid.test
   :version "0.1"
   :description "Test suite for cl-openid"
   :components
   ((:module #:t
-    :components ((:file "suite"))))
+    :components ((:file "suite")
+                 (:file "identifier" :depends-on ("suite")))))
   :depends-on (#:cl-openid #:fiveam))
 
 (defmethod perform ((op asdf:test-op)

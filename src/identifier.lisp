@@ -1,0 +1,72 @@
+;;; -*- lisp -*-
+;;; identifier.lisp - OpenID Identifier API
+
+(in-package #:cl-openid)
+
+(defun remove-dot-segments (parsed-path)
+  "Remove . and .. from parsed URI path, to correctly identify same
+  paths and prevent URI traversal attacks."
+  (loop
+     with traversed = nil  
+     for element in (loop
+                       for (element next) on (rest parsed-path)
+                       for ignored = (member element '("" ".") :test #'string=)
+                       when (and next (not ignored)) collect element
+                       else when (not next) collect (if ignored
+                                                        ""
+                                                        element))
+     if (and (stringp element)
+             (string= element ".."))
+     do (pop traversed)
+     else do (push element traversed)
+     finally (return (cons (first parsed-path)
+                           (nreverse traversed)))))
+
+(defun normalize-identifier (id)
+  "Return normalized user-given identifier ID as an URI object."
+  ;; OpenID Authentication 2.0 Final, Section 7.2.  Normalization
+
+  ;; 1., 2.
+  (let ((possible-xri (if (string= "xri://" (subseq id 0 6))
+                          (subseq id 6)
+                          id)))
+    (when (member (char possible-xri 0)
+                  '(#\= #\@ #\+ #\$ #\! #\())
+      ;; input SHOULD be treated as an XRI
+      (error "XRI identifiers are not supported.")))
+
+  ;; 3. the input SHOULD be treated as an http URL
+
+  ;; if it does not include a "http" or "https" scheme, the Identifier
+  ;; MUST be prefixed with the string "http://"
+  (unless (or (string= (subseq id 0 5) "http:")
+              (string= (subseq id 0 6) "https:"))
+    (setf id (concatenate 'string "http://" id)))
+  
+  (let ((id (uri id)))
+    ;; If the URL contains a fragment part, it MUST be stripped off
+    ;; together with the fragment delimiter character "#"
+    (setf (uri-fragment id) nil)
+
+    ;; Host is case-insensitive
+    (setf (uri-host id) (string-downcase (uri-host id)))
+
+    ;; Traverse dots and double dots.  What about // in middle of path?
+    (setf (uri-parsed-path id)
+          (if (uri-parsed-path id)
+              (remove-dot-segments (uri-parsed-path id))
+              '(:absolute "")))         ; An empty path component is
+                                  ; normalized to a slash
+
+    ;; URL Identifiers MUST then be further normalized by both
+    ;; following redirects when retrieving their content and finally
+    ;; applying the rules in Section 6 of [RFC3986] to the final
+    ;; destination URL.
+    (multiple-value-bind
+          (body-or-stream status-code headers uri stream must-close reason-phrase)
+        (http-request id :method :head :close t)
+      (declare (ignore body-or-stream headers stream must-close reason-phrase))
+      (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
+        (error "Could not reach ~A" id))
+      uri)))
+
