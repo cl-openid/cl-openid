@@ -23,7 +23,10 @@
                            (nreverse traversed)))))
 
 (defun normalize-identifier (id)
-  "Return normalized user-given identifier ID as an URI object."
+  "Normalize a user-given identifier ID, return alist token.
+
+An XRDS URL for Yadis discovery discovered by a HEAD request may be
+also included in the token.."
   ;; OpenID Authentication 2.0 Final, Section 7.2.  Normalization
 
   ;; 1., 2.
@@ -65,8 +68,14 @@
     (multiple-value-bind
           (body-or-stream status-code headers uri stream must-close reason-phrase)
         (http-request id :method :head :close t)
-      (declare (ignore body-or-stream headers stream must-close reason-phrase))
+      (declare (ignore body-or-stream stream must-close reason-phrase))
       (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
         (error "Could not reach ~A" id))
-      uri)))
 
+      ;; Construct return alist
+      (let ((rv ())
+            (xrds (assoc :x-xrds-location headers)))
+        (push (cons :claimed-id uri) rv)
+        (when xrds
+          (push xrds rv))
+        rv))))
