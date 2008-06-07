@@ -68,9 +68,9 @@ also included in the token.."
     (multiple-value-bind
           (body-or-stream status-code headers uri stream must-close reason-phrase)
         (http-request id :method :head :close t)
-      (declare (ignore body-or-stream stream must-close reason-phrase))
+      (declare (ignore body-or-stream stream must-close))
       (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
-        (error "Could not reach ~A" id))
+        (error "Could not reach ~A: ~A ~A" id status-code reason-phrase))
 
       ;; Construct return alist
       (let ((rv ())
