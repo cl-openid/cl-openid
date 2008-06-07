@@ -26,6 +26,7 @@
    (ironclad tarball-repo :source "http://www.method-combination.net/lisp/files/ironclad.tar.gz")
 
    (xmls tarball-repo :source "http://common-lisp.net/project/xmls/xmls-1.2.tar.gz")
+   (cl-html-parse tarball-repo :source "asdf-install:cl-html-parse")
 
    ;; 5am testing
    (arnesi darcs-repo :source "http://common-lisp.net/project/bese/repos/arnesi_dev/")

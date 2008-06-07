@@ -79,3 +79,93 @@ also included in the token.."
         (when xrds
           (push xrds rv))
         rv))))
+
+(defparameter +entities+
+  '(("amp" . #\&) ("gt" . #\>) ("lt" . #\<) ("quot" . #\"))
+  "Alist of HTML entities to be unquoted.")
+
+(defun n-remove-entities (str)
+  (loop
+     with l = (length str)
+     for s = (position #\& str) then (position #\& str :start (1+ s))
+     for e = (when s
+               (position #\; str :start (1+ s)))
+     for replacement = (when s
+                         (cdr (assoc (subseq str (1+ s) e) +entities+
+                                     :test #'string-equal)))
+     while s
+     when replacement
+     do (setf (aref str s) replacement
+              (subseq str (1+ s)) (subseq str (1+ e))
+              l (- l (- e s)))
+     finally (return (subseq str 0 l))))
+
+(defun perform-html-discovery (id body &aux href-cache)
+  (labels ((href (link)
+             "The HREF attribute of LINK, cached."
+             (or href-cache
+                 (setf href-cache
+                       (n-remove-entities
+                        (getf (cdar link) :href)))))
+
+           (remember (name key rel link)
+             "When NAME is in REL, push (CONS KEY (HREF LINK)) to ID."
+             (when (member name rel :test #'string-equal)
+               (push (cons key (href link)) id)))
+
+           (handle-link-tag (link       ; ((:link attrs...))
+                             &aux
+                             (rel (split-sequence #\Space (getf (cdar link) :rel))))
+             (remember "openid2.provider" :op-endpoint-url rel link)
+             (remember "openid2.local_id" :op-local-identifier rel link)
+             (remember "openid.server" :v1.op-endpoint-url rel link)
+             (remember "openid.delegate" :v1.op-local-identifier rel link)))
+
+    (parse-html body :callback-only t
+                :callbacks (acons :link #'handle-link-tag nil)))
+  id)
+
+(defun perform-xrds-discovery (id body)
+  (declare (ignore id body))
+  (error "XRDS not supported (yet)"))
+
+(defun discover (id
+                 &aux
+                 (id-x-xrds-location (assoc :x-xrds-location id))
+                 (request-uri (cdr (or id-x-xrds-location
+                                       (assoc :claimed-id id)))))
+  "Perform discovery."
+  ;; OpenID Authentication 2.0 Final, Section 7.3.  Discovery
+  (let ((*text-content-types* (append '(("application" . "xhtml+xml") ("application" . "xrds+xml"))
+                                      *text-content-types*)))
+    (multiple-value-bind
+          (body status-code headers uri stream must-close reason-phrase)
+        (http-request request-uri)
+      (declare (ignore uri stream must-close))
+      
+      (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
+        (error "Could not reach ~A: ~A ~A" request-uri status-code reason-phrase))
+
+      ;; X-XRDS-Location: header check
+      (let ((x-xrds-location (assoc :x-xrds-location headers)))
+        (when x-xrds-location
+          (if id-x-xrds-location
+              (setf (cdr id-x-xrds-location) (cdr x-xrds-location))
+              (push x-xrds-location id))
+          ;; FIXME: what if document (erroneously) points X-XRDS-Location: to itself?
+          (return-from discover
+            (discover id))))
+
+      ;; Content-Type: check
+      (let ((content-type (multiple-value-list (get-content-type headers))))
+        (setf (cddr content-type) nil)  ; drop parameters
+        (cond
+          ((member content-type '(("text" "html")
+                                  ("application" "xhtml+xml"))
+                   :test #'equalp)
+           (perform-html-discovery id body))
+
+          ((equalp '("application" "xrds+xml") content-type)
+           (perform-xrds-discovery id body))
+
+          (t (error "Unsupported content-type ~S at ~A" content-type request-uri)))))))

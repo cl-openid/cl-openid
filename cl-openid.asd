@@ -16,14 +16,16 @@
   ((:module #:src
             :components ((:file "package")
                          (:file "identifier" :depends-on ("package")))))
-  :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls
-                             #-allegro #:puri))
+  :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls #:split-sequence
+                             #-allegro #:puri
+                             #-allegro #:cl-html-parse))
 
 #+allegro
 (defmethod asdf:perform :after ((op load-op)
                                 (component (eql (find-system :cl-openid))))
   "Use Allegro's own version of ported libraries."
-  (require 'uri))
+  (require 'uri)
+  (require 'phtml))
 
 (defsystem #:cl-openid.test
   :version "0.1"
