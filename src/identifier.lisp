@@ -132,8 +132,9 @@ also included in the token.."
   id)
 
 (defun perform-xrds-discovery (id body)
-  (declare (ignore id body))
-  (error "XRDS not supported (yet)"))
+  (declare (ignore body))
+  (warn "XRDS not supported (yet)")
+  id)
 
 (defun discover (id
                  &aux
