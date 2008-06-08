@@ -107,3 +107,34 @@
 (test n-remove-entities/random
   (for-all ((unquoted (gen-string :elements (gen-one-element #\Space #\< #\> #\" #\& #\- #\a #\b #\c #\d #\e #\f #\g #\h))))
     (is (string= unquoted (n-remove-entities (xmls:toxml unquoted))))))
+
+(test perform-html-discovery
+  (dolist (test-case '(("sanity test" . ((:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location)))
+
+                       ;; single tags
+                       ("<link rel=\"openid2.provider\" href=\"http://example.com/\">"
+                        . ((:op-endpoint-url . "http://example.com/") (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location)))
+                       ("<link rel=\"openid2.local_id\" href=\"http://example.com/\">"
+                        . ((:op-endpoint-url) (:op-local-identifier  . "http://example.com/") (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location)))
+                       ("<link rel=\"openid.server\" href=\"http://example.com/\">"
+                        . ((:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url . "http://example.com/") (:v1.op-local-identifier) (:x-xrds-location)))
+                       ("<link rel=\"openid.delegate\" href=\"http://example.com/\">"
+                        . ((:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier . "http://example.com/") (:x-xrds-location)))
+                       ("<meta http-equiv=\"X-XRDS-Location\" content=\"http://example.com/\">"
+                        . ((:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location . "http://example.com/")))
+
+                       ;; combo
+                       ("<link rel=\"openid2.provider\" href=\"http://example.com/ep\"> <link rel=\"openid2.local_id\" href=\"http://example.com/oploc\"> <link rel=\"openid.server\" href=\"http://example.com/epv1\"> <link rel=\"openid.delegate\" href=\"http://example.com/oplocv1\"> <meta http-equiv=\"X-XRDS-Location\" content=\"http://example.com/xrds\">"
+                        . ((:op-endpoint-url . "http://example.com/ep")
+                           (:op-local-identifier . "http://example.com/oploc")
+                           (:v1.op-endpoint-url . "http://example.com/epv1")
+                           (:v1.op-local-identifier . "http://example.com/oplocv1")
+                           (:x-xrds-location . "http://example.com/xrds")))))
+    (let ((rv (perform-html-discovery () (car test-case))))
+      (dolist (ans (cdr test-case))
+        (is (equalp (cdr ans)
+                    (cdr (assoc (car ans) rv)))
+            "HTML discovery for ~S returned ~S, and not ~S."
+            (car test-case)
+            (assoc (car ans) rv)
+            ans)))))
