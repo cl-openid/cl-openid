@@ -40,8 +40,7 @@
             (collect ".."))))
       (dolist (elt initial-list)
         (collect elt)))
-    (rest rv))))
-
+    (rest rv)))
 
 (test remove-dot-segments
   (dolist (path '(("foo" "bar" "baz")
