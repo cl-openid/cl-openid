@@ -119,10 +119,16 @@ also included in the token.."
              (remember "openid2.provider" :op-endpoint-url rel link)
              (remember "openid2.local_id" :op-local-identifier rel link)
              (remember "openid.server" :v1.op-endpoint-url rel link)
-             (remember "openid.delegate" :v1.op-local-identifier rel link)))
+             (remember "openid.delegate" :v1.op-local-identifier rel link))
+
+           (handle-meta-tag (meta)
+             (when (string-equal "X-XRDS-Location" (getf (cdar meta) :http-equiv))
+               (push (cons :x-xrds-location (getf (cdar meta) :content)) id))))
 
     (parse-html body :callback-only t
-                :callbacks (acons :link #'handle-link-tag nil)))
+                :callbacks (acons :link #'handle-link-tag
+                                  (acons :meta #'handle-meta-tag
+                                         nil))))
   id)
 
 (defun perform-xrds-discovery (id body)
@@ -160,12 +166,19 @@ also included in the token.."
       (let ((content-type (multiple-value-list (get-content-type headers))))
         (setf (cddr content-type) nil)  ; drop parameters
         (cond
+          ((or id-x-xrds-location ; wikitravel returns XRDS as
+                                  ; text/html, so when we asked
+                                  ; explicitly for XRDS we assume we
+                                  ; receive XRDS.
+               (equalp '("application" "xrds+xml") content-type))
+           (perform-xrds-discovery id body))
+
           ((member content-type '(("text" "html")
                                   ("application" "xhtml+xml"))
                    :test #'equalp)
-           (perform-html-discovery id body))
-
-          ((equalp '("application" "xrds+xml") content-type)
-           (perform-xrds-discovery id body))
+           (let ((new-id (perform-html-discovery id body)))
+             (if (assoc :x-xrds-location new-id)
+                 (discover new-id)      ; go through Yadis discovery
+                 new-id)))
 
           (t (error "Unsupported content-type ~S at ~A" content-type request-uri)))))))
