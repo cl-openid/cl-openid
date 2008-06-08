@@ -86,19 +86,19 @@ also included in the token.."
 
 (defun n-remove-entities (str)
   (loop
-     with l = (length str)
      for s = (position #\& str) then (position #\& str :start (1+ s))
      for e = (when s
                (position #\; str :start (1+ s)))
-     for replacement = (when s
+     for replacement = (when (and s e)
                          (cdr (assoc (subseq str (1+ s) e) +entities+
                                      :test #'string-equal)))
      while s
+     #|DEBUG do (print (list s e (subseq str (1+ s) e) '-> replacement)) |#
      when replacement
      do (setf (aref str s) replacement
               (subseq str (1+ s)) (subseq str (1+ e))
-              l (- l (- e s)))
-     finally (return (subseq str 0 l))))
+              str (adjust-array str (- (length str) (- e s))))
+     finally (return str)))
 
 (defun perform-html-discovery (id body &aux href-cache)
   (labels ((href (link)
