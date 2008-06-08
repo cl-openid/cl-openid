@@ -88,3 +88,22 @@
     (is (string= (princ-to-string (cdr (assoc :claimed-id (normalize-identifier (car test-case)))))
                  (cdr test-case)))))
 
+(test n-remove-entities
+  (dolist (test-case '(("sanity test" . "sanity test")
+
+                       ("foo &lt; bar" . "foo < bar")
+                       ("foo &gt; bar" . "foo > bar")
+                       ("foo &amp; bar" . "foo & bar")
+                       ("foo &quot;bar&quot;" . "foo \"bar\"")
+                       ("&lt;&amp;&quot;&gt;" . "<&\">")
+                       ("&amp;&gt;&lt;" . "&><")
+
+                       ("in&sanity <test>" . "in&sanity <test>")
+                       ("in&sane &amp; &quot;b0rken<>&quot" . "in&sane & \"b0rken<>&quot") ; Final &quot intentionally lacks a semicolon, shall not pass.
+                       ))
+    (is (string= (n-remove-entities (copy-seq (car test-case)))
+                 (cdr test-case)))))
+
+(test n-remove-entities/random
+  (for-all ((unquoted (gen-string :elements (gen-one-element #\Space #\< #\> #\" #\& #\- #\a #\b #\c #\d #\e #\f #\g #\h))))
+    (is (string= unquoted (n-remove-entities (xmls:toxml unquoted))))))
