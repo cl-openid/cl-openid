@@ -147,7 +147,7 @@ also included in the token.."
                                       *text-content-types*)))
     (multiple-value-bind
           (body status-code headers uri stream must-close reason-phrase)
-        (http-request request-uri)
+        (http-request request-uri :additional-headers '((:accept-encoding "")))
       (declare (ignore uri stream must-close))
       
       (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
