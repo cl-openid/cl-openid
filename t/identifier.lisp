@@ -85,6 +85,6 @@
                        ("http://common-lisp.net/project/cl-openid/index.shtml/" . "http://common-lisp.net/project/cl-openid/index.shtml/")
 
                        ("http://Common-Lisp.NET/../t/../project/./%63l-openi%64/./index.shtml" . "http://common-lisp.net/project/cl-openid/index.shtml")))
-    (is (string= (princ-to-string (normalize-identifier (car test-case)))
+    (is (string= (princ-to-string (cdr (assoc :claimed-id (normalize-identifier (car test-case)))))
                  (cdr test-case)))))
 
