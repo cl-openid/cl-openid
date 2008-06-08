@@ -100,18 +100,11 @@ also included in the token.."
               str (adjust-array str (- (length str) (- e s))))
      finally (return str)))
 
-(defun perform-html-discovery (id body &aux href-cache)
-  (labels ((href (link)
-             "The HREF attribute of LINK, cached."
-             (or href-cache
-                 (setf href-cache
-                       (n-remove-entities
-                        (getf (cdar link) :href)))))
-
-           (remember (name key rel link)
+(defun perform-html-discovery (id body)
+  (labels ((remember (name key rel link)
              "When NAME is in REL, push (CONS KEY (HREF LINK)) to ID."
              (when (member name rel :test #'string-equal)
-               (push (cons key (href link)) id)))
+               (push (cons key (getf (cdar link) :href)) id)))
 
            (handle-link-tag (link       ; ((:link attrs...))
                              &aux
