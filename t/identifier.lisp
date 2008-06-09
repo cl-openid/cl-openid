@@ -3,7 +3,8 @@
 (in-suite :cl-openid)
 
 (defparameter +gen-path-element+
-  (gen-string :elements (gen-character :alphanumericp t)
+  (gen-string :elements (gen-character :alphanumericp t
+                                       :code (gen-integer :min 16 :max 65535))
               :length (gen-integer :min 1 :max 20)))
 
 (defun insert-dots (initial-list
