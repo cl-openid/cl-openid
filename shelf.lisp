@@ -20,7 +20,7 @@
 (use-package :cl-librarian)
 
 (defshelf cl-openid.deps (hunchentoot) ; e.g.
-  ((usocket tarball-repo :source "asdf-install:usocket")
+  ((usocket svn-repo :source "svn://common-lisp.net/project/usocket/svn/usocket/trunk")
    (puri tarball-repo :source "asdf-install:puri")
    (drakma tarball-repo :source "http://weitz.de/files/drakma.tar.gz")
    (ironclad tarball-repo :source "http://www.method-combination.net/lisp/files/ironclad.tar.gz")
