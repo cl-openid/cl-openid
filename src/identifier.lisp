@@ -148,7 +148,8 @@ also included in the token.."
 
       ;; X-XRDS-Location: header check
       (let ((x-xrds-location (assoc :x-xrds-location headers)))
-        (when x-xrds-location
+        (when (and x-xrds-location
+                   (not (uri= (uri (cdr x-xrds-location)) uri)))
           (if id-x-xrds-location
               (setf (cdr id-x-xrds-location) (cdr x-xrds-location))
               (push x-xrds-location id))
