@@ -109,6 +109,12 @@
   (for-all ((unquoted (gen-string :elements (gen-one-element #\Space #\< #\> #\" #\& #\- #\a #\b #\c #\d #\e #\f #\g #\h))))
     (is (string= unquoted (n-remove-entities (xmls:toxml unquoted))))))
 
+(defun alist-contains (alist reference)
+  (every #'(lambda (item)
+             (equal (cdr item)
+                    (cdr (assoc (car item) alist))))
+         reference))
+
 (test perform-html-discovery
   (dolist (test-case '(("sanity test" . ((:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location)))
 
@@ -132,10 +138,4 @@
                            (:v1.op-local-identifier . "http://example.com/oplocv1")
                            (:x-xrds-location . "http://example.com/xrds")))))
     (let ((rv (perform-html-discovery () (car test-case))))
-      (dolist (ans (cdr test-case))
-        (is (equalp (cdr ans)
-                    (cdr (assoc (car ans) rv)))
-            "HTML discovery for ~S returned ~S, and not ~S."
-            (car test-case)
-            (assoc (car ans) rv)
-            ans)))))
+      (is (alist-contains rv (cdr test-case))))))
