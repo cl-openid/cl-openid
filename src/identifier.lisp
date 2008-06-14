@@ -141,7 +141,7 @@ also included in the token.."
     (multiple-value-bind
           (body status-code headers uri stream must-close reason-phrase)
         (http-request request-uri :additional-headers '((:accept-encoding "")))
-      (declare (ignore uri stream must-close))
+      (declare (ignore stream must-close))
       
       (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
         (error "Could not reach ~A: ~A ~A" request-uri status-code reason-phrase))
