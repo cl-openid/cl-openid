@@ -124,9 +124,81 @@ also included in the token.."
                                          nil))))
   id)
 
-(defun perform-xrds-discovery (id body)
-  (declare (ignore body))
-  (warn "XRDS not supported (yet)")
+(defun perform-xrds-discovery (id body
+                               &aux (parsed (xmls:parse body))
+                               prio endpoint oplocal
+                               v1prio v1endpoint v1oplocal v1type)
+  (assert (member (car parsed) '(("XRDS" . "xri://$xrds")
+                                 ("XRDS" . "xri://\\$xrds")) ; http://www.mediawiki.org/wiki/Extension:OpenID
+                  :test #'equal)
+          ((car parsed)))
+  (flet ((priority (service)
+           (let ((prio (second (assoc "priority" (second service)
+                                      :test #'string=))))
+             (when prio
+               (parse-integer prio))))
+         (prio< (new old)
+           (if (eql new old)
+               (> (random 1.0) 1/2)     ; both NILs or same priority
+               (or (null old)           ; NEW is number, OLD is NIL
+                   (ignore-errors       ; error if NEW is NIL
+                     (< new old)))))
+         (uri (service)
+           (third (find '("URI" . "xri://$xrd*($v*2.0)") service
+                        :key #'car :test #'equal))))
+    (dolist (service  (remove '("Service" . "xri://$xrd*($v*2.0)")
+                              (cddar ; Yadis 1.0, 7.3.1 XRDS -- last XRD element
+                               (last (remove '("XRD" . "xri://$xrd*($v*2.0)")
+                                             (xmls:node-children parsed)
+                                             :test-not #'equal :key #'car)))
+                              :test-not #'equal :key #'car))
+      (dolist (type (mapcar #'third (remove '("Type" . "xri://$xrd*($v*2.0)")
+                                            (xmls:node-children service)
+                                            :test-not #'equal :key #'car)))
+        (cond
+
+          ;; 2.0
+          ((string= type "http://specs.openid.net/auth/2.0/server")
+           (let ((sprio (priority service)))
+             (when (or (null endpoint) (prio< sprio prio))
+               (setf endpoint (uri service)
+                     oplocal nil))))
+
+          ((string= type "http://specs.openid.net/auth/2.0/signon")
+           (let ((sprio (priority service)))
+             (when (or (null endpoint) (prio< sprio prio))
+               (setf prio sprio
+                     endpoint (uri service)
+                     oplocal (third (find '("LocalID" . "xri://$xrd*($v*2.0)")
+                                          (xmls:node-children service)
+                                          :test #'equal :key #'car))))))
+
+          ;; 1.x
+          ((member type '("http://openid.net/server/1.0" "http://openid.net/server/1.1"
+                          "http://openid.net/signon/1.0" "http://openid.net/signon/1.1")
+                   :test #'string=)
+           (let ((sprio (priority service)))
+             (when (or (null v1endpoint) (prio< sprio v1prio))
+               (setf v1prio sprio
+                     v1endpoint (uri service)
+                     v1oplocal (let ((delegate (find '("Delegate" . "http://openid.net/xmlns/1.0")
+                                                     (xmls:node-children service)
+                                                     :test #'equal :key #'car)))
+                                 (when delegate
+                                   (third delegate)))
+                     v1type type))))))))
+
+  (when endpoint
+    (progn (push (cons :op-endpoint-url endpoint) id)
+           (when oplocal
+             (push (cons :op-local-identifier oplocal) id))))
+
+  (when v1type
+    (push (cons :v1.type v1type) id)
+    (push (cons :v1.op-endpoint-url v1endpoint) id)
+    (when v1oplocal
+      (push (cons :v1.op-local-identifier v1oplocal) id)))
+
   id)
 
 (defun discover (id
