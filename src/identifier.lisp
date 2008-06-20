@@ -292,5 +292,20 @@ also included in the token.."
   (let ((ep (assoc :op-endpoint-url discovered-id)))
     (setf (cdr ep) (uri (cdr ep))))
 
+  ;; Set valid association and session types for this ID
+  ;; TODO: maybe separate discovery and after-discovery normalization into two functions?
+
+  (push (cons :assoc-type (if (= 1 (cadr (assoc :protocol-version discovered-id)))
+                              (list "HMAC-SHA1")
+                              (list "HMAC-SHA256" "HMAC-SHA1")))
+        discovered-id)
+
+  (push (cons :session-type (if (= 1 (cadr (assoc :protocol-version discovered-id)))
+                                (list "DH-SHA1" "")
+                                (if (eq :https (uri-scheme (cdr (assoc :op-endpoint-url discovered-id))))
+                                    (list "DH-SHA256" "DH-SHA1" "no-encryption")
+                                    (list "DH-SHA256" "DH-SHA1"))))
+        discovered-id)
+
   discovered-id)
 
