@@ -3,6 +3,15 @@
 
 (in-package #:cl-openid)
 
+(unless (boundp '+protocol-versions+)
+  (defconstant +protocol-versions+
+    '(("http://specs.openid.net/auth/2.0/server" . (cons 2 0))
+      ("http://specs.openid.net/auth/2.0/signon" . (cons 2 0))
+      ("http://openid.net/signon/1.0" . (cons 1 0))
+      ("http://openid.net/server/1.0" . (cons 1 0))
+      ("http://openid.net/signon/1.1" . (cons 1 1))
+      ("http://openid.net/server/1.1" . (cons 1 1)))))
+
 (defun remove-dot-segments (parsed-path)
   "Remove . and .. from parsed URI path, to correctly identify same
   paths and prevent URI traversal attacks."
@@ -205,47 +214,83 @@ also included in the token.."
                  &aux
                  (id-x-xrds-location (assoc :x-xrds-location id))
                  (request-uri (cdr (or id-x-xrds-location
-                                       (assoc :claimed-id id)))))
+                                       (assoc :claimed-id id))))
+                 discovered-id)
   "Perform discovery."
   ;; OpenID Authentication 2.0 Final, Section 7.3.  Discovery
-  (let ((*text-content-types* (append '(("application" . "xhtml+xml") ("application" . "xrds+xml"))
-                                      *text-content-types*)))
-    (multiple-value-bind
-          (body status-code headers uri stream must-close reason-phrase)
-        (http-request request-uri :additional-headers '((:accept-encoding "")))
-      (declare (ignore stream must-close))
+  (setf discovered-id
+        (let ((*text-content-types* (append '(("application" . "xhtml+xml") ("application" . "xrds+xml"))
+                                            *text-content-types*)))
+          (multiple-value-bind
+                (body status-code headers uri stream must-close reason-phrase)
+              (http-request request-uri :additional-headers '((:accept-encoding "")))
+            (declare (ignore stream must-close))
       
-      (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
-        (error "Could not reach ~A: ~A ~A" request-uri status-code reason-phrase))
+            (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
+              (error "Could not reach ~A: ~A ~A" request-uri status-code reason-phrase))
 
-      ;; X-XRDS-Location: header check
-      (let ((x-xrds-location (assoc :x-xrds-location headers)))
-        (when (and x-xrds-location
-                   (not (uri= (uri (cdr x-xrds-location)) uri)))
-          (if id-x-xrds-location
-              (setf (cdr id-x-xrds-location) (cdr x-xrds-location))
-              (push x-xrds-location id))
-          ;; FIXME: what if document (erroneously) points X-XRDS-Location: to itself?
-          (return-from discover
-            (discover id))))
+            ;; X-XRDS-Location: header check
+            (let ((x-xrds-location (assoc :x-xrds-location headers)))
+              (when (and x-xrds-location
+                         (not (uri= (uri (cdr x-xrds-location)) uri)))
+                (if id-x-xrds-location
+                    (setf (cdr id-x-xrds-location) (cdr x-xrds-location))
+                    (push x-xrds-location id))
+                ;; FIXME: what if document (erroneously) points X-XRDS-Location: to itself?
+                (return-from discover
+                  (discover id))))
 
-      ;; Content-Type: check
-      (let ((content-type (multiple-value-list (get-content-type headers))))
-        (setf (cddr content-type) nil)  ; drop parameters
-        (cond
-          ((or id-x-xrds-location ; wikitravel returns XRDS as
-                                  ; text/html, so when we asked
-                                  ; explicitly for XRDS we assume we
-                                  ; receive XRDS.
-               (equalp '("application" "xrds+xml") content-type))
-           (perform-xrds-discovery id body))
+            ;; Content-Type: check
+            (let ((content-type (multiple-value-list (get-content-type headers))))
+              (setf (cddr content-type) nil) ; drop parameters
+              (cond
+                ((or id-x-xrds-location ; wikitravel returns XRDS as
+                                        ; text/html, so when we asked
+                                        ; explicitly for XRDS we assume we
+                                        ; receive XRDS.
+                     (equalp '("application" "xrds+xml") content-type))
+                 (perform-xrds-discovery id body))
 
-          ((member content-type '(("text" "html")
-                                  ("application" "xhtml+xml"))
-                   :test #'equalp)
-           (let ((new-id (perform-html-discovery id body)))
-             (if (assoc :x-xrds-location new-id)
-                 (discover new-id)      ; go through Yadis discovery
-                 new-id)))
+                ((member content-type '(("text" "html")
+                                        ("application" "xhtml+xml"))
+                         :test #'equalp)
+                 (let ((new-id (perform-html-discovery id body)))
+                   (when (assoc :x-xrds-location new-id) ; XRDS location found in HTML
+                     (return-from discover
+                       ;; TODO: catch errors and fall back to HTML-discovered info
+                       (discover (remove-if #'(lambda (item)             ; go through Yadis discovery
+                                                (member (car item)
+                                                        '(:op-endpoint-url :op-local-identifier
+                                                          :v1.op-endpoint-url :v1.op-local-identifier)))
+                                            new-id))))
+                   new-id))
 
-          (t (error "Unsupported content-type ~S at ~A" content-type request-uri)))))))
+                (t (error "Unsupported content-type ~S at ~A" content-type request-uri)))))))
+
+  ;; Normalize endpoint and protocol version info
+  (cond ((assoc :op-endpoint-url discovered-id)
+         (push (cons :protocol-version (cons 2 0)) discovered-id))
+
+        ((assoc :v1.op-endpoint-url discovered-id)
+
+         (setf (car (assoc :v1.op-endpoint-url discovered-id)) :op-endpoint-url)
+
+         (let ((oploc (assoc :v1.op-endpoint-url discovered-id)))
+           (when oploc
+             (setf (car oploc) :op-endpoint-url)))
+
+         (let* ((type (assoc :v1.type discovered-id)))
+           (if type
+               (setf (car type) :protocol-version
+                     (cdr type) (or (cdr (assoc (cdr type) +protocol-versions+ :test #'equal))
+                                    (cons 1 1)))
+               (push (cons :protocol-version (cons 1 1)) discovered-id))))
+
+        (t (error "Discovery unsuccessful: ~S." discovered-id)))
+
+  ;; Set endpoint URL as URI (will need schema info for association)
+  (let ((ep (assoc :op-endpoint-url discovered-id)))
+    (setf (cdr ep) (uri (cdr ep))))
+
+  discovered-id)
+
