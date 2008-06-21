@@ -165,7 +165,6 @@ also included in the token.."
                                             (xmls:node-children service)
                                             :test-not #'equal :key #'car)))
         (cond
-
           ;; 2.0
           ((string= type "http://specs.openid.net/auth/2.0/server")
            (let ((sprio (priority service)))
