@@ -5,12 +5,12 @@
 
 (unless (boundp '+protocol-versions+)
   (defconstant +protocol-versions+
-    '(("http://specs.openid.net/auth/2.0/server" . (cons 2 0))
-      ("http://specs.openid.net/auth/2.0/signon" . (cons 2 0))
-      ("http://openid.net/signon/1.0" . (cons 1 0))
-      ("http://openid.net/server/1.0" . (cons 1 0))
-      ("http://openid.net/signon/1.1" . (cons 1 1))
-      ("http://openid.net/server/1.1" . (cons 1 1)))))
+    '(("http://specs.openid.net/auth/2.0/server" . (2 . 0))
+      ("http://specs.openid.net/auth/2.0/signon" . (2 . 0))
+      ("http://openid.net/signon/1.0" . (1 . 0))
+      ("http://openid.net/server/1.0" . (1 . 0))
+      ("http://openid.net/signon/1.1" . (1 . 1))
+      ("http://openid.net/server/1.1" . (1 . 1)))))
 
 (defun remove-dot-segments (parsed-path)
   "Remove . and .. from parsed URI path, to correctly identify same
