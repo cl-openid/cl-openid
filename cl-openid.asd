@@ -15,10 +15,12 @@
   :components
   ((:module #:src
             :components ((:file "package")
-                         (:file "identifier" :depends-on ("package")))))
+                         (:file "identifier" :depends-on ("package"))
+                         (:file "association" :depends-on ("package")))))
   :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls #:split-sequence
                              #-allegro #:puri
-                             #-allegro #:cl-html-parse))
+                             #-allegro #:cl-html-parse
+                             #:cl-base64 #:trivial-utf-8))
 
 #+allegro
 (defmethod asdf:perform :after ((op load-op)
@@ -33,7 +35,8 @@
   :components
   ((:module #:t
     :components ((:file "suite")
-                 (:file "identifier" :depends-on ("suite")))))
+                 (:file "identifier" :depends-on ("suite"))
+                 (:file "association" :depends-on ("suite")))))
   :depends-on (#:cl-openid #:fiveam))
 
 (defmethod perform ((op asdf:test-op)

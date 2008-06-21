@@ -293,7 +293,6 @@ also included in the token.."
 
   ;; Set valid association and session types for this ID
   ;; TODO: maybe separate discovery and after-discovery normalization into two functions?
-
   (push (cons :assoc-type (if (= 1 (cadr (assoc :protocol-version discovered-id)))
                               (list "HMAC-SHA1")
                               (list "HMAC-SHA256" "HMAC-SHA1")))

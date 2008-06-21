@@ -3,5 +3,8 @@
         #:drakma
         #-allegro puri #+allegro net.uri
         #:net.html.parser
-        #:split-sequence)
+        #:split-sequence
+        #:cl-base64
+        #:trivial-utf-8
+        #:ironclad)
   (:export))
