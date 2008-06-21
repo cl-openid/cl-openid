@@ -54,8 +54,6 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                       :parameters (acons "openid.ns" "http://specs.openid.net/auth/2.0"
                                          parameters))
       (let ((parameters (parse-kv body)))
-        (assert (equal "http://specs.openid.net/auth/2.0" ; FIXME for 1.x compatibility mode
-                       (aget "ns" parameters)))
         (if (= 200 status-code)
             parameters
             (error 'openid-request-error
