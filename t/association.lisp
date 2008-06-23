@@ -75,5 +75,7 @@ error:This is an example message
   (is (eq nil (session-digest-type "no-encryption")))
   (is (eq nil (session-digest-type "")))
   (for-all ((s (gen-string)))
-    (unless (member s '("DH-SHA1" "DH-SHA256" "no-encryption" ""))
-      (signals error (session-digest-type s)))))
+    (if (member s '("DH-SHA1" "DH-SHA256" "no-encryption" "")
+                :test #'string=)
+        (pass)                          ; already tested
+        (signals error (session-digest-type s)))))
