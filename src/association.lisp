@@ -145,7 +145,7 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                                   :hmac-digest (or (aget assoc-type
                                                          '(("HMAC-SHA1" . :SHA1)
                                                            ("HMAC-SHA256" . :SHA256)))
-                                                   (error "Unknown session type.")))
+                                                   (error "Unknown association type.")))
                 endpoint)))))
 
 (defun gc-associations (&aux (time (get-universal-time)))
