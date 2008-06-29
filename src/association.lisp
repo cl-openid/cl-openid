@@ -161,3 +161,36 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
   (or (gethash endpoint *associations*)
       (setf (gethash endpoint *associations*)
             (do-associate endpoint :v1 v1))))
+
+(defun associate (id)
+  (association (aget :op-endpoint-url id)
+               (= 1 (car (aget :protocol-version id)))))
+
+;;; FIXME: optimize, reduce consing
+(defun kv-encode (alist)
+  (string-to-utf-8-bytes
+   (apply #'concatenate 'string
+          (loop
+             for (k . v) in alist
+             collect k
+             collect ":"
+             collect v
+             collect '(#\Newline)))))
+
+(defun sign (association parameters &optional signed)
+  (unless signed
+    (setf signed (split-sequence #\, (aget "openid.signed" parameters))))
+
+  (usb8-array-to-base64-string
+   (hmac-digest
+    (update-hmac (make-hmac (association-mac association)
+                            (association-hmac-digest association))
+                 (kv-encode (loop
+                               for field in signed
+                               collect (cons field
+                                             (aget (concatenate 'string "openid." field)
+                                                   parameters))))))))
+
+(defun check-signature (association parameters)
+  (string= (sign association parameters)
+           (aget "openid.sig" parameters)))
