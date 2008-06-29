@@ -13,6 +13,15 @@ OpenID Authentication 2.0 Appendix B.  Diffie-Hellman Key Exchange Default Value
 
 (defconstant +dh-generator+ 2)
 
+;; An association.  Endpoint URI is the hashtable key.
+(defstruct association
+  (expires nil :type integer)
+  (handle nil :type string)
+  (mac nil :type (simple-array (unsigned-byte 8) (*)))
+  (hmac-digest nil :type keyword))
+
+(defvar *associations* (make-hash-table))
+
 (defun aget (k a)
   (cdr (typecase k
          (sequence (assoc k a :test #'equal))
@@ -67,48 +76,88 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                       :test #'string=)
         (error "Unknown session type."))))
 
-(defun associate (id &key
-                  (assoc-type (second (assoc :assoc-type id)))
-                  (session-type (second (assoc :session-type id)))
-                  &aux (parameters (list '("openid.mode" . "associate")
-                                         `("openid.assoc_type" . ,assoc-type)
-                                         `("openid.session_type" . ,session-type)))
-                  xa)
-  (handler-bind ((openid-request-error
-                  #'(lambda (e)
-                      (when (equal (cdr (assoc "error_code" (parameters e)
-                                               :test #'string=))
-                                   "unsupported-type")
-                        (let ((supported-atype (aget "assoc_type" (parameters e)))
-                              (supported-stype (aget "session_type" (parameters e))))
-                          (return-from associate
-                            (when (and (member supported-atype (aget :assoc-type id) :test #'equal)
-                                       (member supported-stype (aget :session-type id) :test #'equal))
-                              (associate id :assoc-type supported-atype :session-type supported-stype))))))))
-    (when (string= "DH-" session-type :end2 3)
-      (setf xa (random +dh-prime+))     ; FIXME: use safer prng generation
-      (push (cons "openid.dh_consumer_public" (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
-            parameters))
-    (let* ((association (direct-request (aget :op-endpoint-url id) parameters))
-           (expires-in (parse-integer (aget "expires_in" association)))
-           (timestamp (get-universal-time)))
-      (setf (cdr (assoc :session-type id)) session-type
-            (cdr (assoc :assoc-type id)) assoc-type)
-      (push (cons :assoc-handle (aget "assoc_handle" association)) id)
-      (push (cons :assoc-timestamp timestamp) id)
-      (push (cons :expires-in expires-in) id)
-      (push (cons :expires-at (+ expires-in timestamp)) id)
-      (push (cons :mac (if (string= "DH-" session-type :end2 3)
-                           ;; Diffie-Hellman
-                           (let* ((g^xb (base64-string-to-integer (aget "dh_server_public" association)))
-                                  (k (expt-mod g^xb xa +dh-prime+))
-                                  (h (octets-to-integer
-                                      (digest-sequence (session-digest-type session-type)
-                                                       (btwoc k))))
-                                  (emac (base64-string-to-integer (aget "enc_mac_key" association)))
-                                  (mac (logxor h emac)))
-                             mac)
-                           (base64-string-to-integer (aget "mac_key" association))))
-            id)
-      association))
-  id)
+(defun do-associate (endpoint
+                     &key
+                     v1
+                     assoc-type session-type
+                     &aux
+                     (parameters '(("openid.mode" . "associate")))
+                     xa)
+
+  ;; optimize? move to constants?
+  (let  ((supported-atypes  (if v1
+                                '("HMAC-SHA1")
+                                '("HMAC-SHA256" "HMAC-SHA1")))
+         (supported-stypes (if v1
+                               '("DH-SHA1" "")
+                               (if (eq :https (uri-scheme (uri endpoint)))
+                                   '("DH-SHA256" "DH-SHA1" "no-encryption")
+                                   '("DH-SHA256" "DH-SHA1")))))
+    (unless assoc-type
+      (setf assoc-type  (first supported-atypes)))
+    
+    (unless session-type
+      (setf session-type (first supported-stypes)))
+
+    (hunchentoot:log-message :debug
+                             "Associating~:[~; v1-compatible~] with ~A (assoc ~S, session ~S)"
+                             v1 endpoint assoc-type session-type)
+
+    (push (cons "openid.assoc_type" assoc-type) parameters)
+    (push (cons "openid.session_type" session-type) parameters)
+
+    (handler-bind ((openid-request-error
+                    #'(lambda (e)
+                        (when (equal (cdr (assoc "error_code" (parameters e)
+                                                 :test #'string=))
+                                     "unsupported-type")
+                          (let ((supported-atype (aget "assoc_type" (parameters e)))
+                                (supported-stype (aget "session_type" (parameters e))))
+                            (return-from do-associate
+                              (when (and (member supported-atype supported-atypes :test #'equal)
+                                         (member supported-stype supported-stypes :test #'equal))
+                                (do-associate endpoint
+                                  :v1 v1
+                                  :assoc-type supported-atype
+                                  :session-type supported-stype))))))))
+
+      (when (string= "DH-" session-type :end2 3) ; Diffie-Hellman
+        (setf xa (random +dh-prime+)) ; FIXME: use safer prng generation
+        (push (cons "openid.dh_consumer_public" (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
+              parameters))
+
+      (let* ((response (direct-request endpoint parameters)))
+        (values (make-association :handle  (aget "assoc_handle" response)
+                                  :expires (+ (get-universal-time)
+                                              (parse-integer (aget "expires_in" response)))
+                                  :mac (if (string= "DH-" session-type :end2 3)
+                                           ;; Diffie-Hellman
+                                           (let* ((g^xb (base64-string-to-integer (aget "dh_server_public" response)))
+                                                  (k (expt-mod g^xb xa +dh-prime+))
+                                                  (h (octets-to-integer
+                                                      (digest-sequence (session-digest-type session-type)
+                                                                       (btwoc k))))
+                                                  (emac (base64-string-to-integer (aget "enc_mac_key" response)))
+                                                  (mac (logxor h emac)))
+                                             (integer-to-octets mac))
+                                           (base64-string-to-usb8-array
+                                            (aget "mac_key" response)))
+                                  :hmac-digest (or (aget assoc-type
+                                                         '(("HMAC-SHA1" . :SHA1)
+                                                           ("HMAC-SHA256" . :SHA256)))
+                                                   (error "Unknown session type.")))
+                endpoint)))))
+
+(defun gc-associations (&aux (time (get-universal-time)))
+  (maphash #'(lambda (ep association)
+               (when (> time (association-expires association))
+                 (hunchentoot:log-message :debug "GC association with ~A ~S" ep association)
+                 (remhash ep *associations*)))
+           *associations*))
+
+(defun association (endpoint &optional v1)
+  (gc-associations)                     ; keep clean
+  (setf endpoint (intern-uri endpoint))
+  (or (gethash endpoint *associations*)
+      (setf (gethash endpoint *associations*)
+            (do-associate endpoint :v1 v1))))
