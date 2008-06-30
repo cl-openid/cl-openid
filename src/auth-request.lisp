@@ -88,13 +88,13 @@
             "Endpoint URL does not match previously discovered information.")
 
      ;; 11.3.  Checking the Nonce
-     (%check (not (member (aget "openid.nonce" parameters) *nonces*
+     (%check (not (member (aget "openid.response_nonce" parameters) *nonces*
                           :test #'string=))
              "Repeated nonce.")
 
      ;; 11.4.  Verifying Signatures
      (%check (check-signature parameters) "Invalid signature")
 
-     (push (aget "openid.nonce" parameters) *nonces*)
+     (push (aget "openid.response_nonce" parameters) *nonces*)
      t)))
 
