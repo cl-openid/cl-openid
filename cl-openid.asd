@@ -16,7 +16,8 @@
   ((:module #:src
             :components ((:file "package")
                          (:file "identifier" :depends-on ("package"))
-                         (:file "association" :depends-on ("package")))))
+                         (:file "association" :depends-on ("package"))
+                         (:file "auth-request" :depends-on ("association")))))
   :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls #:split-sequence
                              #-allegro #:puri
                              #-allegro #:cl-html-parse
