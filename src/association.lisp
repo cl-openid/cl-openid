@@ -191,6 +191,13 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                                              (aget (concatenate 'string "openid." field)
                                                    parameters))))))))
 
-(defun check-signature (association parameters)
+(defun association-by-handle (handle)
+  (maphash #'(lambda (ep assoc)
+               (declare (ignore ep))
+               (when (string= handle (association-handle assoc))
+                 (return-from association-by-handle assoc)))
+           *associations*))
+
+(defun check-signature (parameters &optional (association (association-by-handle (aget "openid.assoc_handle" parameters))))
   (string= (sign association parameters)
            (aget "openid.sig" parameters)))
