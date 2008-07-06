@@ -79,8 +79,7 @@
          (uri (aget ,parameters-field parameters))))
 
 (defun handle-indirect-reply (parameters id uri
-                              &aux
-                              #+later (v1 (not (string= "http://specs.openid.net/auth/2.0" (aget "openid.ns" parameters)))))
+                              &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
   (string-case (aget "openid.mode" parameters)
     ("setup_needed" :setup-needed)
     ("cancel" nil)
@@ -91,17 +90,43 @@
              "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" parameters))
 
      ;; 11.2.  Verifying Discovered Information
-     (%check (%uri-matches :op-endpoint-url "openid.op_endpoint")
-            "Endpoint URL does not match previously discovered information.")
+     (unless v1-compat
+       (%check (string= "http://specs.openid.net/auth/2.0" (aget "openid.ns" parameters))
+               "Wrong namespace ~A" (aget "openid.ns" parameters)))
+
+     (unless (and v1-compat (null (aget "openid.op_endpoint" parameters)))
+       (%check (%uri-matches :op-endpoint-url "openid.op_endpoint")
+               "Endpoint URL does not match previously discovered information."))
+
+     (unless (or (and v1-compat (null (aget "openid.claimed_id" parameters)))
+                 (%uri-matches :claimed-id "openid.claimed_id"))
+       (let ((cid (discover (normalize-identifier (aget "openid.claimed_id" parameters)))))
+         (if (uri= (aget :op-endpoint-url cid)
+                   (aget :op-endpoint-url id))
+             (setf (cdr (assoc :claimed-id id))
+                   (aget :claimed-id cid))
+             (%err "Received Claimed ID ~A differs from user-supplied ~A, and discovery for received one did not find the same endpoint."
+                   (aget :op-endpoint-url id) (aget :op-endpoint-url cid)))))
 
      ;; 11.3.  Checking the Nonce
      (%check (not (member (aget "openid.response_nonce" parameters) *nonces*
                           :test #'string=))
              "Repeated nonce.")
+     (push (aget "openid.response_nonce" parameters) *nonces*)
 
      ;; 11.4.  Verifying Signatures
      (%check (check-signature parameters) "Invalid signature")
 
-     (push (aget "openid.response_nonce" parameters) *nonces*)
-     t)))
+                   (when (aget "invalidate_handle" reply)
+                     (gc-associations (aget "invalidate_handle" reply)))
+                   (string= "true" (aget "is_valid" reply))))
+             "Invalid signature")
+
+     (unless v1-compat               ; Check list of signed parameters
+       (let ((signed (split-sequence #\, (aget "openid.signed" parameters))))
+         (every #'(lambda (f)
+                    (member f signed :test #'string=))
+                (cons '("op_endpoint" "return_to" "response_nonce" "assoc_handle")
+                      (when (aget "openid.claimed_id" parameters)
+                        '("openid.claimed_id" "openid.identity"))))))
 
