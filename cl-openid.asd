@@ -22,7 +22,7 @@
   :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls #:split-sequence
                              #-allegro #:puri
                              #-allegro #:cl-html-parse
-                             #:cl-base64 #:trivial-utf-8 #:anaphora))
+                             #:cl-base64 #:trivial-utf-8))
 
 #+allegro
 (defmethod asdf:perform :after ((op load-op)
