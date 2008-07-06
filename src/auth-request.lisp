@@ -85,7 +85,11 @@
     ("setup_needed" :setup-needed)
 
     ("cancel" nil)
-    ("id_res" ;; FIXME: verify
+
+    ("id_res"
+
+     ;; Handle assoc invalidations
+     (gc-associations (aget "openid.invalidate_handle" parameters))
 
      ;; 11.1.  Verifying the Return URL
      (%check (uri= uri (uri (aget "openid.return_to" parameters)))
@@ -117,7 +121,15 @@
      (push (aget "openid.response_nonce" parameters) *nonces*)
 
      ;; 11.4.  Verifying Signatures
-     (%check (check-signature parameters) "Invalid signature")
+     (%check (if (association-by-handle (aget "openid.assoc_handle" parameters))
+                 ;; 11.4.1.  Verifying with an Association
+                 (check-signature parameters)
+                 ;; 11.4.2.  Verifying Directly with the OpenID Provider
+                 (let ((reply (direct-request (aget :op-endpoint-url id)
+                                              (acons "openid.mode" "check_authentication"
+                                                     (remove "openid.mode" parameters
+                                                             :key #'car
+                                                             :test #'string=)))))
 
                    (when (aget "invalidate_handle" reply)
                      (gc-associations (aget "invalidate_handle" reply)))
