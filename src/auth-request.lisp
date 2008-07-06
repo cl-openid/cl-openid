@@ -31,7 +31,11 @@
                           ,@(when return-to
                                   `(("openid.return_to" . ,(princ-to-string return-to))))
                           ,@(when realm
-                                  `(("openid.realm" . ,(princ-to-string realm)))))))
+                                  `((,(if (equal '(2 . 0)  ; OpenID 1.x compat: trust_root instead of realm
+                                                 (aget :protocol-version id))
+                                          "openid.realm"
+                                          "openid.trust_root")
+                                      . ,(princ-to-string realm)))))))
 
 (defmacro string-case (keyform &body clauses)
   (let ((key (gensym "key")))
