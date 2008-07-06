@@ -40,10 +40,13 @@ Returns a string with HTML reply and a redirect URI if applicable."
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <a href=\"~A\">return</a>
 </body></html>"
-                   (case (handle-indirect-reply parameters (first *ids*) uri)  ; FIXME: (first *ids*)
-                     (:setup-needed "<h1 style=\"color: orange; text-decoration: blink;\">SETUP NEEDED !!!</h1>")
-                     ((nil) "<h1 style=\"color: red; text-decoration: blink;\">ACCESS DENIED !!!</h1>")
-                     (t "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1>"))
+                   (let ((reply (handle-indirect-reply parameters (first *ids*) uri)))  ; FIXME: (first *ids*)
+                     (case reply
+                       (:setup-needed "<h1 style=\"color: orange; text-decoration: blink;\">SETUP NEEDED !!!</h1>")
+                       ((nil) "<h1 style=\"color: red; text-decoration: blink;\">ACCESS DENIED !!!</h1>")
+                       (t (format nil
+                                  "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: ~A</p>"
+                                  reply))))
                    realm
                    (mapcar #'(lambda (c)
                                (list (car c) (cdr c)))
