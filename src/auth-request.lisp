@@ -92,6 +92,7 @@
 Returns either :SETUP-NEEDED when immediate request failed (FIXME),
 NIL on failure, or claimed ID URI on success."
   (string-case (aget "openid.mode" parameters)
+    ("error" (%err "Assertion error: ~S" parameters))
 
     ("setup_needed" :setup-needed)
 
