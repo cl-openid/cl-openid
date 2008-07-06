@@ -28,6 +28,7 @@
    (xmls tarball-repo :source "http://common-lisp.net/project/xmls/xmls-1.2.tar.gz")
    (cl-html-parse tarball-repo :source "asdf-install:cl-html-parse")
    (trivial-utf-8 darcs-repo :source "http://common-lisp.net/project/trivial-utf-8/darcs/trivial-utf-8")
+   (anaphora tarball-repo :source "asdf-install:anaphora")
 
    ;; 5am testing
    (arnesi darcs-repo :source "http://common-lisp.net/project/bese/repos/arnesi_dev/")

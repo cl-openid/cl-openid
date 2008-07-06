@@ -6,6 +6,7 @@
         #:split-sequence
         #:cl-base64
         #:trivial-utf-8
-        #:ironclad)
+        #:ironclad
+        #:anaphora)
   (:shadowing-import-from :cl #:null) ; Ironclad shadows NULL, we don't want to
   (:export))
