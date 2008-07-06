@@ -53,23 +53,26 @@
 
 (define-condition openid-assertion-error (error)
   ((message :initarg :message :reader message)
+   (message-format-parameters :initarg :message-format-parameters :reader message-format-parameters)
    (id :initarg :id :reader id)
    (assertion :initarg :assertion :reader assertion))
   (:report (lambda (e s)
-             (format s "OpenID assertion error: ~A" (message e)))))
+             (format s "OpenID assertion error: ~?"
+                     (message e) (message-format-parameters e)))))
 
 (defvar *nonces* nil)
 
 ;;; FIXME: roll into a MACROLET.
-(defmacro %err (message)
+(defmacro %err (message &rest args)
   `(error 'openid-assertion-error
           :message ,message
+          :message-format-parameters (list ,@args)
           :assertion parameters
           :id id))
 
-(defmacro %check (test message)
+(defmacro %check (test message &rest args)
   `(unless ,test
-     (%err ,message)))
+     (%err ,message ,@args)))
 
 (defmacro %uri-matches (id-field parameters-field)
   `(uri= (uri (aget ,id-field id))
@@ -85,7 +88,7 @@
 
      ;; 11.1.  Verifying the Return URL
      (%check (uri= uri (uri (aget "openid.return_to" parameters)))
-            "openid.return_to doesn't match server's URI")
+             "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" parameters))
 
      ;; 11.2.  Verifying Discovered Information
      (%check (%uri-matches :op-endpoint-url "openid.op_endpoint")
