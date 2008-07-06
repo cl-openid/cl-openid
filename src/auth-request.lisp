@@ -1,5 +1,6 @@
 (in-package #:cl-openid)
 
+;; 5.2.  Indirect Communication
 (defun indirect-request-uri (endpoint parameters
                              &aux
                              (uri (if (uri-p endpoint)
@@ -9,14 +10,17 @@
                                  (acons "openid.ns" "http://specs.openid.net/auth/2.0"
                                         parameters)
                                  :utf-8)))
+  "Return an URI for an indirect request to OpenID Provider endpoint."
   (setf (uri-query uri)
         (if (uri-query uri)
             (concatenate 'string (uri-query uri) "&" q)
             q))
   uri)
 
+;; 9.  Requesting Authentication
 (defun request-authentication-uri (id &key return-to realm immediate-p
                                    &aux (association (associate id)))
+  "Return URI for an authentication request for ID"
   (unless (or return-to realm)
     (error "Either RETURN-TO, or REALM must be specified."))
   (indirect-request-uri (aget :op-endpoint-url id)
@@ -38,6 +42,7 @@
                                       . ,(princ-to-string realm)))))))
 
 (defmacro string-case (keyform &body clauses)
+  "Like CASE, but for a string KEYFORM."
   (let ((key (gensym "key")))
     `(let ((,key ,keyform))
        (declare (ignorable ,key))
@@ -58,9 +63,11 @@
    (assertion :initarg :assertion :reader assertion))
   (:report (lambda (e s)
              (format s "OpenID assertion error: ~?"
-                     (message e) (message-format-parameters e)))))
+                     (message e) (message-format-parameters e))))
+  (:documentation "Error during OpenID assertion verification"))
 
-(defvar *nonces* nil)
+(defvar *nonces* nil ; FIXME: gc
+  "A list of openid.nonce reply parameters to avoid duplicates.")
 
 ;;; FIXME: roll into a MACROLET.
 (defmacro %err (message &rest args)
@@ -80,6 +87,10 @@
 
 (defun handle-indirect-reply (parameters id uri
                               &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
+  "Handle indirect reply for ID, coming at URI containing PARAMETERS.
+
+Returns either :SETUP-NEEDED when immediate request failed (FIXME),
+NIL on failure, or claimed ID URI on success."
   (string-case (aget "openid.mode" parameters)
 
     ("setup_needed" :setup-needed)
