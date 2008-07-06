@@ -81,7 +81,9 @@
 (defun handle-indirect-reply (parameters id uri
                               &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
   (string-case (aget "openid.mode" parameters)
+
     ("setup_needed" :setup-needed)
+
     ("cancel" nil)
     ("id_res" ;; FIXME: verify
 
