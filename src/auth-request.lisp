@@ -144,3 +144,4 @@
                       (when (aget "openid.claimed_id" parameters)
                         '("openid.claimed_id" "openid.identity"))))))
 
+     (aget :claimed-id id))))
