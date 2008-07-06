@@ -140,8 +140,12 @@
        (let ((signed (split-sequence #\, (aget "openid.signed" parameters))))
          (every #'(lambda (f)
                     (member f signed :test #'string=))
-                (cons '("op_endpoint" "return_to" "response_nonce" "assoc_handle")
-                      (when (aget "openid.claimed_id" parameters)
-                        '("openid.claimed_id" "openid.identity"))))))
+                `("op_endpoint"
+                  "return_to"
+                  "response_nonce"
+                  "assoc_handle"
+                  ,@(when (aget "openid.claimed_id" parameters)
+                       '("openid.claimed_id"
+                         "openid.identity"))))))
 
      (aget :claimed-id id))))
