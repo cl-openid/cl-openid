@@ -148,9 +148,11 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                                                    (error "Unknown association type.")))
                 endpoint)))))
 
-(defun gc-associations (&aux (time (get-universal-time)))
+(defun gc-associations (&optional invalidate-handle &aux (time (get-universal-time)))
   (maphash #'(lambda (ep association)
-               (when (> time (association-expires association))
+               (when (or (> time (association-expires association))
+                         (and invalidate-handle
+                              (string= invalidate-handle (association-handle association))))
                  (hunchentoot:log-message :debug "GC association with ~A ~S" ep association)
                  (remhash ep *associations*)))
            *associations*))
