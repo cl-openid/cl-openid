@@ -70,103 +70,100 @@
 (defvar *nonces* nil ; FIXME: gc
   "A list of openid.nonce reply parameters to avoid duplicates.")
 
-;;; FIXME: roll into a MACROLET.
-(defmacro %err (code message &rest args)
-  `(error 'openid-assertion-error
-          :code ,code
-          :message ,message
-          :message-format-parameters (list ,@args)
-          :assertion parameters
-          :id id))
-
-(defmacro %check (test code message &rest args)
-  `(unless ,test
-     (%err ,code ,message ,@args)))
-
-(defmacro %uri-matches (id-field parameters-field)
-  `(uri= (uri (aget ,id-field id))
-         (uri (aget ,parameters-field parameters))))
-
 (defun handle-indirect-reply (parameters id
                               &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
   "Handle indirect reply for ID, consisting of PARAMETERS.
 
 Returns ID on success, NIL on failure."
-  (string-case (aget "openid.mode" parameters)
-    ("error" (%err :server-error "Assertion error"))
+  (macrolet ((err (code message &rest args)
+               `(error 'openid-assertion-error
+                       :code ,code
+                       :message ,message
+                       :message-format-parameters (list ,@args)
+                       :assertion parameters
+                       :id id))
+             (ensure (test code message &rest args)
+               `(unless ,test
+                  (%err ,code ,message ,@args)))
+             (same-uri (id-field parameters-field)
+               `(uri= (uri (aget ,id-field id))
+                      (uri (aget ,parameters-field parameters)))))
 
-    ("setup_needed" (%err :setup-needed "Setup needed."))
+    (string-case (aget "openid.mode" parameters)
+      ("error" (err :server-error "Assertion error"))
 
-    ("cancel" nil)
+      ("setup_needed" (err :setup-needed "Setup needed."))
 
-    ("id_res"
+      ("cancel" nil)
 
-     ;; Handle assoc invalidations
-     (gc-associations (aget "openid.invalidate_handle" parameters))
+      ("id_res"
 
-     ;; 11.1.  Verifying the Return URL
-     (%check (uri= (aget :return-to id)
-                   (uri (aget "openid.return_to" parameters)))
-             :invalid-return-to
-             "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" parameters))
+       ;; Handle assoc invalidations
+       (gc-associations (aget "openid.invalidate_handle" parameters))
 
-     ;; 11.2.  Verifying Discovered Information
-     (unless v1-compat
-       (%check (string= "http://specs.openid.net/auth/2.0" (aget "openid.ns" parameters))
-               :invalid-namespace
-               "Wrong namespace ~A" (aget "openid.ns" parameters)))
+       ;; 11.1.  Verifying the Return URL
+       (ensure (uri= (aget :return-to id)
+                     (uri (aget "openid.return_to" parameters)))
+               :invalid-return-to
+               "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" parameters))
 
-     (unless (and v1-compat (null (aget "openid.op_endpoint" parameters)))
-       (%check (%uri-matches :op-endpoint-url "openid.op_endpoint")
-               :invalid-endpoint
-               "Endpoint URL does not match previously discovered information."))
+       ;; 11.2.  Verifying Discovered Information
+       (unless v1-compat
+         (ensure (string= "http://specs.openid.net/auth/2.0" (aget "openid.ns" parameters))
+                 :invalid-namespace
+                 "Wrong namespace ~A" (aget "openid.ns" parameters)))
 
-     (unless (or (and v1-compat (null (aget "openid.claimed_id" parameters)))
-                 (%uri-matches :claimed-id "openid.claimed_id"))
-       (let ((cid (discover (normalize-identifier (aget "openid.claimed_id" parameters)))))
-         (if (uri= (aget :op-endpoint-url cid)
-                   (aget :op-endpoint-url id))
-             (setf (cdr (assoc :claimed-id id))
-                   (aget :claimed-id cid))
-             (%err :invalid-claimed-id
-                   "Received Claimed ID ~A differs from user-supplied ~A, and discovery for received one did not find the same endpoint."
-                   (aget :op-endpoint-url id) (aget :op-endpoint-url cid)))))
+       (unless (and v1-compat (null (aget "openid.op_endpoint" parameters)))
+         (ensure (same-uri :op-endpoint-url "openid.op_endpoint")
+                 :invalid-endpoint
+                 "Endpoint URL does not match previously discovered information."))
 
-     ;; 11.3.  Checking the Nonce
-     (%check (not (member (aget "openid.response_nonce" parameters) *nonces*
-                          :test #'string=))
-             :invalid-nonce
-             "Repeated nonce.")
-     (push (aget "openid.response_nonce" parameters) *nonces*)
+       (unless (or (and v1-compat (null (aget "openid.claimed_id" parameters)))
+                   (same-uri :claimed-id "openid.claimed_id"))
+         (let ((cid (discover (normalize-identifier (aget "openid.claimed_id" parameters)))))
+           (if (uri= (aget :op-endpoint-url cid)
+                     (aget :op-endpoint-url id))
+               (setf (cdr (assoc :claimed-id id))
+                     (aget :claimed-id cid))
+               (err :invalid-claimed-id
+                    "Received Claimed ID ~A differs from user-supplied ~A, and discovery for received one did not find the same endpoint."
+                    (aget :op-endpoint-url id) (aget :op-endpoint-url cid)))))
 
-     ;; 11.4.  Verifying Signatures
-     (%check (if (association-by-handle (aget "openid.assoc_handle" parameters))
-                 ;; 11.4.1.  Verifying with an Association
-                 (check-signature parameters)
-                 ;; 11.4.2.  Verifying Directly with the OpenID Provider
-                 (let ((reply (direct-request (aget :op-endpoint-url id)
-                                              (acons "openid.mode" "check_authentication"
-                                                     (remove "openid.mode" parameters
-                                                             :key #'car
-                                                             :test #'string=)))))
+       ;; 11.3.  Checking the Nonce
+       (ensure (not (member (aget "openid.response_nonce" parameters) *nonces*
+                            :test #'string=))
+               :invalid-nonce
+               "Repeated nonce.")
+       (push (aget "openid.response_nonce" parameters) *nonces*)
 
-                   (when (aget "invalidate_handle" reply)
-                     (gc-associations (aget "invalidate_handle" reply)))
-                   (string= "true" (aget "is_valid" reply))))
-             :invalid-signature
-             "Invalid signature")
+       ;; 11.4.  Verifying Signatures
+       (ensure (if (association-by-handle (aget "openid.assoc_handle" parameters))
+                   ;; 11.4.1.  Verifying with an Association
+                   (check-signature parameters)
+                   ;; 11.4.2.  Verifying Directly with the OpenID Provider
+                   (let ((reply (direct-request (aget :op-endpoint-url id)
+                                                (acons "openid.mode" "check_authentication"
+                                                       (remove "openid.mode" parameters
+                                                               :key #'car
+                                                               :test #'string=)))))
 
-     (unless v1-compat               ; Check list of signed parameters
-       (let ((signed (split-sequence #\, (aget "openid.signed" parameters))))
-         (%check (every #'(lambda (f)
-                            (member f signed :test #'string=))
-                        `("op_endpoint"
-                          "return_to"
-                          "response_nonce"
-                          "assoc_handle"
-                          ,@(when (aget "openid.claimed_id" parameters)
-                               '("claimed_id" "identity"))))
-                 :invalid-signed-fields
-                 "Not all fields that are required to be signed, are so.")))
+                     (when (aget "invalidate_handle" reply)
+                       (gc-associations (aget "invalidate_handle" reply)))
+                     (string= "true" (aget "is_valid" reply))))
+               :invalid-signature
+               "Invalid signature")
 
-     id)))
+       (unless v1-compat             ; Check list of signed parameters
+         (let ((signed (split-sequence #\, (aget "openid.signed" parameters))))
+           (ensure (every #'(lambda (f)
+                              (member f signed :test #'string=))
+                          `("op_endpoint"
+                            "return_to"
+                            "response_nonce"
+                            "assoc_handle"
+                            ,@(when (aget "openid.claimed_id" parameters)
+                                    '("claimed_id" "identity"))))
+                   :invalid-signed-fields
+                   "Not all fields that are required to be signed, are so.")))
+
+       id))))
