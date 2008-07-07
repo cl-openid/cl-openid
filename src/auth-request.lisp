@@ -158,14 +158,15 @@ NIL on failure, or claimed ID URI on success."
 
      (unless v1-compat               ; Check list of signed parameters
        (let ((signed (split-sequence #\, (aget "openid.signed" parameters))))
-         (every #'(lambda (f)
-                    (member f signed :test #'string=))
-                `("op_endpoint"
-                  "return_to"
-                  "response_nonce"
-                  "assoc_handle"
-                  ,@(when (aget "openid.claimed_id" parameters)
-                       '("openid.claimed_id"
-                         "openid.identity"))))))
+         (%check (every #'(lambda (f)
+                            (member f signed :test #'string=))
+                        `("op_endpoint"
+                          "return_to"
+                          "response_nonce"
+                          "assoc_handle"
+                          ,@(when (aget "openid.claimed_id" parameters)
+                               '("claimed_id" "identity"))))
+                 :invalid-signed-fields
+                 "Not all fields that are required to be signed, are so.")))
 
      (aget :claimed-id id))))
