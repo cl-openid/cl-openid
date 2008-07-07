@@ -21,6 +21,16 @@
 (defvar *ids* (make-hash-table)
   "List of handled IDs")
 
+(defvar *id-timeout* 3600
+  "Number of seconds after which an ID is collected from *IDS*")
+
+(defun gc-ids (&aux (time-limit (- (get-universal-time) *id-timeout*)))
+  "Collect old IDs."
+  (maphash #'(lambda (k v)
+               (when (< (aget :timestamp v) time-limit)
+                 (remhash k *ids*)))
+           *ids*))
+
 (defpackage :cl-openid.ids
   (:use)
   (:documentation "Package for unique keys to *IDS* hashtable."))
@@ -32,6 +42,7 @@
                                (handle (gentemp "ID" (find-package :cl-openid.ids)))
                                (return-to (merge-uris (symbol-name handle) uri)))
   "Initiate authorization process.  Returns URI to redirect user to."
+  (gc-ids)
   (push (cons :timestamp (get-universal-time)) id)
   (push (cons :return-to return-to) id)
   (setf (gethash handle *ids*) id)
