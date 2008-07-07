@@ -96,7 +96,7 @@ NIL on failure, or claimed ID URI on success."
   (string-case (aget "openid.mode" parameters)
     ("error" (%err :server-error "Assertion error"))
 
-    ("setup_needed" :setup-needed)
+    ("setup_needed" (%err :setup-needed "Setup needed."))
 
     ("cancel" nil)
 
