@@ -57,7 +57,8 @@
 		 `(,test ,@forms))))))
 
 (define-condition openid-assertion-error (error)
-  ((message :initarg :message :reader message)
+  ((code :initarg :code :reader code)
+   (message :initarg :message :reader message)
    (message-format-parameters :initarg :message-format-parameters :reader message-format-parameters)
    (id :initarg :id :reader id)
    (assertion :initarg :assertion :reader assertion))
@@ -70,16 +71,17 @@
   "A list of openid.nonce reply parameters to avoid duplicates.")
 
 ;;; FIXME: roll into a MACROLET.
-(defmacro %err (message &rest args)
+(defmacro %err (code message &rest args)
   `(error 'openid-assertion-error
+          :code ,code
           :message ,message
           :message-format-parameters (list ,@args)
           :assertion parameters
           :id id))
 
-(defmacro %check (test message &rest args)
+(defmacro %check (test code message &rest args)
   `(unless ,test
-     (%err ,message ,@args)))
+     (%err ,code ,message ,@args)))
 
 (defmacro %uri-matches (id-field parameters-field)
   `(uri= (uri (aget ,id-field id))
@@ -92,7 +94,7 @@
 Returns either :SETUP-NEEDED when immediate request failed (FIXME),
 NIL on failure, or claimed ID URI on success."
   (string-case (aget "openid.mode" parameters)
-    ("error" (%err "Assertion error: ~S" parameters))
+    ("error" (%err :server-error "Assertion error"))
 
     ("setup_needed" :setup-needed)
 
@@ -105,15 +107,18 @@ NIL on failure, or claimed ID URI on success."
 
      ;; 11.1.  Verifying the Return URL
      (%check (uri= uri (uri (aget "openid.return_to" parameters)))
+             :invalid-return-to
              "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" parameters))
 
      ;; 11.2.  Verifying Discovered Information
      (unless v1-compat
        (%check (string= "http://specs.openid.net/auth/2.0" (aget "openid.ns" parameters))
+               :invalid-namespace
                "Wrong namespace ~A" (aget "openid.ns" parameters)))
 
      (unless (and v1-compat (null (aget "openid.op_endpoint" parameters)))
        (%check (%uri-matches :op-endpoint-url "openid.op_endpoint")
+               :invalid-endpoint
                "Endpoint URL does not match previously discovered information."))
 
      (unless (or (and v1-compat (null (aget "openid.claimed_id" parameters)))
@@ -123,12 +128,14 @@ NIL on failure, or claimed ID URI on success."
                    (aget :op-endpoint-url id))
              (setf (cdr (assoc :claimed-id id))
                    (aget :claimed-id cid))
-             (%err "Received Claimed ID ~A differs from user-supplied ~A, and discovery for received one did not find the same endpoint."
+             (%err :invalid-claimed-id
+                   "Received Claimed ID ~A differs from user-supplied ~A, and discovery for received one did not find the same endpoint."
                    (aget :op-endpoint-url id) (aget :op-endpoint-url cid)))))
 
      ;; 11.3.  Checking the Nonce
      (%check (not (member (aget "openid.response_nonce" parameters) *nonces*
                           :test #'string=))
+             :invalid-nonce
              "Repeated nonce.")
      (push (aget "openid.response_nonce" parameters) *nonces*)
 
@@ -146,6 +153,7 @@ NIL on failure, or claimed ID URI on success."
                    (when (aget "invalidate_handle" reply)
                      (gc-associations (aget "invalidate_handle" reply)))
                    (string= "true" (aget "is_valid" reply))))
+             :invalid-signature
              "Invalid signature")
 
      (unless v1-compat               ; Check list of signed parameters
