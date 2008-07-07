@@ -87,12 +87,11 @@
   `(uri= (uri (aget ,id-field id))
          (uri (aget ,parameters-field parameters))))
 
-(defun handle-indirect-reply (parameters id uri
+(defun handle-indirect-reply (parameters id
                               &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
-  "Handle indirect reply for ID, coming at URI containing PARAMETERS.
+  "Handle indirect reply for ID, consisting of PARAMETERS.
 
-Returns either :SETUP-NEEDED when immediate request failed (FIXME),
-NIL on failure, or claimed ID URI on success."
+Returns claimed ID URI on success, or NIL on failure."
   (string-case (aget "openid.mode" parameters)
     ("error" (%err :server-error "Assertion error"))
 
@@ -106,7 +105,8 @@ NIL on failure, or claimed ID URI on success."
      (gc-associations (aget "openid.invalidate_handle" parameters))
 
      ;; 11.1.  Verifying the Return URL
-     (%check (uri= uri (uri (aget "openid.return_to" parameters)))
+     (%check (uri= (aget :return-to id)
+                   (uri (aget "openid.return_to" parameters)))
              :invalid-return-to
              "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" parameters))
 
