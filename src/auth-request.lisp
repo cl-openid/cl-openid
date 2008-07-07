@@ -91,7 +91,7 @@
                               &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
   "Handle indirect reply for ID, consisting of PARAMETERS.
 
-Returns claimed ID URI on success, or NIL on failure."
+Returns ID on success, NIL on failure."
   (string-case (aget "openid.mode" parameters)
     ("error" (%err :server-error "Assertion error"))
 
@@ -169,4 +169,4 @@ Returns claimed ID URI on success, or NIL on failure."
                  :invalid-signed-fields
                  "Not all fields that are required to be signed, are so.")))
 
-     (aget :claimed-id id))))
+     id)))
