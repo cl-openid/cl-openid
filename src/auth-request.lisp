@@ -70,6 +70,24 @@
 (defvar *nonces* nil ; FIXME: gc
   "A list of openid.nonce reply parameters to avoid duplicates.")
 
+(defvar *nonce-timeout* 3600
+  "Number of seconds the nonce times out.")
+
+(defun nonce-universal-time (nonce)
+  (encode-universal-time (parse-integer nonce :start 17 :end 19) ; second
+                         (parse-integer nonce :start 14 :end 16) ; minute
+                         (parse-integer nonce :start 11 :end 13) ; hour
+                         (parse-integer nonce :start 8  :end 10) ; date
+                         (parse-integer nonce :start 5  :end 7)  ; month
+                         (parse-integer nonce :start 0  :end 4)  ; year
+                         0                                       ; GMT
+                         ))
+
+(defun gc-nonces (&aux (time-limit (- (get-universal-time) *nonce-timeout*)))
+  (setf *nonces* (delete-if #'(lambda (nonce-time)
+                                (< nonce-time time-limit))
+                            *nonces* :key #'nonce-universal-time)))
+
 (defun handle-indirect-reply (parameters id
                               &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
   "Handle indirect reply for ID, consisting of PARAMETERS.
@@ -130,11 +148,15 @@ Returns ID on success, NIL on failure."
                     (aget :op-endpoint-url id) (aget :op-endpoint-url cid)))))
 
        ;; 11.3.  Checking the Nonce
-       (ensure (not (member (aget "openid.response_nonce" parameters) *nonces*
-                            :test #'string=))
+       (ensure (not (or (> (- (get-universal-time)
+                              (nonce-universal-time (aget "openid.response_nonce" parameters)))
+                           *nonce-timeout*)
+                        (member (aget "openid.response_nonce" parameters) *nonces*
+                                :test #'string=)))
                :invalid-nonce
                "Repeated nonce.")
        (push (aget "openid.response_nonce" parameters) *nonces*)
+       (gc-nonces)
 
        ;; 11.4.  Verifying Signatures
        (ensure (if (association-by-handle (aget "openid.assoc_handle" parameters))
