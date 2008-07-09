@@ -148,14 +148,17 @@ Returns ID on success, NIL on failure."
                     (aget :op-endpoint-url id) (aget :op-endpoint-url cid)))))
 
        ;; 11.3.  Checking the Nonce
-       (ensure (not (or (> (- (get-universal-time)
-                              (nonce-universal-time (aget "openid.response_nonce" parameters)))
-                           *nonce-timeout*)
-                        (member (aget "openid.response_nonce" parameters) *nonces*
-                                :test #'string=)))
-               :invalid-nonce
-               "Repeated nonce.")
-       (push (aget "openid.response_nonce" parameters) *nonces*)
+       (let ((nonce (aget "openid.response_nonce" parameters)))
+         (if nonce
+             (progn (ensure (not (or (> (- (get-universal-time)
+                                           (nonce-universal-time nonce))
+                                        *nonce-timeout*)
+                                     (member nonce *nonces* :test #'string=)))
+                            :invalid-nonce
+                            "Repeated nonce.")
+                    (push nonce *nonces*))
+             (unless v1-compat
+               (err :missing-nonce "No openid.response_noce"))))
        (gc-nonces)
 
        ;; 11.4.  Verifying Signatures
