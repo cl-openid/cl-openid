@@ -49,12 +49,12 @@
        (cond
 	 ,@(loop
 	       for (keys . forms) in clauses
-	       for test = (etypecase keys
-			    (string `(string= ,key ,keys))
-			    (sequence `(find ,key ',keys :test 'string=))
-			    ((eql t) t))
+	       for test-form = (etypecase keys
+                                 (string `(string= ,key ,keys))
+                                 (sequence `(find ,key ',keys :test 'string=))
+                                 ((eql t) t))
 	       collect
-		 `(,test ,@forms))))))
+		 `(,test-form ,@forms))))))
 
 (define-condition openid-assertion-error (error)
   ((code :initarg :code :reader code)
@@ -100,8 +100,8 @@ Returns ID on success, NIL on failure."
                        :message-format-parameters (list ,@args)
                        :assertion parameters
                        :id id))
-             (ensure (test code message &rest args)
-               `(unless ,test
+             (ensure (test-form code message &rest args)
+               `(unless ,test-form
                   (err ,code ,message ,@args)))
              (same-uri (id-field parameters-field)
                `(uri= (uri (aget ,id-field id))
