@@ -102,7 +102,7 @@ Returns ID on success, NIL on failure."
                        :id id))
              (ensure (test code message &rest args)
                `(unless ,test
-                  (%err ,code ,message ,@args)))
+                  (err ,code ,message ,@args)))
              (same-uri (id-field parameters-field)
                `(uri= (uri (aget ,id-field id))
                       (uri (aget ,parameters-field parameters)))))
