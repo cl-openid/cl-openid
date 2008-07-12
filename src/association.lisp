@@ -14,7 +14,8 @@ OpenID Authentication 2.0 Appendix B.  Diffie-Hellman Key Exchange Default Value
 (defconstant +dh-generator+ 2)
 
 ;; An association.  Endpoint URI is the hashtable key.
-(defstruct association
+(defstruct (association
+             (:constructor %make-association))
   (expires nil :type integer)
   (handle nil :type string)
   (mac nil :type (simple-array (unsigned-byte 8) (*)))
@@ -76,6 +77,56 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                       :test #'string=)
         (error "Unknown session type."))))
 
+(defvar *default-association-timeout* 3600
+  "Default association timeout, in seconds")
+
+;; FIXME:gentemp (use true random unique handle -- UUID?)
+(defpackage :cl-openid.assoc-handles
+  (:use)
+  (:documentation "Package for generating unique association handles."))
+
+(defun ensure-integer (val)
+  (etypecase val
+    (integer val)
+    (string (base64-string-to-integer val))
+    (vector (octets-to-integer val))))
+
+(defun dh-encrypt/decrypt-key (digest prime public private key)
+  (let* ((k (expt-mod public private prime))
+         (h (octets-to-integer (digest-sequence digest (btwoc k))))
+         (mac (logxor h (ensure-integer key))))
+    (integer-to-octets mac)))
+
+(defun make-association (&key
+                         (handle (string (gentemp "H" :cl-openid.assoc-handles)))
+                         (expires-in *default-association-timeout*)
+                         (expires-at (+ (get-universal-time) expires-in))
+
+                         association-type
+                         (hmac-digest (or (aget association-type
+                                                '(("HMAC-SHA1" . :SHA1)
+                                                  ("HMAC-SHA256" . :SHA256)))
+                                          (error "Unknown association type.")))
+                         
+                         mac)
+  "Make new association structure, DWIM included.
+
+ - HANDLE should be the new association handle; if none is provided,
+   new one is generated.
+ - EXPIRES-IN is the timeout of the handle; alternatively, EXPIRES-AT
+   is the universal-time when association times out.
+ - ASSOCIATION-TYPE is the OpenID association type (string);
+   alternatively, HMAC-DIGEST is an Ironclad digest name (a keyword)
+   used for signature HMAC checks.
+ - MAC is the literal, unencrypted MAC key."
+  (%make-association :handle handle
+                     :expires expires-at
+                     :mac (etypecase mac
+                            (string (base64-string-to-usb8-array mac))
+                            (vector mac)
+                            (integer (btwoc mac)))
+                     :hmac-digest hmac-digest))
+
 (defun do-associate (endpoint
                      &key
                      v1
@@ -123,30 +174,22 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
 
       (when (string= "DH-" session-type :end2 3) ; Diffie-Hellman
         (setf xa (random +dh-prime+)) ; FIXME: use safer prng generation
-        (push (cons "openid.dh_consumer_public" (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
+        (push (cons "openid.dh_consumer_public"
+                    (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
               parameters))
 
       (let* ((response (direct-request endpoint parameters)))
-        (values (make-association :handle  (aget "assoc_handle" response)
-                                  :expires (+ (get-universal-time)
-                                              (parse-integer (aget "expires_in" response)))
-                                  :mac (if (string= "DH-" session-type :end2 3)
-                                           ;; Diffie-Hellman
-                                           (let* ((g^xb (base64-string-to-integer (aget "dh_server_public" response)))
-                                                  (k (expt-mod g^xb xa +dh-prime+))
-                                                  (h (octets-to-integer
-                                                      (digest-sequence (session-digest-type session-type)
-                                                                       (btwoc k))))
-                                                  (emac (base64-string-to-integer (aget "enc_mac_key" response)))
-                                                  (mac (logxor h emac)))
-                                             (integer-to-octets mac))
-                                           (base64-string-to-usb8-array
-                                            (aget "mac_key" response)))
-                                  :hmac-digest (or (aget assoc-type
-                                                         '(("HMAC-SHA1" . :SHA1)
-                                                           ("HMAC-SHA256" . :SHA256)))
-                                                   (error "Unknown association type.")))
-                endpoint)))))
+        (values
+         (make-association :handle (aget "assoc_handle" response)
+                           :expires-in (parse-integer (aget "expires_in" response)) 
+                           :mac (or (aget "mac_key" response)
+                                    (dh-encrypt/decrypt-key (session-digest-type session-type)
+                                                            +dh-prime+
+                                                            (base64-string-to-integer (aget "dh_server_public" response))
+                                                            xa
+                                                            (aget "enc_mac_key" response)))
+                           :association-type assoc-type)
+         endpoint)))))
 
 (defun gc-associations (&optional invalidate-handle &aux (time (get-universal-time)))
   (maphash #'(lambda (ep association)
