@@ -15,7 +15,8 @@
       (html "CL-OpenID login"
             "<form method=\"GET\"><fieldset><legend>OpenID Login</legend>
 <input type=\"text\" name=\"openid_identifier\" value=\"\" style=\"background-image: url('http://openid.net/wp-content/uploads/2007/10/openid_small_logo.png');background-position: 0px 0px;background-repeat: no-repeat;padding-left: 20px;\">
-<input type=\"submit\" name=\"openid_action\" value=\"Login\"></form>")
+<input type=\"submit\" name=\"openid_action\" value=\"Login\">
+<br><label><input type=\"checkbox\" name=\"checkid_immediate\"> Immediate request</label></form>")
       "Input form for OpenID, for parameterless indirect method endpoint call.")))
 
 (defvar *ids* (make-hash-table)
@@ -57,7 +58,8 @@
 Returns a string with HTML reply and a redirect URI if applicable."
   (if (null postfix)
       (if (aget "openid_identifier" parameters)
-          (values nil (initiate-authorization (aget "openid_identifier" parameters) uri realm))
+          (values nil (initiate-authorization (aget "openid_identifier" parameters) uri realm
+                                              :immediate-p (aget "checkid_immediate" parameters)))
           +openid-input-form+)
       (handler-case
           (html "CL-OpenID result"
