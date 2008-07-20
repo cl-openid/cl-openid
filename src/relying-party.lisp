@@ -36,12 +36,27 @@
   (:use)
   (:documentation "Package for unique keys to *IDS* hashtable."))
 
+(defun add-postfix-to-uri (uri postfix
+                           &aux (rv (if (uri-p uri)
+                                        (copy-uri uri)
+                                        (uri uri))))
+  "Add POSTFIX (string or symbol) to path part of URI, preserving
+query and adding trailing slash to URI if necessary."
+  (setf (uri-path rv)
+        (concatenate 'string
+                     (uri-path rv)
+                     (unless (eql #\/ (aref (uri-path rv)
+                                            (1- (length (uri-path rv)))))
+                       "/")
+                     (string postfix)))
+  rv)
+
 (defun initiate-authorization (given-id uri realm
                                &key immediate-p
                                &aux
                                (id (discover (normalize-identifier given-id)))
                                (handle (gentemp "ID" (find-package :cl-openid.ids)))
-                               (return-to (merge-uris (symbol-name handle) uri)))
+                               (return-to (add-postfix-to-uri uri (symbol-name handle))))
   "Initiate authorization process.  Returns URI to redirect user to."
   (gc-ids)
   (push (cons :timestamp (get-universal-time)) id)
@@ -109,13 +124,11 @@ Returns a string with HTML reply and a redirect URI if applicable."
           content))))
 
 (defun openid-ht-dispatcher (prefix realm &optional uri)
-  "Return a prefix dispatcher for OPENID-HT-HANDLER."
-  ;; Ensure trailing slash.
-  (unless (eql #\/ (aref prefix (1- (length prefix))))
-    (setf prefix (concatenate 'string prefix "/")))
+  "Return a prefix dispatcher for OPENID-HT-HANDLER.
 
+If URI is not supplied, the PREFIX is merged with REALM uri"
   (unless uri
-    (setf uri (merge-uris prefix (uri realm))))
+    (setf uri (merge-uris prefix realm)))
 
   (hunchentoot:create-prefix-dispatcher prefix (openid-ht-handler uri realm prefix)))
 
