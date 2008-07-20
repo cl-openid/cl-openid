@@ -59,22 +59,36 @@ Returns a string with HTML reply and a redirect URI if applicable."
       (if (aget "openid_identifier" parameters)
           (values nil (initiate-authorization (aget "openid_identifier" parameters) uri realm))
           +openid-input-form+)
-      (html "CL-OpenID result"
-            "~A <p><strong>realm:</strong> ~A</p>
+      (handler-case
+          (html "CL-OpenID result"
+                "~A <p><strong>realm:</strong> ~A</p>
 <h2>Reply parameters:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
-            (let ((id (handle-indirect-reply parameters (gethash (intern postfix :cl-openid.ids) *ids*))))
-              (if id
-                  (format nil
-                          "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>"
-                          (hunchentoot:escape-for-html (prin1-to-string id))) ; FIXME:hunchentoot
-                  "<h1 style=\"color: red; text-decoration: blink;\">ACCESS DENIED !!!</h1>"))
-            realm
-            (mapcar #'(lambda (c)
-                        (list (car c) (cdr c)))
-                    parameters)
-            uri)))
+                (let ((id (handle-indirect-reply parameters (gethash (intern postfix :cl-openid.ids) *ids*))))
+                  (if id
+                      (format nil
+                              "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>"
+                              (hunchentoot:escape-for-html (prin1-to-string id))) ; FIXME:hunchentoot
+                      "<h1 style=\"color: red; text-decoration: blink;\">ACCESS DENIED !!!</h1>"))
+                realm
+                (mapcar #'(lambda (c)
+                            (list (car c) (cdr c)))
+                        parameters)
+                uri)
+        (openid-assertion-error (e)
+          (html "CL-OpenID assertion error"
+                "<h1 style=\"color: red; text-decoration: blink;\">ERROR ERROR ERROR !!!</h1>
+<p><strong>~S</strong> ~A</p>
+<h2>Reply parameters:</h2>
+<dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
+<p style=\"text-align:right;\"><a href=\"~A\">return</a><p>
+"
+                (code e) e
+                (mapcar #'(lambda (c)
+                            (list (car c) (cdr c)))
+                        (assertion e))
+                uri)))))
 
 ;; Hunchentoot-specific part
 (defun openid-ht-handler (uri realm prefix)
