@@ -70,15 +70,23 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                    :message (aget "error" parameters)
                    :parameters parameters))))))
 
+(defvar *default-association-timeout* 3600
+  "Default association timeout, in seconds")
+
+(define-condition openid-association-error (simple-error)
+  ())
+
+(defun openid-association-error (format-control &rest format-parameters)
+  (error 'openid-association-error
+         :format-control format-control
+         :format-parameters format-parameters))
+
 (defun session-digest-type (session-type)
   (or (aget session-type  '(("DH-SHA1" . :SHA1)
                             ("DH-SHA256" . :SHA256)))
       (unless (member session-type '("" "no-encryption")
                       :test #'string=)
-        (error "Unknown session type."))))
-
-(defvar *default-association-timeout* 3600
-  "Default association timeout, in seconds")
+        (openid-association-error "Unknown session type ~A" session-type))))
 
 ;; FIXME:gentemp (use true random unique handle -- UUID?)
 (defpackage :cl-openid.assoc-handles
@@ -91,11 +99,18 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
     (string (base64-string-to-integer val))
     (vector (octets-to-integer val))))
 
-(defun dh-encrypt/decrypt-key (digest prime public private key)
+(defun ensure-vector (val)
+  (etypecase val
+    (integer (btwoc val))
+    (string (base64-string-to-usb8-array val))
+    (vector val)))
+
+(defun dh-encrypt/decrypt-key (digest generator prime public private key)
   (let* ((k (expt-mod public private prime))
          (h (octets-to-integer (digest-sequence digest (btwoc k))))
          (mac (logxor h (ensure-integer key))))
-    (integer-to-octets mac)))
+    (values (integer-to-octets mac)
+            (expt-mod generator private prime))))
 
 (defun make-association (&key
                          (handle (string (gentemp "H" :cl-openid.assoc-handles)))
@@ -106,7 +121,7 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                          (hmac-digest (or (aget association-type
                                                 '(("HMAC-SHA1" . :SHA1)
                                                   ("HMAC-SHA256" . :SHA256)))
-                                          (error "Unknown association type.")))
+                                          (openid-association-error "Unknown association type ~A." association-type)))
                          
                          mac)
   "Make new association structure, DWIM included.
@@ -121,10 +136,7 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
  - MAC is the literal, unencrypted MAC key."
   (%make-association :handle handle
                      :expires expires-at
-                     :mac (etypecase mac
-                            (string (base64-string-to-usb8-array mac))
-                            (vector mac)
-                            (integer (btwoc mac)))
+                     :mac (ensure-vector mac)
                      :hmac-digest hmac-digest))
 
 (defun do-associate (endpoint
@@ -184,7 +196,7 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                            :expires-in (parse-integer (aget "expires_in" response)) 
                            :mac (or (aget "mac_key" response)
                                     (dh-encrypt/decrypt-key (session-digest-type session-type)
-                                                            +dh-prime+
+                                                            +dh-generator+ +dh-prime+
                                                             (base64-string-to-integer (aget "dh_server_public" response))
                                                             xa
                                                             (aget "enc_mac_key" response)))
