@@ -18,7 +18,8 @@
                          (:file "identifier" :depends-on ("package"))
                          (:file "association" :depends-on ("package"))
                          (:file "auth-request" :depends-on ("association" "identifier"))
-                         (:file "relying-party" :depends-on ("auth-request" "identifier")))))
+                         (:file "relying-party" :depends-on ("auth-request" "identifier"))
+                         (:file "provider" :depends-on ("association" "auth-request" "relying-party")))))
   :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls #:split-sequence
                              #-allegro #:puri
                              #-allegro #:cl-html-parse
