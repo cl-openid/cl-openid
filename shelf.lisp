@@ -1,9 +1,9 @@
 ;;; -*- lisp -*- shelf.lisp: set up library pathnames and load shelf definition.
 (require 'asdf)
 
-(defpackage #:skel.shelf
+(defpackage #:cl-openid.shelf
   (:use #:common-lisp))
-(in-package #:skel.shelf)
+(in-package #:cl-openid.shelf)
 
 (defvar *topdir*
   (make-pathname :defaults (or *load-pathname*
