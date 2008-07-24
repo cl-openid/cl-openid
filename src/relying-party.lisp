@@ -112,7 +112,7 @@ Returns a string with HTML reply and a redirect URI if applicable."
   "Return a Hunchentoot handler for OpenID request for URI and REALM (closure over HANDLE-OPENID-REQUEST)."
   (let ((u (uri uri))
         (r (uri realm))
-        (l (length prefix)))
+        (l (1+ (length prefix))))
     #'(lambda ()
         (multiple-value-bind (content uri)
             (handle-openid-request u r (hunchentoot:get-parameters)
