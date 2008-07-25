@@ -105,6 +105,20 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
     (string (base64-string-to-usb8-array val))
     (vector val)))
 
+(defun ensure-vector-length (vec len)
+  (cond ((= (length vec) len) vec)
+        ((> (length vec) len)
+         (subseq vec (- (length vec) len)))
+        (t (let ((rv (adjust-array vec len))
+                 (d (- len (length vec))))
+             (psetf (subseq rv d)
+                    (subseq rv 0 len)
+
+                    (subseq rv 0 d)
+                    (make-array d :initial-element 0))
+             rv))))
+
+
 (defun dh-encrypt/decrypt-key (digest generator prime public private key)
   (let* ((k (expt-mod public private prime))
          (h (octets-to-integer (digest-sequence digest (btwoc k))))
@@ -123,7 +137,8 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
                                                   ("HMAC-SHA256" . :SHA256)))
                                           (openid-association-error "Unknown association type ~A." association-type)))
                          
-                         mac)
+                         (mac (random #.(expt 2 32)))) ; FIXME: random
+
   "Make new association structure, DWIM included.
 
  - HANDLE should be the new association handle; if none is provided,
@@ -136,7 +151,10 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
  - MAC is the literal, unencrypted MAC key."
   (%make-association :handle handle
                      :expires expires-at
-                     :mac (ensure-vector mac)
+                     :mac (ensure-vector-length (ensure-vector mac)
+                                                (ecase hmac-digest
+                                                  (:sha1 20)
+                                                  (:sha256 32)))
                      :hmac-digest hmac-digest))
 
 (defun do-associate (endpoint
