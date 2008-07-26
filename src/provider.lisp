@@ -80,6 +80,9 @@
   '(("openid.ns" . "http://specs.openid.net/auth/2.0")
     ("openid.mode" . "cancel")))
 
+(defvar *checkid-setup-callback* nil)
+(defvar *checkid-immediate-callback* nil)
+
 (defun handle-openid-provider-request
     (parameters
      &aux
@@ -130,14 +133,16 @@
                                         ("assoc_type" . ,(if v1-compat "HMAC-SHA1" "HMAC-SHA256"))))))))
 
     ("checkid_immediate"
-     (indirect-response (aget "openid.return_to" parameters)
-                        #+nil  (setup-needed-response)
-                        (successful-response parameters)))
+     (if *checkid-immediate-callback*
+         (funcall *checkid-immediate-callback* parameters)
+         (indirect-response (aget "openid.return_to" parameters)
+                            (setup-needed-response))))
 
     ("checkid_setup"
-     (indirect-response (aget "openid.return_to" parameters)
-                        #+nil (cancel-response)
-                        (successful-response parameters)))
+     (if *checkid-setup-callback*
+         (funcall *checkid-setup-callback* parameters)
+         (indirect-response (aget "openid.return_to" parameters)
+                            (cancel-response))))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
      (kv-encode `(("ns" . "http://specs.openid.net/auth/2.0")
