@@ -73,7 +73,7 @@
                    ("assoc_type" . ,(aget "openid.assoc_type" parameters))
                    ("expires_in" . ,(princ-to-string (- (association-expires association)
                                                         (get-universal-time))))
-                   ("dh_server_public" . ,(usb8-array-to-base64-string (btwoc public))) ; FIXME:btwoc produces 129-byte arrays, is it okay?
+                   ("dh_server_public" . ,(usb8-array-to-base64-string (btwoc public)))
                    ("enc_mac_key" . ,(usb8-array-to-base64-string emac))))))
             (("" "no-encryption")
              (if (hunchentoot:ssl-p)    ; FIXME:hunchentoot
