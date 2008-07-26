@@ -53,14 +53,16 @@
     (format nil "~4,'0D-~2,'0D-~2,'0DT~2,'0D:~2,'0D:~2,'0DZ~A"
             year mon day hr min sec (gensym))))
 
-(defun successful-response (endpoint parameters)
+(defvar *endpoint-uri* nil)
+
+(defun successful-response (parameters)
   (let* ((assoc (or (when (aget "openid.assoc_handle" parameters)
                       (find (aget "openid.assoc_handle" parameters) *provider-associations*
                             :key #'association-handle :test #'string=))
                     (first (push (make-association :hmac-digest :sha256) *provider-associations*))))
          (rv `(("openid.ns" . "http://specs.openid.net/auth/2.0")
                ("openid.mode" . "id_res")
-               ("openid.op_endpoint" . ,(princ-to-string endpoint))
+               ("openid.op_endpoint" . ,(princ-to-string *endpoint-uri*))
                ("openid.claimed_id" . ,(aget "openid.identity" parameters))
                ("openid.identity" . ,(aget "openid.identity" parameters))
                ,(assoc "openid.return_to" parameters :test #'string=)
@@ -79,7 +81,7 @@
     ("openid.mode" . "cancel")))
 
 (defun handle-openid-provider-request
-    (endpoint parameters
+    (parameters
      &aux
      (v1-compat (not (string= "http://specs.openid.net/auth/2.0"
                               (aget "openid.ns" parameters)))))
@@ -130,12 +132,12 @@
     ("checkid_immediate"
      (indirect-response (aget "openid.return_to" parameters)
                         #+nil  (setup-needed-response)
-                        (successful-response endpoint parameters)))
+                        (successful-response parameters)))
 
     ("checkid_setup"
      (indirect-response (aget "openid.return_to" parameters)
                         #+nil (cancel-response)
-                        (successful-response endpoint parameters)))
+                        (successful-response parameters)))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
      (kv-encode `(("ns" . "http://specs.openid.net/auth/2.0")
@@ -152,9 +154,9 @@
 ;; Hunchentoot-specific part
 (defun provider-ht-handle (endpoint)
   (lambda ()
-    (handle-openid-provider-request endpoint
-                                    (append (hunchentoot:post-parameters)
-                                            (hunchentoot:get-parameters)))))
+    (let ((*endpoint-uri* endpoint))
+      (handle-openid-provider-request (append (hunchentoot:post-parameters)
+                                              (hunchentoot:get-parameters))))))
 
 (defun provider-ht-dispatcher (endpoint prefix)
   (hunchentoot:create-prefix-dispatcher prefix (provider-ht-handle (uri endpoint))))
