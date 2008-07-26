@@ -68,7 +68,7 @@
   (:documentation "Error during OpenID assertion verification"))
 
 (defvar *nonces* nil ; FIXME: gc
-  "A list of openid.nonce reply parameters to avoid duplicates.")
+  "A list of openid.nonce response parameters to avoid duplicates.")
 
 (defvar *nonce-timeout* 3600
   "Number of seconds the nonce times out.")
@@ -88,9 +88,9 @@
                                 (< nonce-time time-limit))
                             *nonces* :key #'nonce-universal-time)))
 
-(defun handle-indirect-reply (parameters id
+(defun handle-indirect-response (parameters id
                               &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
-  "Handle indirect reply for ID, consisting of PARAMETERS.
+  "Handle indirect response for ID, consisting of PARAMETERS.
 
 Returns ID on success, NIL on failure."
   (macrolet ((err (code message &rest args)
@@ -166,15 +166,15 @@ Returns ID on success, NIL on failure."
                    ;; 11.4.1.  Verifying with an Association
                    (check-signature parameters)
                    ;; 11.4.2.  Verifying Directly with the OpenID Provider
-                   (let ((reply (direct-request (aget :op-endpoint-url id)
+                   (let ((response (direct-request (aget :op-endpoint-url id)
                                                 (acons "openid.mode" "check_authentication"
                                                        (remove "openid.mode" parameters
                                                                :key #'car
                                                                :test #'string=)))))
 
-                     (when (aget "invalidate_handle" reply)
-                       (gc-associations (aget "invalidate_handle" reply)))
-                     (string= "true" (aget "is_valid" reply))))
+                     (when (aget "invalidate_handle" response)
+                       (gc-associations (aget "invalidate_handle" response)))
+                     (string= "true" (aget "is_valid" response))))
                :invalid-signature
                "Invalid signature")
 

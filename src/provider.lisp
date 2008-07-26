@@ -31,7 +31,7 @@
 
 (defvar *provider-associations* ())
 
-(defun indirect-reply-uri (return-to parameters
+(defun indirect-response-uri (return-to parameters
                            &aux (uri (if (uri-p return-to)
                                          (copy-uri return-to)
                                          (uri return-to))))
@@ -42,9 +42,9 @@
                      (drakma::alist-to-url-encoded-string parameters :utf-8))) ; FIXME: unexported function
   uri)
 
-(defun indirect-reply (return-to parameters)
+(defun indirect-response (return-to parameters)
   (hunchentoot:redirect                 ; FIXME: hunchentoot
-   (princ-to-string (indirect-reply-uri return-to parameters))))
+   (princ-to-string (indirect-response-uri return-to parameters))))
 
 (defun nonce ()
   (multiple-value-bind (sec min hr day mon year wday dst tz)
@@ -77,7 +77,7 @@
                               (aget "openid.ns" parameters)))))
   (string-case (aget "openid.mode" parameters)
     ("associate"
-     (kv-encode ; Direct reply
+     (kv-encode ; Direct response
       (handler-case
           (string-case (aget "openid.session_type" parameters)
             (("DH-SHA1" "DH-SHA256")
@@ -120,16 +120,16 @@
                                         ("assoc_type" . ,(if v1-compat "HMAC-SHA1" "HMAC-SHA256"))))))))
 
     ("checkid_immediate"
-     (indirect-reply (aget "openid.return_to" parameters)
-                     '(("openid.ns" . "http://specs.openid.net/auth/2.0")
-                       ("openid.mode" . "setup_needed"))
-                     #+nil (successful-response endpoint parameters)))
+     (indirect-response (aget "openid.return_to" parameters)
+                        #+nil  '(("openid.ns" . "http://specs.openid.net/auth/2.0")
+                                 ("openid.mode" . "setup_needed"))
+                        (successful-response endpoint parameters)))
 
     ("checkid_setup"
-     (indirect-reply (aget "openid.return_to" parameters)
-                     #+nil '(("openid.ns" . "http://specs.openid.net/auth/2.0")
-                             ("openid.mode" . "cancel"))
-                     (successful-response endpoint parameters)))
+     (indirect-response (aget "openid.return_to" parameters)
+                        #+nil '(("openid.ns" . "http://specs.openid.net/auth/2.0")
+                                ("openid.mode" . "cancel"))
+                        (successful-response endpoint parameters)))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
      (kv-encode `(("ns" . "http://specs.openid.net/auth/2.0")

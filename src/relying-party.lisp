@@ -70,7 +70,7 @@ query and adding trailing slash to URI if necessary."
 (defun handle-openid-request (uri realm parameters postfix)
   "Handle single OpenID Relying Party request for the received PARAMETERS alist, using URI as return_to address and REALM as a realm.
 
-Returns a string with HTML reply and a redirect URI if applicable."
+Returns a string with HTML response and a redirect URI if applicable."
   (if (null postfix)
       (if (aget "openid_identifier" parameters)
           (values nil (initiate-authorization (aget "openid_identifier" parameters) uri realm
@@ -79,10 +79,10 @@ Returns a string with HTML reply and a redirect URI if applicable."
       (handler-case
           (html "CL-OpenID result"
                 "~A <p><strong>realm:</strong> ~A</p>
-<h2>Reply parameters:</h2>
+<h2>Response parameters:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
-                (let ((id (handle-indirect-reply parameters (gethash (intern postfix :cl-openid.ids) *ids*))))
+                (let ((id (handle-indirect-response parameters (gethash (intern postfix :cl-openid.ids) *ids*))))
                   (if id
                       (format nil
                               "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>"
@@ -97,7 +97,7 @@ Returns a string with HTML reply and a redirect URI if applicable."
           (html "CL-OpenID assertion error"
                 "<h1 style=\"color: red; text-decoration: blink;\">ERROR ERROR ERROR !!!</h1>
 <p><strong>~S</strong> ~A</p>
-<h2>Reply parameters:</h2>
+<h2>Response parameters:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>
 "
