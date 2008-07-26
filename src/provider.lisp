@@ -11,8 +11,6 @@
 (defparameter *https-session-types*
   '("no-encryption" ""))
 
-(defvar *slime*)
-
 (defun error-response (err &key contact reference parameters)
   (setf (hunchentoot:return-code) 400) ; FIXME:hunchentoot
 
