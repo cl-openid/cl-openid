@@ -46,6 +46,30 @@
   (hunchentoot:redirect                 ; FIXME: hunchentoot
    (princ-to-string (indirect-reply-uri return-to parameters))))
 
+(defun nonce ()
+  (multiple-value-bind (sec min hr day mon year wday dst tz)
+      (decode-universal-time (get-universal-time) 0)
+    (declare (ignore wday dst tz))
+    (format nil "~4,'0D-~2,'0D-~2,'0DT~2,'0D:~2,'0D:~2,'0DZ~A"
+            year mon day hr min sec (gensym))))
+
+(defun successful-response (endpoint parameters)
+  (let* ((assoc (or (when (aget "openid.assoc_handle" parameters)
+                      (find (aget "openid.assoc_handle" parameters) *provider-associations*
+                            :key #'association-handle :test #'string=))
+                    (first (push (make-association :hmac-digest :sha256) *provider-associations*))))
+         (rv `(("openid.ns" . "http://specs.openid.net/auth/2.0")
+               ("openid.mode" . "id_res")
+               ("openid.op_endpoint" . ,(princ-to-string endpoint))
+               ("openid.claimed_id" . ,(aget "openid.identity" parameters))
+               ("openid.identity" . ,(aget "openid.identity" parameters))
+               ,(assoc "openid.return_to" parameters :test #'string=)
+               ("openid.response_nonce" . ,(nonce))
+               ("openid.assoc_handle" . ,(string (association-handle assoc)))
+               ("openid.signed" . "op_endpoint,identity,claimed_id,return_to,assoc_handle,response_nonce"))))
+    (push (cons "openid.sig" (sign assoc rv)) rv)
+    rv))
+
 (defun handle-openid-provider-request
     (endpoint parameters
      &aux
@@ -98,12 +122,14 @@
     ("checkid_immediate"
      (indirect-reply (aget "openid.return_to" parameters)
                      '(("openid.ns" . "http://specs.openid.net/auth/2.0")
-                       ("openid.mode" . "setup_needed"))))
+                       ("openid.mode" . "setup_needed"))
+                     #+nil (successful-response endpoint parameters)))
 
     ("checkid_setup"
      (indirect-reply (aget "openid.return_to" parameters)
-                     '(("openid.ns" . "http://specs.openid.net/auth/2.0")
-                       ("openid.mode" . "cancel")) ))
+                     #+nil '(("openid.ns" . "http://specs.openid.net/auth/2.0")
+                             ("openid.mode" . "cancel"))
+                     (successful-response endpoint parameters)))
 
     (t (error-response "Unknown mode."))))
 
