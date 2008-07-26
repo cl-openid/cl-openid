@@ -70,6 +70,14 @@
     (push (cons "openid.sig" (sign assoc rv)) rv)
     rv))
 
+(defun setup-needed-response ()
+  '(("openid.ns" . "http://specs.openid.net/auth/2.0")
+    ("openid.mode" . "setup_needed")))
+
+(defun cancel-response ()
+  '(("openid.ns" . "http://specs.openid.net/auth/2.0")
+    ("openid.mode" . "cancel")))
+
 (defun handle-openid-provider-request
     (endpoint parameters
      &aux
@@ -121,14 +129,12 @@
 
     ("checkid_immediate"
      (indirect-response (aget "openid.return_to" parameters)
-                        #+nil  '(("openid.ns" . "http://specs.openid.net/auth/2.0")
-                                 ("openid.mode" . "setup_needed"))
+                        #+nil  (setup-needed-response)
                         (successful-response endpoint parameters)))
 
     ("checkid_setup"
      (indirect-response (aget "openid.return_to" parameters)
-                        #+nil '(("openid.ns" . "http://specs.openid.net/auth/2.0")
-                                ("openid.mode" . "cancel"))
+                        #+nil (cancel-response)
                         (successful-response endpoint parameters)))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
