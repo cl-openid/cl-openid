@@ -157,6 +157,36 @@
     (t (error-response (format nil "Unknown openid.mode ~S" (aget "openid.mode" parameters))))))
 
 ;; Hunchentoot-specific part
+(defvar *setup-params* (make-hash-table))
+(defun handle-checkid-setup (parameters
+                             &aux
+                             (handle (gentemp "PARM" :cl-openid.ids))
+                             (finish-uri (merge-uris "finish-setup" *endpoint-uri*)))
+  (setf (gethash handle *setup-params*) parameters)
+  (html "Log in?"
+        "<h2>Parameters:</h2>
+<dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
+<strong><a href=\"~A\">Log in</a> or <a href=\"~A\">cancel</a>?</strong>"
+        (mapcar #'(lambda (c)
+                    (list (car c) (cdr c)))
+                parameters)
+        (copy-uri finish-uri :query (format nil "handle=~A&allow=1" handle))
+        (copy-uri finish-uri :query (format nil "handle=~A&deny=1" handle))))
+
+(defun finish-checkid-setup (&aux
+                             (handle (intern (hunchentoot:get-parameter "handle") :cl-openid.ids))
+                             (parameters (gethash handle *setup-params*)))
+  (if (hunchentoot:get-parameter "allow")
+      (indirect-response (aget "openid.return_to" parameters)
+                         (successful-response parameters))
+      (indirect-response (aget "openid.return_to" parameters)
+                         (cancel-response))))
+
+(defun finish-checkid-handle (endpoint)
+  (lambda ()
+    (let ((*endpoint-uri* endpoint))
+      (finish-checkid-setup))))
+
 (defun provider-ht-handle (endpoint)
   (lambda ()
     (let ((*endpoint-uri* endpoint))
@@ -164,7 +194,17 @@
                                               (hunchentoot:get-parameters))))))
 
 (defun provider-ht-dispatcher (endpoint prefix)
-  (hunchentoot:create-prefix-dispatcher prefix (provider-ht-handle (uri endpoint))))
+  (list (hunchentoot:create-prefix-dispatcher (concatenate 'string prefix "finish-setup") (finish-checkid-handle endpoint))
+        (hunchentoot:create-prefix-dispatcher prefix (provider-ht-handle (uri endpoint)))))
 
-; (push (provider-ht-dispatcher "http://example.com/cl-openid-op/" "/cl-openid-op/") hunchentoot:*dispatch-table*)
+; (setf hunchentoot:*dispatch-table*
+;       (nconc (provider-ht-dispatcher "http://example.com/cl-openid-op/"
+;                                      "/cl-openid-op/")
+;              hunchentoot:*dispatch-table*)
+
+; (setf *checkid-immediate-callback*
+;       #'(lambda (parameters)
+;           (indirect-response (aget "openid.return_to" parameters)
+;                              (successful-response parameters))))
+
 ; FIXME: Hunchentoot headers.lisp:136 (START-OUTPUT): (push 400 hunchentoot:*approved-return-codes*)
