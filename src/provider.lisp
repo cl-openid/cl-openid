@@ -27,7 +27,7 @@
 
   (when reference
     (push (cons "reference" reference) parameters))
-  parameters)
+  (kv-encode parameters))
 
 (defvar *provider-associations* ())
 
@@ -144,3 +144,4 @@
   (hunchentoot:create-prefix-dispatcher prefix (provider-ht-handle (uri endpoint))))
 
 ; (push (provider-ht-dispatcher "http://example.com/cl-openid-op/" "/cl-openid-op/") hunchentoot:*dispatch-table*)
+; FIXME: Hunchentoot headers.lisp:136 (START-OUTPUT): (push 400 hunchentoot:*approved-return-codes*)
