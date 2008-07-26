@@ -77,8 +77,7 @@
                    ("enc_mac_key" . ,(usb8-array-to-base64-string emac))))))
             (("" "no-encryption")
              (if (hunchentoot:ssl-p)    ; FIXME:hunchentoot
-                 (let ((association (make-association :association-type (aget "openid.assoc_type" parameters)
-                                                      :mac (random +dh-prime+)))) ; FIXME:random
+                 (let ((association (make-association :association-type (aget "openid.assoc_type" parameters)))) ; FIXME:random
                    (push association *provider-associations*)
                    `(("ns" . "http://specs.openid.net/auth/2.0")
                      ("assoc_handle" . ,(association-handle association))
