@@ -141,19 +141,28 @@ also included in the token.."
                   :test #'equal)
           ((car parsed)))
   (flet ((priority (service)
+           "Priority of a service tag: an integer or NIL"
            (let ((prio (second (assoc "priority" (second service)
                                       :test #'string=))))
              (when prio
                (parse-integer prio))))
+
          (prio< (new old)
+           "Test whether NEW priority number is less than OLD.
+
+Takes care for NIL priorities and chooses randomly if both priorities
+are the same."
            (if (eql new old)
                (> (random 1.0) 1/2)     ; both NILs or same priority
                (or (null old)           ; NEW is number, OLD is NIL
                    (ignore-errors       ; error if NEW is NIL
                      (< new old)))))
+
          (uri (service)
+           "URI of a service tag as a string"
            (third (find '("URI" . "xri://$xrd*($v*2.0)") service
                         :key #'car :test #'equal))))
+
     (dolist (service  (remove '("Service" . "xri://$xrd*($v*2.0)")
                               (cddar ; Yadis 1.0, 7.3.1 XRDS -- last XRD element
                                (last (remove '("XRD" . "xri://$xrd*($v*2.0)")
