@@ -23,11 +23,6 @@ OpenID Authentication 2.0 Appendix B.  Diffie-Hellman Key Exchange Default Value
 
 (defvar *associations* (make-hash-table))
 
-(defun aget (k a)
-  (cdr (typecase k
-         (sequence (assoc k a :test #'equal))
-         (t (assoc k a)))))
-
 (defun btwoc (i &aux (octets (integer-to-octets i)))
   (if (or (zerop (length octets))
           (> (aref octets 0) 127))
@@ -92,32 +87,6 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
 (defpackage :cl-openid.assoc-handles
   (:use)
   (:documentation "Package for generating unique association handles."))
-
-(defun ensure-integer (val)
-  (etypecase val
-    (integer val)
-    (string (base64-string-to-integer val))
-    (vector (octets-to-integer val))))
-
-(defun ensure-vector (val)
-  (etypecase val
-    (integer (btwoc val))
-    (string (base64-string-to-usb8-array val))
-    (vector val)))
-
-(defun ensure-vector-length (vec len)
-  (cond ((= (length vec) len) vec)
-        ((> (length vec) len)
-         (subseq vec (- (length vec) len)))
-        (t (let ((rv (adjust-array vec len))
-                 (d (- len (length vec))))
-             (psetf (subseq rv d)
-                    (subseq rv 0 len)
-
-                    (subseq rv 0 d)
-                    (make-array d :initial-element 0))
-             rv))))
-
 
 (defun dh-encrypt/decrypt-key (digest generator prime public private key)
   (let* ((k (expt-mod public private prime))

@@ -41,21 +41,6 @@
                                           "openid.trust_root")
                                       . ,(princ-to-string realm)))))))
 
-(defmacro string-case (keyform &body clauses)
-  "Like CASE, but for a string KEYFORM."
-  (let ((key (gensym "key")))
-    `(let ((,key ,keyform))
-       (declare (ignorable ,key))
-       (cond
-	 ,@(loop
-	       for (keys . forms) in clauses
-	       for test-form = (etypecase keys
-                                 (string `(string= ,key ,keys))
-                                 (sequence `(find ,key ',keys :test 'string=))
-                                 ((eql t) t))
-	       collect
-		 `(,test-form ,@forms))))))
-
 (define-condition openid-assertion-error (error)
   ((code :initarg :code :reader code)
    (message :initarg :message :reader message)

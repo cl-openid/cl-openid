@@ -1,23 +1,12 @@
 (in-package #:cl-openid)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun html (title body &rest body-args)
-    "Format HTML."
-    (format nil "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"
-   \"http://www.w3.org/TR/html4/strict.dtd\">
-<html><head><title>~A</title></head>
-<body>~?</body></html>"
-            title body body-args)))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (boundp '+openid-input-form+)
-    (defconstant +openid-input-form+
-      (html "CL-OpenID login"
-            "<form method=\"GET\"><fieldset><legend>OpenID Login</legend>
+(define-constant +openid-input-form+
+    (html "CL-OpenID login"
+          "<form method=\"GET\"><fieldset><legend>OpenID Login</legend>
 <input type=\"text\" name=\"openid_identifier\" value=\"\" style=\"background-image: url('http://openid.net/wp-content/uploads/2007/10/openid_small_logo.png');background-position: 0px 0px;background-repeat: no-repeat;padding-left: 20px;\">
 <input type=\"submit\" name=\"openid_action\" value=\"Login\">
 <br><label><input type=\"checkbox\" name=\"checkid_immediate\"> Immediate request</label></form>")
-      "Input form for OpenID, for parameterless indirect method endpoint call.")))
+  "Input form for OpenID, for parameterless indirect method endpoint call.")
 
 (defvar *ids* (make-hash-table)
   "List of handled IDs")

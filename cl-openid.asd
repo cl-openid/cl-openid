@@ -16,6 +16,7 @@
   ((:module #:src
             :serial t
             :components ((:file "package")
+                         (:file "shared" :depends-on ("package"))
                          (:file "identifier")
                          (:file "association")
                          (:file "auth-request")
