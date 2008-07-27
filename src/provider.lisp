@@ -72,6 +72,7 @@
     (push (cons "openid.sig" (sign assoc rv)) rv)
     rv))
 
+;; FIXME: user_setup_url (14.2.2)
 (defun setup-needed-response ()
   '(("openid.ns" . "http://specs.openid.net/auth/2.0")
     ("openid.mode" . "setup_needed")))
