@@ -95,7 +95,8 @@
           (string-case (aget "openid.session_type" parameters)
             (("DH-SHA1" "DH-SHA256")
              (let ((private (random +dh-prime+)) ; FIXME:random
-                   (association (make-association :association-type (aget "openid.assoc_type" parameters))))
+                   (association (make-association :association-type (or (aget "openid.assoc_type" parameters)
+                                                                        (and v1-compat "HMAC-SHA1")))))
                (multiple-value-bind (emac public)
                    (dh-encrypt/decrypt-key (session-digest-type (aget "openid.session_type" parameters))
                                            (ensure-integer (or (aget "openid.dh_gen" parameters) +dh-generator+))
