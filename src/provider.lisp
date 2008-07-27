@@ -146,13 +146,13 @@
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
      (kv-encode `(("ns" . "http://specs.openid.net/auth/2.0")
-                  ("is_valid" . ,(if (string= (sign (find (aget "openid.assoc_handle" parameters)
-                                                          *provider-associations*
-                                                          :key #'association-handle :test #'string=)
-                                                    parameters)
-                                              (aget "openid.sig" parameters))
-                                     "true"
-                                     "false")))))
+                  ("is_valid"
+                   . ,(if (check-signature parameters
+                                           (find (aget "openid.assoc_handle" parameters)
+                                                 *provider-associations*
+                                                 :key #'association-handle :test #'string=))
+                          "true"
+                          "false")))))
 
     (t (error-response (format nil "Unknown openid.mode ~S" (aget "openid.mode" parameters))))))
 
