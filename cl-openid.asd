@@ -48,5 +48,4 @@
                     (system (eql (find-system :cl-openid))))
   "Perform unit tests for cl-openid"
   (asdf:operate 'asdf:load-op :cl-openid.test)
-  (funcall (intern (string :run!) (string :it.bese.fiveam))
-           (intern (string :cl-openid) :keyword)))
+  (funcall (intern (string :run!) (string :it.bese.fiveam)) :cl-openid))
