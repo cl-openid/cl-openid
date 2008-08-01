@@ -1,6 +1,7 @@
 (in-package #:cl-openid)
 
-;; 9.  Requesting Authentication
+;; OpenID Authentication 2.0, 9.  Requesting Authentication
+;; http://openid.net/specs/openid-authentication-2_0.html#requesting_authentication
 (defun request-authentication-uri (id &key return-to realm immediate-p
                                    &aux (association (associate id)))
   "Return URI for an authentication request for ID"

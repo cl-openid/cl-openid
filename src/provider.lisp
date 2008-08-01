@@ -18,7 +18,7 @@
       (decode-universal-time (get-universal-time) 0)
     (declare (ignore wday dst tz))
     (format nil "~4,'0D-~2,'0D-~2,'0DT~2,'0D:~2,'0D:~2,'0DZ~A"
-            year mon day hr min sec (gensym))))
+            year mon day hr min sec (gensym)))) ; FIXME:gensym
 
 (defvar *endpoint-uri* nil)
 

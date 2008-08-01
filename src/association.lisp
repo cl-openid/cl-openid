@@ -1,5 +1,7 @@
 (in-package #:cl-openid)
 
+;; OpenID Authentication 2.0, Appendix B.  Diffie-Hellman Key Exchange Default Value,
+;; http://openid.net/specs/openid-authentication-2_0.html#pvalue
 (defconstant +dh-prime+
   (parse-integer (concatenate 'string
                               "DCF93A0B883972EC0E19989AC5A2CE310E1D37717E8D9571BB7623731866E61E"
@@ -7,21 +9,24 @@
                               "7D45C2E7E52DC81C7A171876E5CEA74B1448BFDFAF18828EFD2519F14E45E382"
                               "6634AF1949E5B535CC829A483B8A76223E5D490A257F05BDFF16F2FB22C583AB")
                  :radix 16)
-  "This is a confirmed-prime number, used as the default modulus for Diffie-Hellman Key Exchange.
+  "This is a confirmed-prime number, used as the default modulus for Diffie-Hellman Key Exchange.")
 
-OpenID Authentication 2.0 Appendix B.  Diffie-Hellman Key Exchange Default Value")
-
-(defconstant +dh-generator+ 2)
+;; OpenID Authentication 2.0, 8.1.2.  Diffie-Hellman Request Parameters,
+;; http://openid.net/specs/openid-authentication-2_0.html#anchor17
+(defconstant +dh-generator+ 2
+  "Default generator value for Diffie-Hellman key exchange.")
 
 ;; An association.  Endpoint URI is the hashtable key.
 (defstruct (association
              (:constructor %make-association))
+  "An association between OP and RP."
   (expires nil :type integer)
   (handle nil :type string)
   (mac nil :type (simple-array (unsigned-byte 8) (*)))
   (hmac-digest nil :type keyword))
 
-(defvar *associations* (make-hash-table))
+(defvar *associations* (make-hash-table)
+  "Hash table of RP associations, indexed by interned endpoint URIs.")
 
 (defvar *default-association-timeout* 3600
   "Default association timeout, in seconds")
@@ -47,6 +52,7 @@ OpenID Authentication 2.0 Appendix B.  Diffie-Hellman Key Exchange Default Value
   (:documentation "Package for generating unique association handles."))
 
 (defun dh-encrypt/decrypt-key (digest generator prime public private key)
+  "Perform Diffie-Hellman key exchange."
   (let* ((k (expt-mod public private prime))
          (h (octets-to-integer (digest-sequence digest (btwoc k))))
          (mac (logxor h (ensure-integer key))))
