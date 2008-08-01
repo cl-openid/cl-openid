@@ -25,21 +25,6 @@
   (:use)
   (:documentation "Package for unique keys to *IDS* hashtable."))
 
-(defun add-postfix-to-uri (uri postfix
-                           &aux (rv (if (uri-p uri)
-                                        (copy-uri uri)
-                                        (uri uri))))
-  "Add POSTFIX (string or symbol) to path part of URI, preserving
-query and adding trailing slash to URI if necessary."
-  (setf (uri-path rv)
-        (concatenate 'string
-                     (uri-path rv)
-                     (unless (eql #\/ (aref (uri-path rv)
-                                            (1- (length (uri-path rv)))))
-                       "/")
-                     (string postfix)))
-  rv)
-
 (defun initiate-authorization (given-id uri realm
                                &key immediate-p
                                &aux
