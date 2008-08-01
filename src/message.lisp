@@ -115,9 +115,9 @@
         (concatenate 'string
                      (uri-query uri)
                      (and (uri-query uri) "&")
-                     (drakma::alist-to-url-encoded-string message :utf-8))) ; FIXME: unexported function
+                     (drakma::alist-to-url-encoded-string message :utf-8))) ; FIXME:unexported
   uri)
 
 (defun indirect-response (return-to message)
-  (hunchentoot:redirect                 ; FIXME: hunchentoot
+  (hunchentoot:redirect                 ; FIXME:hunchentoot
    (princ-to-string (indirect-response-uri return-to message))))

@@ -113,7 +113,7 @@
     (unless session-type
       (setf session-type (first supported-stypes)))
 
-    (hunchentoot:log-message :debug
+    (hunchentoot:log-message :debug     ; FIXME:hunchentoot
                              "Associating~:[~; v1-compatible~] with ~A (assoc ~S, session ~S)"
                              v1 endpoint assoc-type session-type)
 
@@ -136,7 +136,7 @@
                                   :session-type supported-stype))))))))
 
       (when (string= "DH-" session-type :end2 3) ; Diffie-Hellman
-        (setf xa (random +dh-prime+)) ; FIXME: use safer prng generation
+        (setf xa (random +dh-prime+)) ; FIXME:random
         (push (cons "openid.dh_consumer_public"
                     (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
               parameters))

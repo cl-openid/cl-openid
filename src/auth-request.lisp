@@ -36,7 +36,7 @@
                      (message e) (message-format-parameters e))))
   (:documentation "Error during OpenID assertion verification"))
 
-(defvar *nonces* nil ; FIXME: gc
+(defvar *nonces* nil ; FIXME:gc
   "A list of openid.nonce response parameters to avoid duplicates.")
 
 (defvar *nonce-timeout* 3600
