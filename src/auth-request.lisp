@@ -27,13 +27,13 @@
 
 (define-condition openid-assertion-error (error)
   ((code :initarg :code :reader code)
-   (message :initarg :message :reader message)
-   (message-format-parameters :initarg :message-format-parameters :reader message-format-parameters)
+   (reason :initarg :reason :reader reason)
+   (reason-format-parameters :initarg :reason-format-parameters :reader reason-format-parameters)
    (id :initarg :id :reader id)
-   (assertion :initarg :assertion :reader assertion))
+   (message :initarg :message :reader message))
   (:report (lambda (e s)
              (format s "OpenID assertion error: ~?"
-                     (message e) (message-format-parameters e))))
+                     (reason e) (reason-format-parameters e))))
   (:documentation "Error during OpenID assertion verification"))
 
 (defvar *nonces* nil ; FIXME:gc
@@ -57,26 +57,26 @@
                                 (< nonce-time time-limit))
                             *nonces* :key #'nonce-universal-time)))
 
-(defun handle-indirect-response (parameters id
+(defun handle-indirect-response (message id
                                  &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
-  "Handle indirect response for ID, consisting of PARAMETERS.
+  "Handle indirect response MESSAGE directed for ID.
 
 Returns ID on success, NIL on failure."
-  (macrolet ((err (code message &rest args)
+  (macrolet ((err (code reason &rest args)
                `(error 'openid-assertion-error
                        :code ,code
-                       :message ,message
-                       :message-format-parameters (list ,@args)
-                       :assertion parameters
+                       :reason ,reason
+                       :reason-format-parameters (list ,@args)
+                       :message message
                        :id id))
              (ensure (test-form code message &rest args)
                `(unless ,test-form
                   (err ,code ,message ,@args)))
-             (same-uri (id-field parameters-field)
+             (same-uri (id-field message-field)
                `(uri= (uri (aget ,id-field id))
-                      (uri (aget ,parameters-field parameters)))))
+                      (uri (aget ,message-field message)))))
 
-    (string-case (aget "openid.mode" parameters)
+    (string-case (aget "openid.mode" message)
       ("error" (err :server-error "Assertion error"))
 
       ("setup_needed" (err :setup-needed "Setup needed."))
@@ -86,28 +86,28 @@ Returns ID on success, NIL on failure."
       ("id_res"
 
        ;; Handle assoc invalidations
-       (gc-associations (aget "openid.invalidate_handle" parameters))
+       (gc-associations (aget "openid.invalidate_handle" message))
 
        ;; 11.1.  Verifying the Return URL
        (ensure (uri= (aget :return-to id)
-                     (uri (aget "openid.return_to" parameters)))
+                     (uri (aget "openid.return_to" message)))
                :invalid-return-to
-               "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" parameters))
+               "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" message))
 
        ;; 11.2.  Verifying Discovered Information
        (unless v1-compat
-         (ensure (string= "http://specs.openid.net/auth/2.0" (aget "openid.ns" parameters))
+         (ensure (string= "http://specs.openid.net/auth/2.0" (aget "openid.ns" message))
                  :invalid-namespace
-                 "Wrong namespace ~A" (aget "openid.ns" parameters)))
+                 "Wrong namespace ~A" (aget "openid.ns" message)))
 
-       (unless (and v1-compat (null (aget "openid.op_endpoint" parameters)))
+       (unless (and v1-compat (null (aget "openid.op_endpoint" message)))
          (ensure (same-uri :op-endpoint-url "openid.op_endpoint")
                  :invalid-endpoint
                  "Endpoint URL does not match previously discovered information."))
 
-       (unless (or (and v1-compat (null (aget "openid.claimed_id" parameters)))
+       (unless (or (and v1-compat (null (aget "openid.claimed_id" message)))
                    (same-uri :claimed-id "openid.claimed_id"))
-         (let ((cid (discover (normalize-identifier (aget "openid.claimed_id" parameters)))))
+         (let ((cid (discover (normalize-identifier (aget "openid.claimed_id" message)))))
            (if (uri= (aget :op-endpoint-url cid)
                      (aget :op-endpoint-url id))
                (setf (cdr (assoc :claimed-id id))
@@ -117,7 +117,7 @@ Returns ID on success, NIL on failure."
                     (aget :op-endpoint-url id) (aget :op-endpoint-url cid)))))
 
        ;; 11.3.  Checking the Nonce
-       (let ((nonce (aget "openid.response_nonce" parameters)))
+       (let ((nonce (aget "openid.response_nonce" message)))
          (if nonce
              (progn (ensure (not (or (> (- (get-universal-time)
                                            (nonce-universal-time nonce))
@@ -131,13 +131,13 @@ Returns ID on success, NIL on failure."
        (gc-nonces)
 
        ;; 11.4.  Verifying Signatures
-       (ensure (if (association-by-handle (aget "openid.assoc_handle" parameters))
+       (ensure (if (association-by-handle (aget "openid.assoc_handle" message))
                    ;; 11.4.1.  Verifying with an Association
-                   (check-signature parameters)
+                   (check-signature message)
                    ;; 11.4.2.  Verifying Directly with the OpenID Provider
                    (let ((response (direct-request (aget :op-endpoint-url id)
                                                 (acons "openid.mode" "check_authentication"
-                                                       (remove "openid.mode" parameters
+                                                       (remove "openid.mode" message
                                                                :key #'car
                                                                :test #'string=)))))
 
@@ -148,14 +148,14 @@ Returns ID on success, NIL on failure."
                "Invalid signature")
 
        (unless v1-compat             ; Check list of signed parameters
-         (let ((signed (split-sequence #\, (aget "openid.signed" parameters))))
+         (let ((signed (split-sequence #\, (aget "openid.signed" message))))
            (ensure (every #'(lambda (f)
                               (member f signed :test #'string=))
                           `("op_endpoint"
                             "return_to"
                             "response_nonce"
                             "assoc_handle"
-                            ,@(when (aget "openid.claimed_id" parameters)
+                            ,@(when (aget "openid.claimed_id" message)
                                     '("claimed_id" "identity"))))
                    :invalid-signed-fields
                    "Not all fields that are required to be signed, are so.")))

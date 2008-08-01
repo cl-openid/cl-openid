@@ -41,22 +41,22 @@
                               :realm realm
                               :return-to return-to))
 
-(defun handle-openid-request (uri realm parameters postfix)
-  "Handle single OpenID Relying Party request for the received PARAMETERS alist, using URI as return_to address and REALM as a realm.
+(defun handle-openid-request (uri realm message postfix)
+  "Handle single OpenID Relying Party request for the received MESSAGE, using URI as return_to address and REALM as a realm.
 
 Returns a string with HTML response and a redirect URI if applicable."
   (if (null postfix)
-      (if (aget "openid_identifier" parameters)
-          (values nil (initiate-authorization (aget "openid_identifier" parameters) uri realm
-                                              :immediate-p (aget "checkid_immediate" parameters)))
+      (if (aget "openid_identifier" message)
+          (values nil (initiate-authorization (aget "openid_identifier" message) uri realm
+                                              :immediate-p (aget "checkid_immediate" message)))
           +openid-input-form+)
       (handler-case
           (html "CL-OpenID result"
                 "~A <p><strong>realm:</strong> ~A</p>
-<h2>Response parameters:</h2>
+<h2>Response:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
-                (let ((id (handle-indirect-response parameters (gethash (intern postfix :cl-openid.ids) *ids*))))
+                (let ((id (handle-indirect-response message (gethash (intern postfix :cl-openid.ids) *ids*))))
                   (if id
                       (format nil
                               "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>"
@@ -65,20 +65,20 @@ Returns a string with HTML response and a redirect URI if applicable."
                 realm
                 (mapcar #'(lambda (c)
                             (list (car c) (cdr c)))
-                        parameters)
+                        message)
                 uri)
         (openid-assertion-error (e)
           (html "CL-OpenID assertion error"
                 "<h1 style=\"color: red; text-decoration: blink;\">ERROR ERROR ERROR !!!</h1>
 <p><strong>~S</strong> ~A</p>
-<h2>Response parameters:</h2>
+<h2>Response:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>
 "
                 (code e) e
                 (mapcar #'(lambda (c)
                             (list (car c) (cdr c)))
-                        (assertion e))
+                        (message e))
                 uri)))))
 
 ;; Hunchentoot-specific part

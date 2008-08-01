@@ -11,17 +11,17 @@
 
 (defvar *endpoint-uri* nil)
 
-(defun successful-response (parameters)
-  (let* ((assoc (or (when (aget "openid.assoc_handle" parameters)
-                      (find (aget "openid.assoc_handle" parameters) *provider-associations*
+(defun successful-response (message)
+  (let* ((assoc (or (when (aget "openid.assoc_handle" message)
+                      (find (aget "openid.assoc_handle" message) *provider-associations*
                             :key #'association-handle :test #'string=))
                     (first (push (make-association :hmac-digest :sha256) *provider-associations*))))
          (rv `(("openid.ns" . "http://specs.openid.net/auth/2.0")
                ("openid.mode" . "id_res")
                ("openid.op_endpoint" . ,(princ-to-string *endpoint-uri*))
-               ("openid.claimed_id" . ,(aget "openid.identity" parameters))
-               ("openid.identity" . ,(aget "openid.identity" parameters))
-               ,(assoc "openid.return_to" parameters :test #'string=)
+               ("openid.claimed_id" . ,(aget "openid.identity" message))
+               ("openid.identity" . ,(aget "openid.identity" message))
+               ,(assoc "openid.return_to" message :test #'string=)
                ("openid.response_nonce" . ,(nonce))
                ("openid.assoc_handle" . ,(string (association-handle assoc)))
                ("openid.signed" . "op_endpoint,identity,claimed_id,return_to,assoc_handle,response_nonce"))))
@@ -41,43 +41,43 @@
 (defvar *checkid-immediate-callback* nil)
 
 (defun handle-openid-provider-request
-    (parameters
+    (message
      &aux
      (v1-compat (not (string= "http://specs.openid.net/auth/2.0"
-                              (aget "openid.ns" parameters)))))
-  (string-case (aget "openid.mode" parameters)
+                              (aget "openid.ns" message)))))
+  (string-case (aget "openid.mode" message)
     ("associate"
      (encode-kv ; Direct response
       (handler-case
-          (string-case (aget "openid.session_type" parameters)
+          (string-case (aget "openid.session_type" message)
             (("DH-SHA1" "DH-SHA256")
              (let ((private (random +dh-prime+)) ; FIXME:random
-                   (association (make-association :association-type (or (aget "openid.assoc_type" parameters)
+                   (association (make-association :association-type (or (aget "openid.assoc_type" message)
                                                                         (and v1-compat "HMAC-SHA1")))))
                (multiple-value-bind (emac public)
-                   (dh-encrypt/decrypt-key (session-digest-type (aget "openid.session_type" parameters))
-                                           (ensure-integer (or (aget "openid.dh_gen" parameters) +dh-generator+))
-                                           (ensure-integer (or (aget "openid.dh_modulus" parameters) +dh-prime+))
-                                           (ensure-integer (aget "openid.dh_consumer_public" parameters))
+                   (dh-encrypt/decrypt-key (session-digest-type (aget "openid.session_type" message))
+                                           (ensure-integer (or (aget "openid.dh_gen" message) +dh-generator+))
+                                           (ensure-integer (or (aget "openid.dh_modulus" message) +dh-prime+))
+                                           (ensure-integer (aget "openid.dh_consumer_public" message))
                                            private
                                            (association-mac association))
                  (push association *provider-associations*)
                  `(("ns" . "http://specs.openid.net/auth/2.0")
                    ("assoc_handle" . ,(association-handle association))
-                   ("session_type" . ,(aget "openid.session_type" parameters))
-                   ("assoc_type" . ,(aget "openid.assoc_type" parameters))
+                   ("session_type" . ,(aget "openid.session_type" message))
+                   ("assoc_type" . ,(aget "openid.assoc_type" message))
                    ("expires_in" . ,(princ-to-string (- (association-expires association)
                                                         (get-universal-time))))
                    ("dh_server_public" . ,(usb8-array-to-base64-string (btwoc public)))
                    ("enc_mac_key" . ,(usb8-array-to-base64-string emac))))))
             (("" "no-encryption")
              (if (hunchentoot:ssl-p)    ; FIXME:hunchentoot
-                 (let ((association (make-association :association-type (aget "openid.assoc_type" parameters)))) ; FIXME:random
+                 (let ((association (make-association :association-type (aget "openid.assoc_type" message)))) ; FIXME:random
                    (push association *provider-associations*)
                    `(("ns" . "http://specs.openid.net/auth/2.0")
                      ("assoc_handle" . ,(association-handle association))
-                     ("session_type" . ,(aget "openid.session_type" parameters))
-                     ("assoc_type" . ,(aget "openid.assoc_type" parameters))
+                     ("session_type" . ,(aget "openid.session_type" message))
+                     ("assoc_type" . ,(aget "openid.assoc_type" message))
                      ("expires_in" . ,(princ-to-string (- (association-expires association)
                                                           (get-universal-time))))
                      ("mac_key" . ,(usb8-array-to-base64-string (association-mac association)))))
@@ -86,58 +86,58 @@
 
         (openid-association-error (e)
           (error-response (princ-to-string e)
-                          :parameters `(("error_code" . "unsupported-type")
+                          :message `(("error_code" . "unsupported-type")
                                         ("session_type" . ,(if v1-compat "DH-SHA1" "DH-SHA256")) ; We do not prefer cleartext session, regardless of SSL
                                         ("assoc_type" . ,(if v1-compat "HMAC-SHA1" "HMAC-SHA256"))))))))
 
     ("checkid_immediate"
      (if *checkid-immediate-callback*
-         (funcall *checkid-immediate-callback* parameters)
-         (indirect-response (aget "openid.return_to" parameters)
+         (funcall *checkid-immediate-callback* message)
+         (indirect-response (aget "openid.return_to" message)
                             (setup-needed-response))))
 
     ("checkid_setup"
      (if *checkid-setup-callback*
-         (funcall *checkid-setup-callback* parameters)
-         (indirect-response (aget "openid.return_to" parameters)
+         (funcall *checkid-setup-callback* message)
+         (indirect-response (aget "openid.return_to" message)
                             (cancel-response))))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
      (encode-kv `(("ns" . "http://specs.openid.net/auth/2.0")
                   ("is_valid"
-                   . ,(if (check-signature parameters
-                                           (find (aget "openid.assoc_handle" parameters)
+                   . ,(if (check-signature message
+                                           (find (aget "openid.assoc_handle" message)
                                                  *provider-associations*
                                                  :key #'association-handle :test #'string=))
                           "true"
                           "false")))))
 
-    (t (error-response (format nil "Unknown openid.mode ~S" (aget "openid.mode" parameters))))))
+    (t (error-response (format nil "Unknown openid.mode ~S" (aget "openid.mode" message))))))
 
 ;; Hunchentoot-specific part
 (defvar *setup-params* (make-hash-table))
-(defun handle-checkid-setup (parameters
+(defun handle-checkid-setup (message
                              &aux
                              (handle (gentemp "PARM" :cl-openid.ids))
                              (finish-uri (merge-uris "finish-setup" *endpoint-uri*)))
-  (setf (gethash handle *setup-params*) parameters)
+  (setf (gethash handle *setup-params*) message)
   (html "Log in?"
-        "<h2>Parameters:</h2>
+        "<h2>Message:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <strong><a href=\"~A\">Log in</a> or <a href=\"~A\">cancel</a>?</strong>"
         (mapcar #'(lambda (c)
                     (list (car c) (cdr c)))
-                parameters)
+                message)
         (copy-uri finish-uri :query (format nil "handle=~A&allow=1" handle))
         (copy-uri finish-uri :query (format nil "handle=~A&deny=1" handle))))
 
 (defun finish-checkid-setup (&aux
                              (handle (intern (hunchentoot:get-parameter "handle") :cl-openid.ids))
-                             (parameters (gethash handle *setup-params*)))
+                             (message (gethash handle *setup-params*)))
   (if (hunchentoot:get-parameter "allow")
-      (indirect-response (aget "openid.return_to" parameters)
-                         (successful-response parameters))
-      (indirect-response (aget "openid.return_to" parameters)
+      (indirect-response (aget "openid.return_to" message)
+                         (successful-response message))
+      (indirect-response (aget "openid.return_to" message)
                          (cancel-response))))
 
 (defun finish-checkid-handle (endpoint)
@@ -161,8 +161,8 @@
 ;              hunchentoot:*dispatch-table*)
 
 ; (setf *checkid-immediate-callback*
-;       #'(lambda (parameters)
-;           (indirect-response (aget "openid.return_to" parameters)
-;                              (successful-response parameters))))
+;       #'(lambda (message)
+;           (indirect-response (aget "openid.return_to" message)
+;                              (successful-response message))))
 
 ; FIXME: Hunchentoot headers.lisp:136 (START-OUTPUT): (push 400 hunchentoot:*approved-return-codes*)

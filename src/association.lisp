@@ -95,7 +95,7 @@
                      v1
                      assoc-type session-type
                      &aux
-                     (parameters '(("openid.mode" . "associate")))
+                     (message '(("openid.mode" . "associate")))
                      xa)
 
   ;; optimize? move to constants?
@@ -117,16 +117,16 @@
                              "Associating~:[~; v1-compatible~] with ~A (assoc ~S, session ~S)"
                              v1 endpoint assoc-type session-type)
 
-    (push (cons "openid.assoc_type" assoc-type) parameters)
-    (push (cons "openid.session_type" session-type) parameters)
+    (push (cons "openid.assoc_type" assoc-type) message)
+    (push (cons "openid.session_type" session-type) message)
 
     (handler-bind ((openid-request-error
                     #'(lambda (e)
-                        (when (equal (cdr (assoc "error_code" (parameters e)
+                        (when (equal (cdr (assoc "error_code" (message e)
                                                  :test #'string=))
                                      "unsupported-type")
-                          (let ((supported-atype (aget "assoc_type" (parameters e)))
-                                (supported-stype (aget "session_type" (parameters e))))
+                          (let ((supported-atype (aget "assoc_type" (message e)))
+                                (supported-stype (aget "session_type" (message e))))
                             (return-from do-associate
                               (when (and (member supported-atype supported-atypes :test #'equal)
                                          (member supported-stype supported-stypes :test #'equal))
@@ -139,9 +139,9 @@
         (setf xa (random +dh-prime+)) ; FIXME:random
         (push (cons "openid.dh_consumer_public"
                     (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
-              parameters))
+              message))
 
-      (let* ((response (direct-request endpoint parameters)))
+      (let* ((response (direct-request endpoint message)))
         (values
          (make-association :handle (aget "assoc_handle" response)
                            :expires-in (parse-integer (aget "expires_in" response)) 
@@ -174,9 +174,9 @@
   (association (aget :op-endpoint-url id)
                (= 1 (car (aget :protocol-version id)))))
 
-(defun sign (association parameters &optional signed)
+(defun sign (association message &optional signed)
   (unless signed
-    (setf signed (split-sequence #\, (aget "openid.signed" parameters))))
+    (setf signed (split-sequence #\, (aget "openid.signed" message))))
 
   (usb8-array-to-base64-string
    (hmac-digest
@@ -186,7 +186,7 @@
                                for field in signed
                                collect (cons field
                                              (aget (concatenate 'string "openid." field)
-                                                   parameters))))))))
+                                                   message))))))))
 
 (defun association-by-handle (handle)
   (maphash #'(lambda (ep assoc)
@@ -195,6 +195,6 @@
                  (return-from association-by-handle assoc)))
            *associations*))
 
-(defun check-signature (parameters &optional (association (association-by-handle (aget "openid.assoc_handle" parameters))))
-  (string= (sign association parameters)
-           (aget "openid.sig" parameters)))
+(defun check-signature (message &optional (association (association-by-handle (aget "openid.assoc_handle" message))))
+  (string= (sign association message)
+           (aget "openid.sig" message)))

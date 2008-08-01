@@ -43,12 +43,12 @@
      while end))
 
 ; FIXME: optimize, reduce consing
-(defun encode-kv (parameters)
-  "Encode PARAMETERS alist as key-value form octet vector"
+(defun encode-kv (message)
+  "Encode MESSAGE alist as key-value form octet vector"
   (string-to-utf-8-bytes
    (apply #'concatenate 'string
           (loop
-             for (k . v) in parameters
+             for (k . v) in message
              collect k
              collect ":"
              collect v
@@ -56,26 +56,26 @@
 
 ;;; Requests and responses
 (define-condition openid-request-error (error)
-  ((message :initarg :message :reader message)
-   (parameters :initarg :parameters :reader parameters))
+  ((reason :initarg :reason :reader reason)
+   (message :initarg :message :reader message))
   (:report (lambda (e s)
-             (format s "OpenID request error: ~A" (message e)))))
+             (format s "OpenID request error: ~A" (reason e)))))
 
 ;; OpenID Authentication 2.0, 5.1.  Direct Communication
 ;; http://openid.net/specs/openid-authentication-2_0.html#direct_comm
-(defun direct-request (uri parameters)
-  "Send a direct request to URI, sending PARAMETERS alist."
+(defun direct-request (uri message)
+  "Send a direct request to URI, sending MESSAGE alist."
   (let ((*text-content-types* nil))
     (multiple-value-bind (body status-code)
         (http-request uri
                       :method :post
-                      :parameters (in-ns parameters))
-      (let ((parameters (parse-kv body)))
+                      :parameters (in-ns message))
+      (let ((response (parse-kv body)))
         (if (= 200 status-code)
-            parameters
+            response
             (error 'openid-request-error
-                   :message (aget "error" parameters)
-                   :parameters parameters))))))
+                   :reason (message-field "error" response)
+                   :message response))))))
 
 ;; OpenID Authentication 2.0, 5.1.2.2.  Error Responses
 ;; http://openid.net/specs/openid-authentication-2_0.html#direct_comm
@@ -96,13 +96,13 @@
 
 ;; OpenID Authentication 2.0, 5.2.  Indirect Communication,
 ;; http://openid.net/specs/openid-authentication-2_0.html#indirect_comm
-(defun indirect-request-uri (endpoint parameters
+(defun indirect-request-uri (endpoint message
                              &aux
                              (uri (new-uri endpoint))
                              (q (drakma::alist-to-url-encoded-string ; FIXME:unexported
-                                 (in-ns parameters)
+                                 (in-ns message)
                                  :utf-8)))
-  "Return an URI for an indirect request to OpenID Provider ENDPOINT, sending PARAMETERS alist."
+  "Return an URI for an indirect request to OpenID Provider ENDPOINT, sending MESSAGE."
   (setf (uri-query uri)
         (if (uri-query uri)
             (concatenate 'string (uri-query uri) "&" q)
