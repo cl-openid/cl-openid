@@ -58,7 +58,7 @@
                             *nonces* :key #'nonce-universal-time)))
 
 (defun handle-indirect-response (parameters id
-                              &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
+                                 &aux (v1-compat (not (equal '(2 . 0) (aget :protocol-version id)))))
   "Handle indirect response for ID, consisting of PARAMETERS.
 
 Returns ID on success, NIL on failure."
