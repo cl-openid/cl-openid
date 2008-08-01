@@ -6,7 +6,7 @@
 (define-constant +openid2-namespace+ "http://specs.openid.net/auth/2.0"
   "Namespace URI for OpenID 2.0 messages.")
 
-(define-constant +openid2-ns-cons+ (cons "openid.ns" +openid-2.0-namespace+)
+(define-constant +openid2-ns-cons+ (cons "openid.ns" +openid2-namespace+)
   "Helper constant pair for constructing messages.")
 
 (defmacro in-ns (message &optional (namespace '+openid2-ns-cons+))
