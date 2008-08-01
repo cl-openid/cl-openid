@@ -1,22 +1,5 @@
 (in-package #:cl-openid)
 
-;; 5.2.  Indirect Communication
-(defun indirect-request-uri (endpoint parameters
-                             &aux
-                             (uri (if (uri-p endpoint)
-                                      (copy-uri endpoint)
-                                      (uri endpoint)))
-                             (q (drakma::alist-to-url-encoded-string ; FIXME: use of unexported function
-                                 (acons "openid.ns" "http://specs.openid.net/auth/2.0"
-                                        parameters)
-                                 :utf-8)))
-  "Return an URI for an indirect request to OpenID Provider endpoint."
-  (setf (uri-query uri)
-        (if (uri-query uri)
-            (concatenate 'string (uri-query uri) "&" q)
-            q))
-  uri)
-
 ;; 9.  Requesting Authentication
 (defun request-authentication-uri (id &key return-to realm immediate-p
                                    &aux (association (associate id)))

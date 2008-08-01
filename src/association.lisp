@@ -23,48 +23,6 @@ OpenID Authentication 2.0 Appendix B.  Diffie-Hellman Key Exchange Default Value
 
 (defvar *associations* (make-hash-table))
 
-(defun btwoc (i &aux (octets (integer-to-octets i)))
-  (if (or (zerop (length octets))
-          (> (aref octets 0) 127))
-      (concatenate '(simple-array (unsigned-byte 8) (*)) '(0) octets)
-      octets))
-
-(defun base64-btwoc (i)
-  (usb8-array-to-base64-string (btwoc i)))
-
-(defun parse-kv (array)
-  "Parse key-value form message passed as an (unsigned-byte 8) array into alist.
-
-OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
-  (loop
-     for start = 0 then (1+ end)
-     for end = (position 10 array :start start)
-     for colon = (position #.(char-code #\:) array :start start)
-     when colon collect
-       (cons (utf-8-bytes-to-string array :start start :end colon)
-             (utf-8-bytes-to-string array :start (1+ colon) :end (or end (length array))))
-     while end))
-
-(define-condition openid-request-error (error)
-  ((message :initarg :message :reader message)
-   (parameters :initarg :parameters :reader parameters))
-  (:report (lambda (e s)
-             (format s "OpenID request error: ~A" (message e)))))
-
-(defun direct-request (uri parameters)
-  (let ((*text-content-types* nil))
-    (multiple-value-bind (body status-code)
-        (http-request uri
-                      :method :post
-                      :parameters (acons "openid.ns" "http://specs.openid.net/auth/2.0"
-                                         parameters))
-      (let ((parameters (parse-kv body)))
-        (if (= 200 status-code)
-            parameters
-            (error 'openid-request-error
-                   :message (aget "error" parameters)
-                   :parameters parameters))))))
-
 (defvar *default-association-timeout* 3600
   "Default association timeout, in seconds")
 
@@ -210,17 +168,6 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
   (association (aget :op-endpoint-url id)
                (= 1 (car (aget :protocol-version id)))))
 
-;;; FIXME: optimize, reduce consing
-(defun kv-encode (alist)
-  (string-to-utf-8-bytes
-   (apply #'concatenate 'string
-          (loop
-             for (k . v) in alist
-             collect k
-             collect ":"
-             collect v
-             collect '(#\Newline)))))
-
 (defun sign (association parameters &optional signed)
   (unless signed
     (setf signed (split-sequence #\, (aget "openid.signed" parameters))))
@@ -229,7 +176,7 @@ OpenID Authentication 2.0 4.1.1.  Key-Value Form Encoding."
    (hmac-digest
     (update-hmac (make-hmac (association-mac association)
                             (association-hmac-digest association))
-                 (kv-encode (loop
+                 (encode-kv (loop
                                for field in signed
                                collect (cons field
                                              (aget (concatenate 'string "openid." field)

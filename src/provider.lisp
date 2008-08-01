@@ -11,40 +11,7 @@
 (defparameter *https-session-types*
   '("no-encryption" ""))
 
-(defun error-response (err &key contact reference parameters)
-  (setf (hunchentoot:return-code) 400) ; FIXME:hunchentoot
-
-  ;; For v1 RPs this field is meaningless.
-  (push (cons "ns" "http://specs.openid.net/auth/2.0") parameters)
-
-  ;; Spec is unclear on this, but it won't hurt.
-  (push (cons "mode" "error") parameters)
-
-  (push (cons "error" err) parameters)
-
-  (when contact
-    (push (cons "contact" contact) parameters))
-
-  (when reference
-    (push (cons "reference" reference) parameters))
-  (kv-encode parameters))
-
 (defvar *provider-associations* ())
-
-(defun indirect-response-uri (return-to parameters
-                           &aux (uri (if (uri-p return-to)
-                                         (copy-uri return-to)
-                                         (uri return-to))))
-  (setf (uri-query uri)
-        (concatenate 'string
-                     (uri-query uri)
-                     (and (uri-query uri) "&")
-                     (drakma::alist-to-url-encoded-string parameters :utf-8))) ; FIXME: unexported function
-  uri)
-
-(defun indirect-response (return-to parameters)
-  (hunchentoot:redirect                 ; FIXME: hunchentoot
-   (princ-to-string (indirect-response-uri return-to parameters))))
 
 (defun nonce ()
   (multiple-value-bind (sec min hr day mon year wday dst tz)
@@ -91,7 +58,7 @@
                               (aget "openid.ns" parameters)))))
   (string-case (aget "openid.mode" parameters)
     ("associate"
-     (kv-encode ; Direct response
+     (encode-kv ; Direct response
       (handler-case
           (string-case (aget "openid.session_type" parameters)
             (("DH-SHA1" "DH-SHA256")
@@ -147,7 +114,7 @@
                             (cancel-response))))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
-     (kv-encode `(("ns" . "http://specs.openid.net/auth/2.0")
+     (encode-kv `(("ns" . "http://specs.openid.net/auth/2.0")
                   ("is_valid"
                    . ,(if (check-signature parameters
                                            (find (aget "openid.assoc_handle" parameters)
