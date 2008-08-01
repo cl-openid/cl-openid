@@ -101,7 +101,6 @@ also included in the token.."
                          (cdr (assoc (subseq str (1+ s) e) +entities+
                                      :test #'string-equal)))
      while s
-     #|DEBUG do (print (list s e (subseq str (1+ s) e) '-> replacement)) |#
      when replacement
      do (setf (aref str s) replacement
               (subseq str (1+ s)) (subseq str (1+ e))
