@@ -1,16 +1,5 @@
 (in-package #:cl-openid)
 
-(defparameter *assoc-types*
-  '(("HMAC-SHA1" . :SHA1)
-    ("HMAC-SHA256" . :SHA256)))
-
-(defparameter *session-types*
-  '(("DH-SHA1" . :SHA1)
-    ("DH-SHA256" . :SHA256)))
-
-(defparameter *https-session-types*
-  '("no-encryption" ""))
-
 (defvar *provider-associations* ())
 
 (defun nonce ()
