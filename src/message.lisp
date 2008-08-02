@@ -102,7 +102,7 @@
         (if (= 200 status-code)
             response
             (error 'openid-request-error
-                   :reason (message-field "error" response)
+                   :reason (message-field response "error")
                    :message response))))))
 
 ;; OpenID Authentication 2.0, 5.1.2.2.  Error Responses
