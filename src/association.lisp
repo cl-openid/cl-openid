@@ -71,7 +71,6 @@
                                           (openid-association-error "Unknown association type ~A." association-type)))
                          
                          (mac (random #.(expt 2 256)))) ; FIXME:random
-
   "Make new association structure, DWIM included.
 
  - HANDLE should be the new association handle; if none is provided,
