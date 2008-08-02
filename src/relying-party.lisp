@@ -25,16 +25,16 @@
   "Counter for unique association handle generation")
 
 (defun new-auth-handle ()
-  "Return new unique authorization handle as string"
+  "Return new unique authentication handle as string"
   (integer-to-base64-string (incf *auth-handle-counter*) :uri t))
 
-(defun initiate-authorization (given-id uri realm
+(defun initiate-authentication (given-id uri realm
                                &key immediate-p
                                &aux
                                (id (discover (normalize-identifier given-id)))
                                (handle (new-auth-handle))
                                (return-to (add-postfix-to-uri uri handle)))
-  "Initiate authorization process.  Returns URI to redirect user to."
+  "Initiate authentication process.  Returns URI to redirect user to."
   (gc-ids)
   (push (cons :timestamp (get-universal-time)) id)
   (push (cons :return-to return-to) id)
@@ -50,7 +50,7 @@
 Returns a string with HTML response and a redirect URI if applicable."
   (if (null postfix)
       (if (aget "openid_identifier" message)
-          (values nil (initiate-authorization (aget "openid_identifier" message) uri realm
+          (values nil (initiate-authentication (aget "openid_identifier" message) uri realm
                                               :immediate-p (aget "checkid_immediate" message)))
           +openid-input-form+)
       (handler-case
