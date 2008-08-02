@@ -88,17 +88,18 @@ also included in the token.."
           (push xrds rv))
         rv))))
 
-(defparameter +entities+
-  '(("amp" . #\&) ("gt" . #\>) ("lt" . #\<) ("quot" . #\"))
+(define-constant +entities+
+    '(("amp" . #\&) ("gt" . #\>) ("lt" . #\<) ("quot" . #\"))
   "Alist of HTML entities to be unquoted.")
 
-(defun n-remove-entities (str)
+(defun n-remove-entities (str &optional (entities +entities+))
+  "Remove HTML entities from STR, destructively."
   (loop
      for s = (position #\& str) then (position #\& str :start (1+ s))
      for e = (when s
                (position #\; str :start (1+ s)))
      for replacement = (when (and s e)
-                         (cdr (assoc (subseq str (1+ s) e) +entities+
+                         (cdr (assoc (subseq str (1+ s) e) entities
                                      :test #'string-equal)))
      while s
      when replacement
