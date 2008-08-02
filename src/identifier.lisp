@@ -137,7 +137,7 @@ also included in the token.."
                                prio endpoint oplocal
                                v1prio v1endpoint v1oplocal v1type)
   (assert (member (car parsed) '(("XRDS" . "xri://$xrds")
-                                 ("XRDS" . "xri://\\$xrds")) ; http://www.mediawiki.org/wiki/Extension:OpenID
+                                 ("XRDS" . "xri://\\$xrds")) ; http://www.mediawiki.org/wiki/Extension:OpenID possible bug
                   :test #'equal)
           ((car parsed)))
   (flet ((priority (service)
