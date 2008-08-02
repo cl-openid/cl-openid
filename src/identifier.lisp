@@ -243,7 +243,6 @@ are the same."
                 (if id-x-xrds-location
                     (setf (cdr id-x-xrds-location) (cdr x-xrds-location))
                     (push x-xrds-location id))
-                ;; FIXME: what if document (erroneously) points X-XRDS-Location: to itself?
                 (return-from discover
                   (discover id))))
 
