@@ -46,10 +46,12 @@
                       :test #'string=)
         (openid-association-error "Unknown session type ~A" session-type))))
 
-;; FIXME:gentemp (use true random unique handle -- UUID?)
-(defpackage :cl-openid.assoc-handles
-  (:use)
-  (:documentation "Package for generating unique association handles."))
+(defvar *association-handle-counter* 0
+  "Counter for unique association handle generation")
+
+(defun new-association-handle ()
+  "Return new unique association handle as string"
+  (integer-to-base64-string (incf *association-handle-counter*) :uri t))
 
 (defun dh-encrypt/decrypt-key (digest generator prime public private key)
   "Perform Diffie-Hellman key exchange."
@@ -60,7 +62,7 @@
             (expt-mod generator private prime))))
 
 (defun make-association (&key
-                         (handle (string (gentemp "H" :cl-openid.assoc-handles)))
+                         (handle (new-association-handle))
                          (expires-in *default-association-timeout*)
                          (expires-at (+ (get-universal-time) expires-in))
 
