@@ -8,7 +8,7 @@
 <br><label><input type=\"checkbox\" name=\"checkid_immediate\"> Immediate request</label></form>")
   "Input form for OpenID, for parameterless indirect method endpoint call.")
 
-(defvar *ids* (make-hash-table)
+(defvar *ids* (make-hash-table :test #'equal)
   "List of handled IDs")
 
 (defvar *id-timeout* 3600
@@ -21,16 +21,19 @@
                  (remhash k *ids*)))
            *ids*))
 
-(defpackage :cl-openid.ids
-  (:use)
-  (:documentation "Package for unique keys to *IDS* hashtable."))
+(defvar *auth-handle-counter* 0
+  "Counter for unique association handle generation")
+
+(defun new-auth-handle ()
+  "Return new unique authorization handle as string"
+  (integer-to-base64-string (incf *auth-handle-counter*) :uri t))
 
 (defun initiate-authorization (given-id uri realm
                                &key immediate-p
                                &aux
                                (id (discover (normalize-identifier given-id)))
-                               (handle (gentemp "ID" (find-package :cl-openid.ids)))
-                               (return-to (add-postfix-to-uri uri (symbol-name handle))))
+                               (handle (new-auth-handle))
+                               (return-to (add-postfix-to-uri uri handle)))
   "Initiate authorization process.  Returns URI to redirect user to."
   (gc-ids)
   (push (cons :timestamp (get-universal-time)) id)
@@ -56,7 +59,7 @@ Returns a string with HTML response and a redirect URI if applicable."
 <h2>Response:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
-                (let ((id (handle-indirect-response message (gethash (intern postfix :cl-openid.ids) *ids*))))
+                (let ((id (handle-indirect-response message (gethash postfix *ids*))))
                   (if id
                       (format nil
                               "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>"
