@@ -25,7 +25,7 @@
   (mac nil :type (simple-array (unsigned-byte 8) (*)))
   (hmac-digest nil :type keyword))
 
-(defvar *associations* (make-hash-table)
+(defvar *associations* (make-hash-table :test #'equalp)
   "Hash table of RP associations, indexed by interned endpoint URIs.")
 
 (defvar *default-association-timeout* 3600
@@ -166,7 +166,7 @@
 
 (defun association (endpoint &optional v1)
   (gc-associations)                     ; keep clean
-  (setf endpoint (intern-uri endpoint))
+  (setf endpoint (uri endpoint))        ; make sure it's an URI object
   (or (gethash endpoint *associations*)
       (setf (gethash endpoint *associations*)
             (do-associate endpoint :v1 v1))))
