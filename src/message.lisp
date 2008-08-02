@@ -60,7 +60,7 @@
 ;; http://openid.net/specs/openid-authentication-2_0.html#anchor4
 (defun parse-kv (array)
   "Parse key-value form message passed as an octet vector into parameter alist."
-  (declare (type (simple-array (unsigned-byte 8) (*)) array))
+  (declare (type (vector (unsigned-byte 8)) array))
   (loop
      for start = 0 then (1+ end)
      for end = (position 10 array :start start)
