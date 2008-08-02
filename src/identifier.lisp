@@ -120,7 +120,7 @@ also included in the token.."
              (remember "openid2.provider" :op-endpoint-url rel link)
              (remember "openid2.local_id" :op-local-identifier rel link)
              (remember "openid.server" :v1.op-endpoint-url rel link)
-             (remember "openid.delegate" :v1.op-local-identifier rel link))
+             (remember "openid.delegate" :v1.op-local-identifier rel link)) ; FIXME:delegate?
 
            (handle-meta-tag (meta)
              (when (string-equal "X-XRDS-Location" (getf (cdar meta) :http-equiv))
