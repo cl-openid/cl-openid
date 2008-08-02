@@ -13,6 +13,34 @@
   "Add NAMESPACE cons to MESSAGE."
   `(cons ,namespace ,message))
 
+(defun message-field (message field-name)
+  "get field MESSAGE-FIELD from message MESSAGE."
+  (cdr (assoc field-name message :test #'string=)))
+
+(defun message-v2-p (message)
+  "True if MESSAGE is an OpenID v2 message (checks namespace)"
+  (string= +openid2-namespace+ (message-field message "openid.ns")))
+
+(defun make-message (&rest keys)
+  "Make new message alist from keyword parameters."
+  (loop for (k v) on keys by #'cddr
+     collect (cons (string-downcase (string k)) v)))
+
+(defun copy-message (message &rest keys)
+  "Copy MESSAGE, possibly updating KEYS, provided as keyword parameters."
+  (if keys
+      (let ((rv (loop
+                   for (k . v) in message
+                   for kk = (intern (string-upcase k) :keyword)
+                   for vv = (getf keys kk)
+                   if vv
+                   collect (cons k vv) and do (remf keys kk)
+                   else collect (cons k v))))
+        (if keys
+            (nconc rv (apply #'make-message keys))
+            rv))
+      (copy-tree message)))
+
 ;;; Data encoding and decoding
 
 ;; OpenID Authentication 2.0, 4.2.  Integer Representations,
