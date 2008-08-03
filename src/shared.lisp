@@ -76,6 +76,11 @@ If U is already an URI object, return a copy; otherwise, return (URI U)."
     (uri (copy-uri u))
     (t (uri u))))
 
+(defun maybe-uri (u)
+  "Return (URI U), unless U is NIL."
+  (when u
+    (uri u)))
+
 (defun add-postfix-to-uri (uri postfix
                            &aux (rv (new-uri uri)))
   "Add POSTFIX (string or symbol) to path part of URI, preserving
