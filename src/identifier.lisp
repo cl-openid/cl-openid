@@ -11,6 +11,28 @@
       ("http://openid.net/signon/1.1" . (1 . 1))
       ("http://openid.net/server/1.1" . (1 . 1))))
 
+(defstruct (auth-process
+             :conc-name
+             (:constructor %make-auth-process))
+  "Data structure gathering information about an ongoing authentication process."
+  (protocol-version-major 2 :type '(unsigned-byte 8))
+  (protocol-version-minor 0 :type '(unsigned-byte 8))
+  (claimed-id nil :type 'uri)
+  (op-local-id nil :type '(or uri null))
+  (return-to nil :type '(or uri null))
+  (xrds-location nil :type '(or uri null))
+  (endpoint-uri nil :type '(or uri null))
+  (timestamp nil :type '(or integer null)))
+
+(defun protocol-version (auth-process)
+  (cons (protocol-version-major auth-process)
+        (protocol-version-minor auth-process)))
+
+(defun (setf protocol-version) (new-value auth-process)
+  (setf (protocol-version-major auth-process) (car new-value)
+        (protocol-version-minor auth-process) (cdr new-value))
+  new-value)
+
 (defun remove-dot-segments (parsed-path)
   "Remove . and .. from parsed URI path, to correctly identify same
   paths and prevent URI traversal attacks."
@@ -30,17 +52,17 @@
      finally (return (cons (first parsed-path)
                            (nreverse traversed)))))
 
-(defun normalize-identifier (id)
-  "Normalize a user-given identifier ID, return alist token.
+(defun make-auth-process (given-id)
+  "Initialize new AUTH-PROCESS structure from a user-given identifier GIVEN-ID (string).
 
-An XRDS URL for Yadis discovery discovered by a HEAD request may be
-also included in the token.."
+An XRDS location for Yadis discovery discovered by a HEAD request may
+be included in returned structure."
   ;; OpenID Authentication 2.0 Final, Section 7.2.  Normalization
 
   ;; 1., 2.
-  (let ((possible-xri (if (string= "xri://" (subseq id 0 6))
-                          (subseq id 6)
-                          id)))
+  (let ((possible-xri (if (string= "xri://" (subseq given-id 0 6))
+                          (subseq given-id 6)
+                          given-id)))
     (when (member (char possible-xri 0)
                   '(#\= #\@ #\+ #\$ #\! #\())
       ;; input SHOULD be treated as an XRI
@@ -50,11 +72,11 @@ also included in the token.."
 
   ;; if it does not include a "http" or "https" scheme, the Identifier
   ;; MUST be prefixed with the string "http://"
-  (unless (or (string= (subseq id 0 5) "http:")
-              (string= (subseq id 0 6) "https:"))
-    (setf id (concatenate 'string "http://" id)))
+  (unless (or (string= (subseq given-id 0 5) "http:")
+              (string= (subseq given-id 0 6) "https:"))
+    (setf given-id (concatenate 'string "http://" given-id)))
   
-  (let ((id (uri id)))
+  (let ((id (uri given-id)))
     ;; If the URL contains a fragment part, it MUST be stripped off
     ;; together with the fragment delimiter character "#"
     (setf (uri-fragment id) nil)
@@ -81,11 +103,10 @@ also included in the token.."
         (error "Could not reach ~A: ~A ~A" id status-code reason-phrase))
 
       ;; Construct return alist
-      (let ((rv ())
+      (let ((rv (%make-auth-process :claimed-id uri))
             (xrds (assoc :x-xrds-location headers)))
-        (push (cons :claimed-id uri) rv)
         (when xrds
-          (push xrds rv))
+          (setf (xrds-location rv) (uri (cdr xrds))))
         rv))))
 
 (define-constant +entities+
@@ -108,31 +129,39 @@ also included in the token.."
               str (adjust-array str (- (length str) (- e s))))
      finally (return str)))
 
-(defun perform-html-discovery (id body)
-  (labels ((remember (name key rel link)
-             "When NAME is in REL, push (CONS KEY (HREF LINK)) to ID."
-             (when (member name rel :test #'string-equal)
-               (push (cons key (getf (cdar link) :href)) id)))
-
-           (handle-link-tag (link       ; ((:link attrs...))
+(defun perform-html-discovery (authproc body &aux ep oploc ep.1 oploc.1 xrds)
+  (macrolet ((setf-to-href (place name rel link)
+             "When NAME is in REL list, setf VAR to LINK tag's href."
+             `(when (member ,name ,rel :test #'string-equal)
+               (setf ,place (getf (cdar ,link) :href)))))
+    (flet ((handle-link-tag (link       ; ((:link attrs...))
                              &aux
                              (rel (split-sequence #\Space (getf (cdar link) :rel))))
-             (remember "openid2.provider" :op-endpoint-url rel link)
-             (remember "openid2.local_id" :op-local-identifier rel link)
-             (remember "openid.server" :v1.op-endpoint-url rel link)
-             (remember "openid.delegate" :v1.op-local-identifier rel link)) ; FIXME:delegate?
+             (setf-to-href ep "openid2.provider" rel link)
+             (setf-to-href oploc "openid2.local_id" rel link)
+             (setf-to-href ep.1 "openid.server" rel link)
+             (setf-to-href oploc.1 "openid.delegate" rel link))
 
            (handle-meta-tag (meta)
              (when (string-equal "X-XRDS-Location" (getf (cdar meta) :http-equiv))
-               (push (cons :x-xrds-location (getf (cdar meta) :content)) id))))
+               (setf xrds (getf (cdar meta) :content)))))
 
-    (parse-html body :callback-only t
-                :callbacks (acons :link #'handle-link-tag
-                                  (acons :meta #'handle-meta-tag
-                                         nil))))
-  id)
+      (parse-html body :callback-only t
+                  :callbacks (acons :link #'handle-link-tag
+                                    (acons :meta #'handle-meta-tag
+                                           nil)))))
+  (if ep
+      (setf (endpoint-uri authproc) (uri ep)
+            (op-local-id authproc) (and oploc (uri oploc))
+            (protocol-version authproc) '(2 . 0))
+      (setf (endpoint-uri authproc) (uri ep.1)
+            (op-local-id authproc) (and oploc (uri oploc.1))
+            (protocol-version authproc) '(1 . 1)))
+  (when xrds
+    (setf (xrds-location authproc) (uri xrds)))
+  authproc)
 
-(defun perform-xrds-discovery (id body
+(defun perform-xrds-discovery (authproc body
                                &aux (parsed (xmls:parse body))
                                prio endpoint oplocal
                                v1prio v1endpoint v1oplocal v1type)
@@ -204,99 +233,71 @@ are the same."
                                    (third delegate)))
                      v1type type))))))))
 
-  (when endpoint
-    (progn (push (cons :op-endpoint-url endpoint) id)
-           (when oplocal
-             (push (cons :op-local-identifier oplocal) id))))
+  (if endpoint
+      (setf (endpoint-uri authproc) (uri endpoint)
+            (op-local-id authproc) (maybe-uri oplocal))
+      (setf (protocol-version authproc)  (or (cdr (assoc v1type +protocol-versions+
+                                                         :test #'equal))
+                                             '(1 . 1))
+            (endpoint-uri authproc) (uri v1endpoint)
+            (op-local-id authproc) (maybe-uri v1oplocal)))
 
-  (when v1type
-    (push (cons :v1.type v1type) id)
-    (push (cons :v1.op-endpoint-url v1endpoint) id)
-    (when v1oplocal
-      (push (cons :v1.op-local-identifier v1oplocal) id)))
-
-  id)
+  authproc)
 
 (defun discover (id
                  &aux
-                 (id-x-xrds-location (assoc :x-xrds-location id))
-                 (request-uri (cdr (or id-x-xrds-location
-                                       (assoc :claimed-id id))))
-                 discovered-id)
-  "Perform discovery."
+                 (authproc (etypecase id
+                             (auth-process id)
+                             (string (make-auth-process id))))
+                 (request-uri (or (xrds-location authproc)
+                                  (claimed-id authproc)))
+                 (*text-content-types* (append '(("application" . "xhtml+xml")
+                                                 ("application" . "xrds+xml"))
+                                               *text-content-types*)))
+  "Perform discovery on ID.
+
+ID may be either an already initialized AUTH-PROCESS structure, or
+user-given ID string."
+
   ;; OpenID Authentication 2.0 Final, Section 7.3.  Discovery
-  (setf discovered-id
-        (let ((*text-content-types* (append '(("application" . "xhtml+xml") ("application" . "xrds+xml"))
-                                            *text-content-types*)))
-          (multiple-value-bind
-                (body status-code headers uri stream must-close reason-phrase)
-              (http-request request-uri :additional-headers '((:accept-encoding "")))
-            (declare (ignore stream must-close))
+  (multiple-value-bind
+        (body status-code headers uri stream must-close reason-phrase)
+      (http-request request-uri :additional-headers '((:accept-encoding "")))
+    (declare (ignore stream must-close))
       
-            (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
-              (error "Could not reach ~A: ~A ~A" request-uri status-code reason-phrase))
+    (unless (= 2 (floor (/ status-code 100))) ; 2xx succesful response
+      (error "Could not reach ~A: ~A ~A" request-uri status-code reason-phrase))
 
-            ;; X-XRDS-Location: header check
-            (let ((x-xrds-location (assoc :x-xrds-location headers)))
-              (when (and x-xrds-location
-                         (not (uri= (uri (cdr x-xrds-location)) uri)))
-                (if id-x-xrds-location
-                    (setf (cdr id-x-xrds-location) (cdr x-xrds-location))
-                    (push x-xrds-location id))
-                (return-from discover
-                  (discover id))))
+    ;; X-XRDS-Location: header check
+    (let ((x-xrds-location (maybe-uri (aget :x-xrds-location headers))))
+      (when (and x-xrds-location
+                 (not (uri= x-xrds-location uri)))
+        (setf (xrds-location authproc) x-xrds-location)
+        (return-from discover ; Restart discovery process to use Yadis
+          (discover authproc))))
 
-            ;; Content-Type: check
-            (let ((content-type (multiple-value-list (get-content-type headers))))
-              (setf (cddr content-type) nil) ; drop parameters
-              (cond
-                ((or id-x-xrds-location ; wikitravel returns XRDS as
-                                        ; text/html, so when we asked
-                                        ; explicitly for XRDS we assume we
-                                        ; receive XRDS.
-                     (equalp '("application" "xrds+xml") content-type))
-                 (perform-xrds-discovery id body))
+    ;; Content-Type: check
+    (let ((content-type (multiple-value-list (get-content-type headers))))
+      (setf (cddr content-type) nil)    ; drop parameters
+      (cond
+        ((or (xrds-location authproc)   ; mediawiki OpenID plugin
+                                        ; returns XRDS as text/html,
+                                        ; so when we ask explicitly
+                                        ; for XRDS we assume we
+                                        ; received XRDS.
+             (equalp '("application" "xrds+xml") content-type))
+         (perform-xrds-discovery authproc body))
 
-                ((member content-type '(("text" "html")
-                                        ("application" "xhtml+xml"))
-                         :test #'equalp)
-                 (let ((new-id (perform-html-discovery id body)))
-                   (when (assoc :x-xrds-location new-id) ; XRDS location found in HTML
-                     (return-from discover
-                       ;; TODO: catch errors and fall back to HTML-discovered info
-                       (discover (remove-if #'(lambda (item)             ; go through Yadis discovery
-                                                (member (car item)
-                                                        '(:op-endpoint-url :op-local-identifier
-                                                          :v1.op-endpoint-url :v1.op-local-identifier)))
-                                            new-id))))
-                   new-id))
+        ((member content-type '(("text" "html")
+                                ("application" "xhtml+xml"))
+                 :test #'equalp)
+         (perform-html-discovery authproc body)
+         (when (xrds-location authproc) ; XRDS location found in HTML
+           ;; We go back to perform Yadis discovery.  Maybe we should
+           ;; save already discovered info and 
+           (return-from discover
+             (discover authproc))))
 
-                (t (error "Unsupported content-type ~S at ~A" content-type request-uri)))))))
+        (t (error "Unsupported content-type ~S at ~A" content-type request-uri)))))
 
-  ;; Normalize endpoint and protocol version info
-  (cond ((assoc :op-endpoint-url discovered-id)
-         (push (cons :protocol-version (cons 2 0)) discovered-id))
-
-        ((assoc :v1.op-endpoint-url discovered-id)
-
-         (setf (car (assoc :v1.op-endpoint-url discovered-id)) :op-endpoint-url)
-
-         (let ((oploc (assoc :v1.op-endpoint-url discovered-id)))
-           (when oploc
-             (setf (car oploc) :op-endpoint-url)))
-
-         (let* ((type (assoc :v1.type discovered-id)))
-           (if type
-               (setf (car type) :protocol-version
-                     (cdr type) (or (cdr (assoc (cdr type) +protocol-versions+ :test #'equal))
-                                    (cons 1 1)))
-               (push (cons :protocol-version (cons 1 1)) discovered-id))))
-
-        (t (error "Discovery unsuccessful: ~S." discovered-id)))
-
-  ;; Set endpoint URL as URI (will need schema info for association)
-  (let ((ep (assoc :op-endpoint-url discovered-id)))
-    (setf (cdr ep) (uri (cdr ep))))
-
-  discovered-id)
-
+    authproc)

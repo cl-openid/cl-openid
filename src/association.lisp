@@ -171,9 +171,9 @@
       (setf (gethash endpoint *associations*)
             (do-associate endpoint :v1 v1))))
 
-(defun associate (id)
-  (association (aget :op-endpoint-url id)
-               (= 1 (car (aget :protocol-version id)))))
+(defun associate (authproc)
+  (association (endpoint-uri authproc)
+               (= 1 (protocol-version-major authproc))))
 
 (defun sign (association message &optional signed)
   (unless signed

@@ -8,18 +8,18 @@
 <br><label><input type=\"checkbox\" name=\"checkid_immediate\"> Immediate request</label></form>")
   "Input form for OpenID, for parameterless indirect method endpoint call.")
 
-(defvar *ids* (make-hash-table :test #'equal)
-  "List of handled IDs")
+(defvar *authprocs* (make-hash-table :test #'equal)
+  "Handled authenticaction processes")
 
-(defvar *id-timeout* 3600
-  "Number of seconds after which an ID is collected from *IDS*")
+(defvar *authproc-timeout* 3600
+  "Number of seconds after which an AUTH-PROCESS is collected from *AUTHPROCS*")
 
-(defun gc-ids (&aux (time-limit (- (get-universal-time) *id-timeout*)))
+(defun gc-authprocs (&aux (time-limit (- (get-universal-time) *authproc-timeout*)))
   "Collect old IDs."
   (maphash #'(lambda (k v)
-               (when (< (aget :timestamp v) time-limit)
-                 (remhash k *ids*)))
-           *ids*))
+               (when (< (timestamp v) time-limit)
+                 (remhash k *authprocs*)))
+           *authprocs*))
 
 (defvar *auth-handle-counter* 0
   "Counter for unique association handle generation")
@@ -31,15 +31,15 @@
 (defun initiate-authentication (given-id uri realm
                                &key immediate-p
                                &aux
-                               (id (discover (normalize-identifier given-id)))
+                               (authproc (discover given-id))
                                (handle (new-auth-handle))
                                (return-to (add-postfix-to-uri uri handle)))
   "Initiate authentication process.  Returns URI to redirect user to."
-  (gc-ids)
-  (push (cons :timestamp (get-universal-time)) id)
-  (push (cons :return-to return-to) id)
-  (setf (gethash handle *ids*) id)
-  (request-authentication-uri id
+  (gc-authprocs)
+  (setf (timestamp authproc) (get-universal-time)
+        (return-to authproc) return-to)
+  (setf (gethash handle *authprocs*) authproc)
+  (request-authentication-uri authproc
                               :immediate-p immediate-p
                               :realm realm
                               :return-to return-to))
@@ -59,7 +59,7 @@ Returns a string with HTML response and a redirect URI if applicable."
 <h2>Response:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
-                (let ((id (handle-indirect-response message (gethash postfix *ids*))))
+                (let ((id (handle-indirect-response message (gethash postfix *authprocs*))))
                   (if id
                       (format nil
                               "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>"
