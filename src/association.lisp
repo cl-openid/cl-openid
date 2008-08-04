@@ -96,7 +96,6 @@
                      v1
                      assoc-type session-type
                      &aux
-                     (message '(("openid.mode" . "associate")))
                      xa)
 
   ;; optimize? move to constants?
@@ -118,42 +117,42 @@
                              "Associating~:[~; v1-compatible~] with ~A (assoc ~S, session ~S)"
                              v1 endpoint assoc-type session-type)
 
-    (push (cons "openid.assoc_type" assoc-type) message)
-    (push (cons "openid.session_type" session-type) message)
+    (let ((request (make-message :openid.mode "associate"
+                                 :openid.assoc_type assoc-type
+                                 :openid.session_type session-type)))
+      (handler-bind ((openid-request-error
+                      #'(lambda (e)
+                          (when (equal (cdr (assoc "error_code" (message e)
+                                                   :test #'string=))
+                                       "unsupported-type")
+                            (let ((supported-atype (aget "assoc_type" (message e)))
+                                  (supported-stype (aget "session_type" (message e))))
+                              (return-from do-associate
+                                (when (and (member supported-atype supported-atypes :test #'equal)
+                                           (member supported-stype supported-stypes :test #'equal))
+                                  (do-associate endpoint
+                                    :v1 v1
+                                    :assoc-type supported-atype
+                                    :session-type supported-stype))))))))
 
-    (handler-bind ((openid-request-error
-                    #'(lambda (e)
-                        (when (equal (cdr (assoc "error_code" (message e)
-                                                 :test #'string=))
-                                     "unsupported-type")
-                          (let ((supported-atype (aget "assoc_type" (message e)))
-                                (supported-stype (aget "session_type" (message e))))
-                            (return-from do-associate
-                              (when (and (member supported-atype supported-atypes :test #'equal)
-                                         (member supported-stype supported-stypes :test #'equal))
-                                (do-associate endpoint
-                                  :v1 v1
-                                  :assoc-type supported-atype
-                                  :session-type supported-stype))))))))
+        (when (string= "DH-" session-type :end2 3) ; Diffie-Hellman
+          (setf xa (random +dh-prime+))            ; FIXME:random
+          (push (cons "openid.dh_consumer_public"
+                      (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
+                request))
 
-      (when (string= "DH-" session-type :end2 3) ; Diffie-Hellman
-        (setf xa (random +dh-prime+)) ; FIXME:random
-        (push (cons "openid.dh_consumer_public"
-                    (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
-              message))
-
-      (let* ((response (direct-request endpoint message)))
-        (values
-         (make-association :handle (aget "assoc_handle" response)
-                           :expires-in (parse-integer (aget "expires_in" response)) 
-                           :mac (or (aget "mac_key" response)
-                                    (dh-encrypt/decrypt-key (session-digest-type session-type)
-                                                            +dh-generator+ +dh-prime+
-                                                            (base64-string-to-integer (aget "dh_server_public" response))
-                                                            xa
-                                                            (aget "enc_mac_key" response)))
-                           :association-type assoc-type)
-         endpoint)))))
+        (let* ((response (direct-request endpoint request)))
+          (values
+           (make-association :handle (aget "assoc_handle" response)
+                             :expires-in (parse-integer (aget "expires_in" response)) 
+                             :mac (or (aget "mac_key" response)
+                                      (dh-encrypt/decrypt-key (session-digest-type session-type)
+                                                              +dh-generator+ +dh-prime+
+                                                              (base64-string-to-integer (aget "dh_server_public" response))
+                                                              xa
+                                                              (aget "enc_mac_key" response)))
+                             :association-type assoc-type)
+           endpoint))))))
 
 (defun gc-associations (&optional invalidate-handle &aux (time (get-universal-time)))
   (maphash #'(lambda (ep association)
@@ -186,8 +185,8 @@
                  (encode-kv (loop
                                for field in signed
                                collect (cons field
-                                             (aget (concatenate 'string "openid." field)
-                                                   message))))))))
+                                             (message-field message
+                                                            (concatenate 'string "openid." field)))))))))
 
 (defun association-by-handle (handle)
   (maphash #'(lambda (ep assoc)
@@ -198,4 +197,4 @@
 
 (defun check-signature (message &optional (association (association-by-handle (aget "openid.assoc_handle" message))))
   (string= (sign association message)
-           (aget "openid.sig" message)))
+           (message-field message "openid.sig")))
