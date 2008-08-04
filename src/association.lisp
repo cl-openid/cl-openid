@@ -113,10 +113,6 @@
     (unless session-type
       (setf session-type (first supported-stypes)))
 
-    (hunchentoot:log-message :debug     ; FIXME:hunchentoot
-                             "Associating~:[~; v1-compatible~] with ~A (assoc ~S, session ~S)"
-                             v1 endpoint assoc-type session-type)
-
     (let ((request (make-message :openid.mode "associate"
                                  :openid.assoc_type assoc-type
                                  :openid.session_type session-type)))
@@ -159,7 +155,6 @@
                (when (or (> time (association-expires association))
                          (and invalidate-handle
                               (string= invalidate-handle (association-handle association))))
-                 (hunchentoot:log-message :debug "GC association with ~A ~S" ep association)
                  (remhash ep *associations*)))
            *associations*))
 
