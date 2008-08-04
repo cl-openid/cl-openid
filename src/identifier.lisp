@@ -150,15 +150,17 @@ be included in returned structure."
                   :callbacks (acons :link #'handle-link-tag
                                     (acons :meta #'handle-meta-tag
                                            nil)))))
-  (if ep
-      (setf (endpoint-uri authproc) (uri ep)
-            (op-local-id authproc) (and oploc (uri oploc))
-            (protocol-version authproc) '(2 . 0))
-      (setf (endpoint-uri authproc) (uri ep.1)
-            (op-local-id authproc) (and oploc (uri oploc.1))
-            (protocol-version authproc) '(1 . 1)))
+  (cond
+    (ep (setf (endpoint-uri authproc) (uri ep)
+              (op-local-id authproc) (maybe-uri oploc)
+              (protocol-version authproc) '(2 . 0)))
+    (ep.1 (setf (endpoint-uri authproc) (uri ep.1)
+              (op-local-id authproc) (maybe-uri oploc.1)
+              (protocol-version authproc) '(1 . 1))))
+
   (when xrds
     (setf (xrds-location authproc) (uri xrds)))
+
   authproc)
 
 (defun perform-xrds-discovery (authproc body
@@ -232,15 +234,14 @@ are the same."
                                  (when delegate
                                    (third delegate)))
                      v1type type))))))))
-
-  (if endpoint
-      (setf (endpoint-uri authproc) (uri endpoint)
-            (op-local-id authproc) (maybe-uri oplocal))
-      (setf (protocol-version authproc)  (or (cdr (assoc v1type +protocol-versions+
-                                                         :test #'equal))
-                                             '(1 . 1))
-            (endpoint-uri authproc) (uri v1endpoint)
-            (op-local-id authproc) (maybe-uri v1oplocal)))
+  (cond
+    (endpoint (setf (endpoint-uri authproc) (uri endpoint)
+                    (op-local-id authproc) (maybe-uri oplocal)))
+    (v1endpoint (setf (protocol-version authproc)  (or (cdr (assoc v1type +protocol-versions+
+                                                                   :test #'equal))
+                                                       '(1 . 1))
+                      (endpoint-uri authproc) (uri v1endpoint)
+                      (op-local-id authproc) (maybe-uri v1oplocal))))
 
   authproc)
 
