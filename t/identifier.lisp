@@ -71,11 +71,11 @@
       (is (equalp (append (cons 'junk original-list) '(""))
                   (remove-dot-segments (append (cons 'junk (insert-dots original-list)) appendix)))))))
 
-(test normalize-identifier
-  (signals error (normalize-identifier "xri://=test"))
-  (signals error (normalize-identifier "=test"))
-  (signals error (normalize-identifier "http://example.com/nonexistent"))
-  (signals error (normalize-identifier "http://test.invalid/"))
+(test make-auth-process
+  (signals error (make-auth-process "xri://=test"))
+  (signals error (make-auth-process "=test"))
+  (signals error (make-auth-process "http://example.com/nonexistent"))
+  (signals error (make-auth-process "http://test.invalid/"))
   (dolist (test-case '(("example.com" . "http://example.com/")
 
                        ("http://example.com" . "http://example.com/")
@@ -86,7 +86,7 @@
                        ("http://common-lisp.net/project/cl-openid/index.shtml/" . "http://common-lisp.net/project/cl-openid/index.shtml/")
 
                        ("http://Common-Lisp.NET/../t/../project/./%63l-openi%64/./index.shtml" . "http://common-lisp.net/project/cl-openid/index.shtml")))
-    (is (string= (princ-to-string (cdr (assoc :claimed-id (normalize-identifier (car test-case)))))
+    (is (string= (princ-to-string (claimed-id (make-auth-process (car test-case))))
                  (cdr test-case)))))
 
 (test n-remove-entities
@@ -116,29 +116,39 @@
          reference))
 
 (test perform-html-discovery
-  (dolist (test-case '(("sanity test" (:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location))
+  (dolist (test-case '(("sanity test" (endpoint-uri) (op-local-id) (xrds-location))
 
                        ;; single tags
-                       ("<link rel=\"openid2.provider\" href=\"http://example.com/\">"
-                        (:op-endpoint-url . "http://example.com/") (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location))
-                       ("<link rel=\"openid2.local_id\" href=\"http://example.com/\">"
-                        (:op-endpoint-url) (:op-local-identifier  . "http://example.com/") (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location))
+                       ("<link rel=\"openid2.provider\" href=\"http://example.com/\">" ; simple endpoint URI
+                        (protocol-version . (2 . 0)) (endpoint-uri . "http://example.com/") (op-local-id) (xrds-location))
+                       ("<link rel=\"openid2.local_id\" href=\"http://example.com/\">" ; local_id only, nothing should be discovered
+                        (endpoint-uri) (op-local-id) (xrds-location))
+                       ("<link rel=\"openid2.provider\" href=\"http://example.com/ep\"> <link rel=\"openid2.local_id\" href=\"http://example.com/oploc\">"
+                        (protocol-version . (2 . 0)) (endpoint-uri . "http://example.com/ep") (op-local-id  . "http://example.com/oploc") (xrds-location))
                        ("<link rel=\"openid.server\" href=\"http://example.com/\">"
-                        (:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url . "http://example.com/") (:v1.op-local-identifier) (:x-xrds-location))
+                        (protocol-version . (1 . 1)) (op-local-id) (endpoint-uri . "http://example.com/") (xrds-location))
                        ("<link rel=\"openid.delegate\" href=\"http://example.com/\">"
-                        (:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier . "http://example.com/") (:x-xrds-location))
+                        (endpoint-uri) (op-local-id) (xrds-location))
+                       ("<link rel=\"openid.server\" href=\"http://example.com/ep\"> <link rel=\"openid.delegate\" href=\"http://example.com/oploc\">"
+                        (protocol-version . (1 . 1)) (endpoint-uri . "http://example.com/ep") (op-local-id . "http://example.com/oploc") (xrds-location))
                        ("<meta http-equiv=\"X-XRDS-Location\" content=\"http://example.com/\">"
-                        (:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:x-xrds-location . "http://example.com/"))
+                        (endpoint-uri) (op-local-id) (xrds-location . "http://example.com/"))
 
                        ;; combo
                        ("<link rel=\"openid2.provider\" href=\"http://example.com/ep\"> <link rel=\"openid2.local_id\" href=\"http://example.com/oploc\"> <link rel=\"openid.server\" href=\"http://example.com/epv1\"> <link rel=\"openid.delegate\" href=\"http://example.com/oplocv1\"> <meta http-equiv=\"X-XRDS-Location\" content=\"http://example.com/xrds\">"
-                        (:op-endpoint-url . "http://example.com/ep")
-                        (:op-local-identifier . "http://example.com/oploc")
-                        (:v1.op-endpoint-url . "http://example.com/epv1")
-                        (:v1.op-local-identifier . "http://example.com/oplocv1")
-                        (:x-xrds-location . "http://example.com/xrds"))))
-    (is (alist-contains (perform-html-discovery () (car test-case))
-                        (cdr test-case)))))
+                        (protocol-version . (2 . 0))
+                        (endpoint-uri . "http://example.com/ep")
+                        (op-local-id . "http://example.com/oploc")
+                        (xrds-location . "http://example.com/xrds"))))
+    (let ((authproc (perform-html-discovery (make-auth-process "http://example.com/")
+                                            (car test-case))))
+      (dolist (check (cdr test-case))
+        (let ((rv (funcall (car check) authproc)))
+          (is (typecase rv
+                (uri (uri= rv (uri (cdr check))))
+                (t (equal rv (cdr check))))
+              "~A of ~A (~S) is ~A, expected ~A"
+              (car check) authproc (car test-case) rv (cdr check)))))))
 
 (test perform-xrds-discovery
   (labels ((xrds (xml alist &rest rest)
@@ -151,14 +161,16 @@
 
     (dolist (test-case (xrds
                         ;; Sanity check
-                        "" '((:op-endpoint-url) (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:v1.type))
+                        "" '((endpoint-uri) (op-local-id))
 
                         ;; Simple endpoint 2.0 (Yahoo)
                         "<Service>
 <Type>http://specs.openid.net/auth/2.0/server</Type>
 <URI>http://example.com/</URI>
 </Service>"
-                        '((:op-endpoint-url . "http://example.com/") (:op-local-identifier) (:v1.op-endpoint-url) (:v1.op-local-identifier) (:v1.type))
+                        '((protocol-version . (2 . 0))
+                          (endpoint-uri . "http://example.com/")
+                          (op-local-id))
 
                         ;; Simple OP-local ID 2.0 (example in OpenID 2.0 standard, Appendix A.3
                         "<Service xmlns=\"xri://$xrd*($v*2.0)\">
@@ -166,41 +178,43 @@
 <URI>https://www.exampleprovider.com/endpoint/</URI>
 <LocalID>https://exampleuser.exampleprovider.com/</LocalID>
 </Service>"
-                        '((:op-endpoint-url . "https://www.exampleprovider.com/endpoint/") (:op-local-identifier . "https://exampleuser.exampleprovider.com/") (:v1.op-endpoint-url) (:v1.op-local-identifier) (:v1.type))
+                        '((protocol-version . (2 . 0))
+                          (endpoint-uri . "https://www.exampleprovider.com/endpoint/")
+                          (op-local-id . "https://exampleuser.exampleprovider.com/"))
 
                         ;; Simple endpoint 1.0
                         "<Service>
 <Type>http://openid.net/server/1.0</Type>
 <URI>http://example.com/endpoint/</URI>
 </Service>"
-                        '((:v1.type . "http://openid.net/server/1.0")
-                          (:v1.op-endpoint-url . "http://example.com/endpoint/")
-                          (:v1.op-local-identifier) (:op-endpoint-url) (:op-local-identifier))
+                        '((protocol-version . (1 . 0))
+                          (endpoint-uri . "http://example.com/endpoint/")
+                          (op-local-id))
 
                         ;; type variants
                         "<Service>
 <Type>http://openid.net/signon/1.0</Type>
 <URI>http://example.com/endpoint/</URI>
 </Service>"
-                        '((:v1.type . "http://openid.net/signon/1.0")
-                          (:v1.op-endpoint-url . "http://example.com/endpoint/")
-                          (:v1.op-local-identifier) (:op-endpoint-url) (:op-local-identifier))
+                        '((protocol-version . (1 . 0))
+                          (endpoint-uri . "http://example.com/endpoint/")
+                          (op-local-id))
  
                         "<Service>
 <Type>http://openid.net/server/1.1</Type>
 <URI>http://example.com/endpoint/</URI>
 </Service>"
-                        '((:v1.type . "http://openid.net/server/1.1")
-                          (:v1.op-endpoint-url . "http://example.com/endpoint/")
-                          (:v1.op-local-identifier) (:op-endpoint-url) (:op-local-identifier))
+                        '((protocol-version . (1 . 1))
+                          (endpoint-uri . "http://example.com/endpoint/")
+                          (op-local-id))
 
                         "<Service>
 <Type>http://openid.net/signon/1.1</Type>
 <URI>http://example.com/endpoint/</URI>
 </Service>"
-                        '((:v1.type . "http://openid.net/signon/1.1")
-                          (:v1.op-endpoint-url . "http://example.com/endpoint/")
-                          (:v1.op-local-identifier) (:op-endpoint-url) (:op-local-identifier))                        
+                        '((protocol-version . (1 . 1))
+                          (endpoint-uri . "http://example.com/endpoint/")
+                          (op-local-id))                        
 
                         ;; Simple OP-local ID 1.0
                         "<Service priority=\"20\">
@@ -208,10 +222,9 @@
 <URI>http://example.com/endpoint/</URI>
 <openid:Delegate>http://example.com/oplocal/</openid:Delegate>
 </Service>"
-                        '((:v1.type . "http://openid.net/server/1.0")
-                          (:v1.op-endpoint-url . "http://example.com/endpoint/")
-                          (:v1.op-local-identifier . "http://example.com/oplocal/")
-                          (:op-endpoint-url) (:op-local-identifier))
+                        '((protocol-version . (1 . 0))
+                          (endpoint-uri . "http://example.com/endpoint/")
+                          (op-local-id . "http://example.com/oplocal/"))
 
                         ;; Combo example from Wikipedia
                         "<Service>
@@ -242,11 +255,9 @@
       <MediaType select=\"true\">image/jpeg</MediaType>
       <URI append=\"path\" >http://pictures.example.com</URI>
     </Service>"
-                        '((:v1.type . "http://openid.net/server/1.0")
-                          (:v1.op-local-identifier . "http://www.livejournal.com/users/example/")
-                          (:v1.op-endpoint-url . "http://www.livejournal.com/openid/server.bml")
-                          (:op-local-identifier . "http://example.myopenid.com/")
-                          (:op-endpoint-url . "http://www.myopenid.com/server"))
+                        '((protocol-version . (2 . 0))
+                          (op-local-id . "http://example.myopenid.com/")
+                          (endpoint-uri . "http://www.myopenid.com/server"))
 
                         ;; Priority / 1.0, openid.pl
                         "<Service priority=\"10\">
@@ -260,8 +271,8 @@
       <Type>http://openid.net/sreg/1.0</Type>
       <URI>http://example.com/server</URI>
     </Service>"
-                        '((:v1.type . "http://openid.net/signon/1.1")
-                          (:v1.op-endpoint-url . "http://example.com/server"))
+                        '((protocol-version . (1 . 1))
+                          (endpoint-uri . "http://example.com/server"))
 
                         ;; Combo 1.0/2.0 in single Service tag (vinismo.com Wiki)
                         "<Service priority=\"0\">
@@ -270,12 +281,14 @@
     <Type>http://openid.net/sreg/1.0</Type>
     <Type>http://specs.openid.net/auth/2.0/signon</Type>
   </Service>"
-                        '((:v1.op-endpoint-url . "http://example.com/endpoint/")
-                          (:v1.type . "http://openid.net/signon/1.0")
-                          (:op-endpoint-url . "http://example.com/endpoint/")
-                          (:v1.op-endpoint-url . "http://example.com/endpoint/"))
-                        ))
-
-      (is (alist-contains (perform-xrds-discovery () (car test-case))
-                          (cdr test-case))))))
-
+                        '((protocol-version . (2 . 0))
+                          (endpoint-uri . "http://example.com/endpoint/"))))
+      (let ((authproc (perform-xrds-discovery (make-auth-process "example.com")
+                                              (first test-case))))
+        (dolist (check (rest test-case))
+          (let ((rv (funcall (car check) authproc)))
+            (is (typecase rv
+                  (uri (uri= rv (uri (cdr check))))
+                  (t (equal rv (cdr check))))
+                "~A of ~A (~S) is ~A, expected ~A"
+                (car check) authproc (car test-case) rv (cdr check))))))))
