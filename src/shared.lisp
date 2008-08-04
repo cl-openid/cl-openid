@@ -101,8 +101,9 @@ query and adding trailing slash to URI if necessary."
   (setf (uri-path rv)
         (concatenate 'string
                      (uri-path rv)
-                     (unless (eql #\/ (aref (uri-path rv)
-                                            (1- (length (uri-path rv)))))
+                     (unless (and (uri-path rv)
+                                  (eql #\/ (aref (uri-path rv)
+                                                 (1- (length (uri-path rv))))))
                        "/")
                      (string postfix)))
   rv)
