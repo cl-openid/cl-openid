@@ -17,6 +17,19 @@ Sequence (e.g. string) keys are searched with :TEST #'EQUAL."
          (sequence (assoc key alist :test #'equal))
          (t (assoc key alist)))))
 
+;; OpenID Authentication 2.0, 4.2.  Integer Representations,
+;; http://openid.net/specs/openid-authentication-2_0.html#btwoc
+(defun btwoc (i &aux (octets (integer-to-octets i)))
+  "Return two's complement binary string representing integer I, as an octet vector."
+  (if (or (zerop (length octets))
+          (> (aref octets 0) 127))
+      (concatenate '(simple-array (unsigned-byte 8) (*)) '(0) octets)
+      octets))
+
+(defun base64-btwoc (i)
+  "Return two's complement binary string representing integer I, as Base64-encoded string."
+  (usb8-array-to-base64-string (btwoc i)))
+
 (defun ensure-integer (val)
   "For VAL being an integer, a Base64-encoded string representing
 integer, or an octet vector representing integer, return its integer
