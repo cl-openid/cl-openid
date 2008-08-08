@@ -29,9 +29,12 @@
     (uri (princ-to-string value))))
 
 (defun make-message (&rest keys)
-  "Make new message alist from keyword parameters."
+  "Make new message alist from keyword parameters.
+
+Fields with NIL values are not included in returned alist."
   (loop for (k v) on keys by #'cddr
-     collect (cons (string-downcase (string k)) (message-field-string v))))
+     if v collect (cons (string-downcase (string k))
+                        (message-field-string v))))
 
 (defun copy-message (message &rest keys)
   "Copy MESSAGE, possibly updating KEYS, provided as keyword parameters."
