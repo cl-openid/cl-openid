@@ -45,8 +45,7 @@
                    else collect (cons k v))))
         (if keys
             (nconc rv (apply #'make-message keys))
-            rv))
-      (copy-tree message)))
+            rv))))
 
 ;;; Data encoding and decoding
 
