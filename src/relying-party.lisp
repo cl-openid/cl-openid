@@ -41,7 +41,7 @@
 ;; http://openid.net/specs/openid-authentication-2_0.html#requesting_authentication
 (defun request-authentication-uri (authproc &key realm immediate-p
                                    &aux (association (associate authproc)))
-  "Return URI for an authentication request for ID"
+  "URI for an authentication request for AUTHPROC"
   (unless (or (return-to authproc) realm)
     (error "At least one of: (RETURN-TO AUTHPROC), REALM must be specified."))
   (indirect-request-uri (endpoint-uri authproc)
