@@ -18,7 +18,7 @@
             :components ((:file "package")
                          (:file "shared" :depends-on ("package"))
                          (:file "message" :depends-on ("package" "shared"))
-                         (:file "identifier")
+                         (:file "authproc" :depends-on ("package" "shared"))
                          (:file "association")
                          (:file "auth-request")
                          (:file "relying-party")
@@ -41,7 +41,7 @@
   :components
   ((:module #:t
     :components ((:file "suite")
-                 (:file "identifier" :depends-on ("suite"))
+                 (:file "authproc" :depends-on ("suite"))
                  (:file "association" :depends-on ("suite")))))
   :depends-on (#:cl-openid #:fiveam))
 

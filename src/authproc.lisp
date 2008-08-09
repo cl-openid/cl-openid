@@ -1,5 +1,6 @@
 ;;; -*- lisp -*-
-;;; identifier.lisp - OpenID Identifier API
+;;; authproc.lisp - a single authentication process conducted by
+;;; Relying Party.  Identifier normalization and discovery.
 
 (in-package #:cl-openid)
 
