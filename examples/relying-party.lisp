@@ -40,7 +40,7 @@ Returns a string with HTML response and a redirect URI if applicable."
       (handler-case
           (html "CL-OpenID result" ;; Format the result
                 "~A <p><strong>realm:</strong> ~A</p>
-<h2>Response:</h2>~/format-alist/
+<h2>Response:</h2>~/cl-openid.example-rp::format-alist/
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
                 (let ((id (cl-openid::handle-indirect-response rp message postfix)))
                   (if id
@@ -55,7 +55,7 @@ Returns a string with HTML response and a redirect URI if applicable."
           (html "CL-OpenID assertion error"
                 "<h1 style=\"color: red; text-decoration: blink;\">ERROR ERROR ERROR !!!</h1>
 <p><strong>~S</strong> ~A</p>
-<h2>Response:</h2>~/format-message/
+<h2>Response:</h2>~/cl-openid.example-rp::format-alist/
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
                 (cl-openid::code e) e message (cl-openid::root-uri rp))))))
 
