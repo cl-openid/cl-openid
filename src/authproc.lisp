@@ -4,14 +4,6 @@
 
 (in-package #:cl-openid)
 
-(define-constant +protocol-versions+
-    '(("http://specs.openid.net/auth/2.0/server" . (2 . 0))
-      ("http://specs.openid.net/auth/2.0/signon" . (2 . 0))
-      ("http://openid.net/signon/1.0" . (1 . 0))
-      ("http://openid.net/server/1.0" . (1 . 0))
-      ("http://openid.net/signon/1.1" . (1 . 1))
-      ("http://openid.net/server/1.1" . (1 . 1))))
-
 (defstruct (auth-process
              :conc-name
              (:constructor %make-auth-process))
@@ -163,6 +155,15 @@ be included in returned structure."
     (setf (xrds-location authproc) (uri xrds)))
 
   authproc)
+
+(define-constant +protocol-versions+
+    '(("http://specs.openid.net/auth/2.0/server" . (2 . 0))
+      ("http://specs.openid.net/auth/2.0/signon" . (2 . 0))
+      ("http://openid.net/signon/1.0" . (1 . 0))
+      ("http://openid.net/server/1.0" . (1 . 0))
+      ("http://openid.net/signon/1.1" . (1 . 1))
+      ("http://openid.net/server/1.1" . (1 . 1)))
+  "OpenID protocol versions for XRDS service type URIs")
 
 (defun perform-xrds-discovery (authproc body
                                &aux (parsed (xmls:parse body))
