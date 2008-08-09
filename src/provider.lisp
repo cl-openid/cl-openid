@@ -116,12 +116,16 @@
                                (message-field message "openid.mode"))))))
 
 ;; Hunchentoot-specific part
-(defvar *setup-params* (make-hash-table))
+(defvar *op-requests* (make-hash-table :test #'equal))
+(defvar *op-requests-counter* 0)
+(defun new-op-request-handle ()
+  (integer-to-base64-string (incf *op-requests-counter*) :uri t))
+
 (defun handle-checkid-setup (message
                              &aux
-                             (handle (gentemp "PARM" :cl-openid.ids))
+                             (handle (new-op-request-handle))
                              (finish-uri (merge-uris "finish-setup" *endpoint-uri*)))
-  (setf (gethash handle *setup-params*) message)
+  (setf (gethash handle *op-requests*) message)
   (html "Log in?"
         "<h2>Message:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
@@ -133,12 +137,12 @@
         (copy-uri finish-uri :query (format nil "handle=~A&deny=1" handle))))
 
 (defun finish-checkid-setup (&aux
-                             (handle (intern (hunchentoot:get-parameter "handle") :cl-openid.ids))
-                             (message (gethash handle *setup-params*)))
+                             (handle (hunchentoot:get-parameter "handle"))
+                             (message (gethash handle *op-requests*)))
   (if (hunchentoot:get-parameter "allow")
-      (indirect-response (aget "openid.return_to" message)
+      (indirect-response (message-field message "openid.return_to")
                          (successful-response message))
-      (indirect-response (aget "openid.return_to" message)
+      (indirect-response (message-field message "openid.return_to")
                          (cancel-response))))
 
 (defun finish-checkid-handle (endpoint)
@@ -159,11 +163,12 @@
 ; (setf hunchentoot:*dispatch-table*
 ;       (nconc (provider-ht-dispatcher "http://example.com/cl-openid-op/"
 ;                                      "/cl-openid-op/")
-;              hunchentoot:*dispatch-table*)
+;              hunchentoot:*dispatch-table*))
 
 ; (setf *checkid-immediate-callback*
-;       #'(lambda (message)
-;           (indirect-response (aget "openid.return_to" message)
-;                              (successful-response message))))
+;       (lambda (message)
+;         (indirect-response (message-field message "openid.return_to")
+;                            (successful-response message)))
+;       *checkid-setup-callback* 'handle-checkid-setup)
 
 ; FIXME: Hunchentoot headers.lisp:136 (START-OUTPUT): (push 400 hunchentoot:*approved-return-codes*)
