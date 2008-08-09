@@ -20,7 +20,6 @@
                          (:file "message" :depends-on ("package" "shared"))
                          (:file "authproc" :depends-on ("package" "shared"))
                          (:file "association")
-                         (:file "auth-request")
                          (:file "relying-party")
                          (:file "provider"))))
   :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls #:split-sequence
