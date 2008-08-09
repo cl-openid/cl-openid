@@ -97,19 +97,19 @@
   "Handle indirect response MESSAGE directed for AUTHPROC.
 
 Returns AUTHPROC on success, NIL on failure."
-  (macrolet ((err (code reason &rest args) ; FIXME:macrolet (use FLET)
-               `(error 'openid-assertion-error
-                       :code ,code
-                       :reason ,reason
-                       :reason-format-parameters (list ,@args)
-                       :message message
-                       :authproc authproc))
-             (ensure (test-form code message &rest args)
-               `(unless ,test-form
-                  (err ,code ,message ,@args)))
-             (same-uri (ap-accessor field-name)
-               `(uri= (uri (,ap-accessor authproc))
-                      (uri (message-field message ,field-name)))))
+  (labels ((err (code reason &rest args) ; FIXME:macrolet (use FLET)
+             (error 'openid-assertion-error
+                    :code code
+                    :reason reason
+                    :reason-format-parameters args
+                    :message message
+                    :authproc authproc))
+           (ensure (test code message &rest args)
+             (unless test
+               (apply #'err code message args)))
+           (same-uri (ap-accessor field-name)
+             (uri= (uri (funcall ap-accessor authproc))
+                   (uri (message-field message field-name)))))
 
     (string-case (message-field message "openid.mode")
       ("error" (err :server-error "Assertion error"))
@@ -136,13 +136,13 @@ Returns AUTHPROC on success, NIL on failure."
                  "Wrong namespace ~A" (message-field message "openid.ns")))
 
        (unless (and v1-compat (null (message-field message "openid.op_endpoint")))
-         (ensure (same-uri endpoint-uri "openid.op_endpoint")
+         (ensure (same-uri #'endpoint-uri "openid.op_endpoint")
                  :invalid-endpoint
                  "Endpoint URL does not match previously discovered information."))
 
        (unless (or (and v1-compat
                         (null (message-field message "openid.claimed_id")))
-                   (same-uri claimed-id "openid.claimed_id"))
+                   (same-uri #'claimed-id "openid.claimed_id"))
          (let ((cap (discover (message-field message "openid.claimed_id"))))
            (if (uri= (endpoint-uri cap) (endpoint-uri authproc))
                (setf (claimed-id authproc) (claimed-id cap))
