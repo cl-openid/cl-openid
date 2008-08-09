@@ -39,11 +39,11 @@
 
 ;; OpenID Authentication 2.0, 9.  Requesting Authentication
 ;; http://openid.net/specs/openid-authentication-2_0.html#requesting_authentication
-(defun request-authentication-uri (authproc &key return-to realm immediate-p
+(defun request-authentication-uri (authproc &key realm immediate-p
                                    &aux (association (associate authproc)))
   "Return URI for an authentication request for ID"
-  (unless (or return-to realm)
-    (error "Either RETURN-TO, or REALM must be specified."))
+  (unless (or (return-to authproc) realm)
+    (error "At least one of: (RETURN-TO AUTHPROC), REALM must be specified."))
   (indirect-request-uri (endpoint-uri authproc)
                         (make-message :openid.mode (if immediate-p
                                                        "checkid_immediate"
@@ -53,7 +53,7 @@
                                                            (claimed-id authproc))
                                       :openid.assoc_handle (when association
                                                              (association-handle association))
-                                      :openid.return_to return-to
+                                      :openid.return_to (return-to authproc)
 
                                       (if (= 2 (protocol-version-major authproc))
                                           :openid.realm  ; OpenID 1.x compat: trust_root instead of realm
