@@ -125,9 +125,9 @@
   "Handle indirect response MESSAGE directed for AUTHPROC (either an AUTH-PROCESS structure, or a handle string).
 
 Returns AUTHPROC on success, NIL on failure."
-  (unless (logv:logv (auth-process-p authproc))
+  (unless  (auth-process-p authproc)
     (setf authproc
-          (or (logv:logv (gethash authproc (authprocs rp)))
+          (or (gethash authproc (authprocs rp))
               (error "Don't know authentication-process with handle ~A" authproc))))
   
   (let ((v1-compat (not (= 2 (protocol-version-major authproc)))))
