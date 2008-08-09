@@ -25,9 +25,6 @@
   (mac nil :type (simple-array (unsigned-byte 8) (*)))
   (hmac-digest nil :type keyword))
 
-(defvar *associations* (make-hash-table :test #'equalp)
-  "Hash table of RP associations, indexed by interned endpoint URIs.")
-
 (defvar *default-association-timeout* 3600
   "Default association timeout, in seconds")
 
@@ -91,13 +88,7 @@
                                                   (:sha256 32)))
                      :hmac-digest hmac-digest))
 
-(defun do-associate (endpoint
-                     &key
-                     v1
-                     assoc-type session-type
-                     &aux
-                     xa)
-
+(defun associate (endpoint &key v1 assoc-type session-type &aux xa)
   ;; optimize? move to constants?
   (let  ((supported-atypes  (if v1
                                 '("HMAC-SHA1")
@@ -123,13 +114,13 @@
                                        "unsupported-type")
                             (let ((supported-atype (aget "assoc_type" (message e)))
                                   (supported-stype (aget "session_type" (message e))))
-                              (return-from do-associate
+                              (return-from associate
                                 (when (and (member supported-atype supported-atypes :test #'equal)
                                            (member supported-stype supported-stypes :test #'equal))
-                                  (do-associate endpoint
-                                    :v1 v1
-                                    :assoc-type supported-atype
-                                    :session-type supported-stype))))))))
+                                  (associate endpoint
+                                             :v1 v1
+                                             :assoc-type supported-atype
+                                             :session-type supported-stype))))))))
 
         (when (string= "DH-" session-type :end2 3) ; Diffie-Hellman
           (setf xa (random +dh-prime+))            ; FIXME:random
@@ -149,25 +140,6 @@
                                                               (aget "enc_mac_key" response)))
                              :association-type assoc-type)
            endpoint))))))
-
-(defun gc-associations (&optional invalidate-handle &aux (time (get-universal-time)))
-  (maphash #'(lambda (ep association)
-               (when (or (> time (association-expires association))
-                         (and invalidate-handle
-                              (string= invalidate-handle (association-handle association))))
-                 (remhash ep *associations*)))
-           *associations*))
-
-(defun association (endpoint &optional v1)
-  (gc-associations)                     ; keep clean
-  (setf endpoint (uri endpoint))        ; make sure it's an URI object
-  (or (gethash endpoint *associations*)
-      (setf (gethash endpoint *associations*)
-            (do-associate endpoint :v1 v1))))
-
-(defun associate (authproc)
-  (association (endpoint-uri authproc)
-               (= 1 (protocol-version-major authproc))))
 
 (defun signature (association message &optional signed)
   "Calculate signature from MESSAGE using ASSOCIATION, return signature string.
@@ -195,13 +167,6 @@ with \"openid\" prefix stripped."
   (acons "openid.sig" (signature association message signed)
          message))
 
-(defun association-by-handle (handle)
-  (maphash #'(lambda (ep assoc)
-               (declare (ignore ep))
-               (when (string= handle (association-handle assoc))
-                 (return-from association-by-handle assoc)))
-           *associations*))
-
-(defun check-signature (message &optional (association (association-by-handle (aget "openid.assoc_handle" message))))
+(defun check-signature (association message)
   (string= (signature association message)
            (message-field message "openid.sig")))
