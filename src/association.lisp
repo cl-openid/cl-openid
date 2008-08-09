@@ -169,7 +169,11 @@
   (association (endpoint-uri authproc)
                (= 1 (protocol-version-major authproc))))
 
-(defun sign (association message &optional signed)
+(defun signature (association message &optional signed)
+  "Calculate signature from MESSAGE using ASSOCIATION, return signature string.
+
+Optional SIGNED parameter is a list of fields to sign, as strings,
+with \"openid\" prefix stripped."
   (unless signed
     (setf signed (split-sequence #\, (aget "openid.signed" message))))
 
@@ -183,6 +187,14 @@
                                              (message-field message
                                                             (concatenate 'string "openid." field)))))))))
 
+(defun signed (association message &optional signed)
+  "Sign MESSAGE, using ASSOCIATION, return signed message.
+
+Optional SIGNED parameter is a list of fields to sign, as strings,
+with \"openid\" prefix stripped."
+  (acons "openid.sig" (signature association message signed)
+         message))
+
 (defun association-by-handle (handle)
   (maphash #'(lambda (ep assoc)
                (declare (ignore ep))
@@ -191,5 +203,5 @@
            *associations*))
 
 (defun check-signature (message &optional (association (association-by-handle (aget "openid.assoc_handle" message))))
-  (string= (sign association message)
+  (string= (signature association message)
            (message-field message "openid.sig")))
