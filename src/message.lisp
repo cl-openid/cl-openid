@@ -26,7 +26,8 @@
   (etypecase value
     (string value)
     (symbol (string value))
-    (uri (princ-to-string value))))
+    ((vector (unsigned-byte 8)) (usb8-array-to-base64-string value))
+    ((or uri number) (princ-to-string value))))
 
 (defun make-message (&rest keys)
   "Make new message alist from keyword parameters.
