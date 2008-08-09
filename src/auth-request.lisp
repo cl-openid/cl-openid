@@ -8,21 +8,20 @@
   (unless (or return-to realm)
     (error "Either RETURN-TO, or REALM must be specified."))
   (indirect-request-uri (endpoint-uri authproc)
-                        `(("openid.mode" . ,(if immediate-p
-                                                "checkid_immediate"
-                                                "checkid_setup"))
-                          ("openid.claimed_id" . ,(princ-to-string (claimed-id authproc)))
-                          ("openid.identity" . ,(or (op-local-id authproc)
-                                                    (princ-to-string (claimed-id authproc))))
-                          ,@(when association
-                                  `(("openid.assoc_handle" . ,(association-handle association))))
-                          ,@(when return-to
-                                  `(("openid.return_to" . ,(princ-to-string return-to))))
-                          ,@(when realm
-                                  `((,(if (= 2   (protocol-version-major authproc))
-                                          "openid.realm" ; OpenID 1.x compat: trust_root instead of realm
-                                          "openid.trust_root")
-                                      . ,(princ-to-string realm)))))))
+                        (make-message :openid.mode (if immediate-p
+                                                       "checkid_immediate"
+                                                       "checkid_setup")
+                                      :openid.claimed_id (claimed-id authproc)
+                                      :openid.identity (or (op-local-id authproc)
+                                                           (claimed-id authproc))
+                                      :openid.assoc_handle (when association
+                                                             (association-handle association))
+                                      :openid.return_to return-to
+
+                                      (if (= 2 (protocol-version-major authproc))
+                                          :openid.realm  ; OpenID 1.x compat: trust_root instead of realm
+                                          :openid.trust_root)
+                                      realm)))
 
 (define-condition openid-assertion-error (error)
   ((code :initarg :code :reader code)
@@ -71,11 +70,11 @@ Returns AUTHPROC on success, NIL on failure."
              (ensure (test-form code message &rest args)
                `(unless ,test-form
                   (err ,code ,message ,@args)))
-             (same-uri (ap-accessor message-field)
+             (same-uri (ap-accessor field-name)
                `(uri= (uri (,ap-accessor authproc))
-                      (uri (aget ,message-field message)))))
+                      (uri (message-field message ,field-name)))))
 
-    (string-case (aget "openid.mode" message)
+    (string-case (message-field message "openid.mode")
       ("error" (err :server-error "Assertion error"))
 
       ("setup_needed" (err :setup-needed "Setup needed."))
@@ -85,29 +84,29 @@ Returns AUTHPROC on success, NIL on failure."
       ("id_res"
 
        ;; Handle assoc invalidations
-       (gc-associations (aget "openid.invalidate_handle" message))
+       (gc-associations (message-field message "openid.invalidate_handle"))
 
        ;; 11.1.  Verifying the Return URL
        (ensure (uri= (return-to authproc)
-                     (uri (aget "openid.return_to" message)))
+                     (uri (message-field message "openid.return_to")))
                :invalid-return-to
-               "openid.return_to ~A doesn't match server's URI" (aget "openid.return_to" message))
+               "openid.return_to ~A doesn't match server's URI" (message-field message "openid.return_to"))
 
        ;; 11.2.  Verifying Discovered Information
        (unless v1-compat
-         (ensure (string= +openid2-namespace+ (aget "openid.ns" message))
+         (ensure (string= +openid2-namespace+ (message-field message "openid.ns"))
                  :invalid-namespace
-                 "Wrong namespace ~A" (aget "openid.ns" message)))
+                 "Wrong namespace ~A" (message-field message "openid.ns")))
 
-       (unless (and v1-compat (null (aget "openid.op_endpoint" message)))
+       (unless (and v1-compat (null (message-field message "openid.op_endpoint")))
          (ensure (same-uri endpoint-uri "openid.op_endpoint")
                  :invalid-endpoint
                  "Endpoint URL does not match previously discovered information."))
 
        (unless (or (and v1-compat
-                        (null (aget "openid.claimed_id" message)))
+                        (null (message-field message "openid.claimed_id")))
                    (same-uri claimed-id "openid.claimed_id"))
-         (let ((cap (discover (aget "openid.claimed_id" message))))
+         (let ((cap (discover (message-field message "openid.claimed_id"))))
            (if (uri= (endpoint-uri cap) (endpoint-uri authproc))
                (setf (claimed-id authproc) (claimed-id cap))
                (err :invalid-claimed-id
@@ -115,7 +114,7 @@ Returns AUTHPROC on success, NIL on failure."
                     (endpoint-uri authproc) (endpoint-uri cap)))))
 
        ;; 11.3.  Checking the Nonce
-       (let ((nonce (aget "openid.response_nonce" message)))
+       (let ((nonce (message-field message "openid.response_nonce")))
          (if nonce
              (progn (ensure (not (or (> (- (get-universal-time)
                                            (nonce-universal-time nonce))
@@ -129,7 +128,7 @@ Returns AUTHPROC on success, NIL on failure."
        (gc-nonces)
 
        ;; 11.4.  Verifying Signatures
-       (ensure (if (association-by-handle (aget "openid.assoc_handle" message))
+       (ensure (if (association-by-handle (message-field message "openid.assoc_handle"))
                    ;; 11.4.1.  Verifying with an Association
                    (check-signature message)
                    ;; 11.4.2.  Verifying Directly with the OpenID Provider
@@ -139,21 +138,21 @@ Returns AUTHPROC on success, NIL on failure."
                                                                :key #'car
                                                                :test #'string=)))))
 
-                     (when (aget "invalidate_handle" response)
-                       (gc-associations (aget "invalidate_handle" response)))
-                     (string= "true" (aget "is_valid" response))))
+                     (when (message-field response "invalidate_handle")
+                       (gc-associations (message-field response "invalidate_handle")))
+                     (string= "true" (message-field response "is_valid"))))
                :invalid-signature
                "Invalid signature")
 
        (unless v1-compat             ; Check list of signed parameters
-         (let ((signed (split-sequence #\, (aget "openid.signed" message))))
+         (let ((signed (split-sequence #\, (message-field message "openid.signed"))))
            (ensure (every #'(lambda (f)
                               (member f signed :test #'string=))
                           `("op_endpoint"
                             "return_to"
                             "response_nonce"
                             "assoc_handle"
-                            ,@(when (aget "openid.claimed_id" message)
+                            ,@(when (message-field message "openid.claimed_id")
                                     '("claimed_id" "identity"))))
                    :invalid-signed-fields
                    "Not all fields that are required to be signed, are so.")))

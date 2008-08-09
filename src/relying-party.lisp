@@ -49,9 +49,9 @@
 
 Returns a string with HTML response and a redirect URI if applicable."
   (if (null postfix)
-      (if (aget "openid_identifier" message)
-          (values nil (initiate-authentication (aget "openid_identifier" message) uri realm
-                                              :immediate-p (aget "checkid_immediate" message)))
+      (if (message-field message "openid_identifier")
+          (values nil (initiate-authentication (message-field message "openid_identifier") uri realm
+                                              :immediate-p (message-field message "checkid_immediate")))
           +openid-input-form+)
       (handler-case
           (html "CL-OpenID result"
