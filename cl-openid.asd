@@ -18,8 +18,8 @@
             :components ((:file "package")
                          (:file "shared" :depends-on ("package"))
                          (:file "message" :depends-on ("package" "shared"))
-                         (:file "authproc" :depends-on ("package" "shared"))
-                         (:file "association")
+                         (:file "association" :depends-on ("package" "shared" "message"))
+                         (:file "authproc" :depends-on ("package" "shared" "message" "association"))
                          (:file "relying-party")
                          (:file "provider"))))
   :depends-on (#:hunchentoot #:drakma #:ironclad #:xmls #:split-sequence
