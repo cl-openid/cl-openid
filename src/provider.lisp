@@ -92,9 +92,10 @@
                                                  :assoc_type (if v1-compat "HMAC-SHA1" "HMAC-SHA256")))))))
 
     ("checkid_immediate"
-     (if *checkid-immediate-callback*
-         (funcall *checkid-immediate-callback* message)
-         (indirect-response (message-field message "openid.return_to")
+     (indirect-response (message-field message "openid.return_to")
+                        (if (and *checkid-immediate-callback*
+                                 (funcall *checkid-immediate-callback* message))
+                            (successful-response message)
                             (setup-needed-response))))
 
     ("checkid_setup"
@@ -115,60 +116,11 @@
     (t (error-response (format nil "Unknown openid.mode ~S"
                                (message-field message "openid.mode"))))))
 
-;; Hunchentoot-specific part
 (defvar *op-requests* (make-hash-table :test #'equal))
 (defvar *op-requests-counter* 0)
 (defun new-op-request-handle ()
   (integer-to-base64-string (incf *op-requests-counter*) :uri t))
 
-(defun handle-checkid-setup (message
-                             &aux
-                             (handle (new-op-request-handle))
-                             (finish-uri (merge-uris "finish-setup" *endpoint-uri*)))
+(defun register-op-request (message &aux (handle (new-op-request-handle)))
   (setf (gethash handle *op-requests*) message)
-  (html "Log in?"
-        "<h2>Message:</h2>
-<dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
-<strong><a href=\"~A\">Log in</a> or <a href=\"~A\">cancel</a>?</strong>"
-        (mapcar #'(lambda (c)
-                    (list (car c) (cdr c)))
-                message)
-        (copy-uri finish-uri :query (format nil "handle=~A&allow=1" handle))
-        (copy-uri finish-uri :query (format nil "handle=~A&deny=1" handle))))
-
-(defun finish-checkid-setup (&aux
-                             (handle (hunchentoot:get-parameter "handle"))
-                             (message (gethash handle *op-requests*)))
-  (if (hunchentoot:get-parameter "allow")
-      (indirect-response (message-field message "openid.return_to")
-                         (successful-response message))
-      (indirect-response (message-field message "openid.return_to")
-                         (cancel-response))))
-
-(defun finish-checkid-handle (endpoint)
-  (lambda ()
-    (let ((*endpoint-uri* endpoint))
-      (finish-checkid-setup))))
-
-(defun provider-ht-handle (endpoint)
-  (lambda ()
-    (let ((*endpoint-uri* endpoint))
-      (handle-openid-provider-request (append (hunchentoot:post-parameters)
-                                              (hunchentoot:get-parameters))))))
-
-(defun provider-ht-dispatcher (endpoint prefix)
-  (list (hunchentoot:create-prefix-dispatcher (concatenate 'string prefix "finish-setup") (finish-checkid-handle endpoint))
-        (hunchentoot:create-prefix-dispatcher prefix (provider-ht-handle (uri endpoint)))))
-
-; (setf hunchentoot:*dispatch-table*
-;       (nconc (provider-ht-dispatcher "http://example.com/cl-openid-op/"
-;                                      "/cl-openid-op/")
-;              hunchentoot:*dispatch-table*))
-
-; (setf *checkid-immediate-callback*
-;       (lambda (message)
-;         (indirect-response (message-field message "openid.return_to")
-;                            (successful-response message)))
-;       *checkid-setup-callback* 'handle-checkid-setup)
-
-; FIXME: Hunchentoot headers.lisp:136 (START-OUTPUT): (push 400 hunchentoot:*approved-return-codes*)
+  handle)

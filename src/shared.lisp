@@ -108,11 +108,3 @@ query and adding trailing slash to URI if necessary."
                      (string postfix)))
   rv)
 
-;; FIXME: This should probably belong to examples.
-(defun html (title body &rest body-args)
-  "Simple HTML formatting."
-  (format nil "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"
-   \"http://www.w3.org/TR/html4/strict.dtd\">
-<html><head><title>~A</title></head>
-<body>~?</body></html>"
-          title body body-args))
