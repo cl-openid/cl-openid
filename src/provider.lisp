@@ -2,12 +2,16 @@
 
 (defvar *provider-associations* ())
 
+(defvar *nonce-counter* 0
+  "Counter for nonce generation")
+
 (defun nonce ()
   (multiple-value-bind (sec min hr day mon year wday dst tz)
       (decode-universal-time (get-universal-time) 0)
     (declare (ignore wday dst tz))
     (format nil "~4,'0D-~2,'0D-~2,'0DT~2,'0D:~2,'0D:~2,'0DZ~A"
-            year mon day hr min sec (gensym)))) ; FIXME:gensym
+            year mon day hr min sec
+            (integer-to-base64-string (incf *nonce-counter*)))))
 
 (defvar *endpoint-uri* nil)
 
