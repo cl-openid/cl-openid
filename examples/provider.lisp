@@ -29,9 +29,9 @@
   (ssl-p))
 
 
-;;; Handle checkid_immediate: accept every second request
 (defvar *checkid-immediate-counter* 0)
 (defmethod handle-checkid-immediate ((op sample-hunchentoot-op) message)
+  "Handle checkid_immediate: accept every second request"
   (declare (ignore message))
   (oddp (incf *checkid-immediate-counter*)))
 
@@ -58,10 +58,11 @@
       (cancel-response op message)))
 
 
+(defvar *openid-provider* nil)
+
 (defun hunchentoot-openid-response (body &optional code)
   (cond
-    ((not code)
-     body)
+    ((not code) body)
 
     ((= code +indirect-response-code+)
      (redirect (princ-to-string body) :code +indirect-response-code+)
@@ -70,35 +71,30 @@
     (t (setf (return-code) code)
        body)))
 
-(defun finish-checkid-handle (op)
-  (lambda ()
-    (multiple-value-call 'hunchentoot-openid-response
-      (finish-checkid-setup op))))
+(defun finish-checkid-handle ()
+  (multiple-value-call 'hunchentoot-openid-response
+    (finish-checkid-setup *openid-provider*)))
 
-(defun provider-ht-handle (op)
-  (lambda ()
-    (multiple-value-call 'hunchentoot-openid-response
-      (handle-openid-provider-request op
-                                      (append (post-parameters)
-                                              (get-parameters))))))
-
-(defvar *op* nil)
+(defun provider-ht-handle ()
+  (multiple-value-call 'hunchentoot-openid-response
+    (handle-openid-provider-request *openid-provider*
+                                    (append (post-parameters)
+                                            (get-parameters)))))
 
 (defun init-provider (base-uri prefix
                       &aux
                       (op-endpoint-uri (merge-uris prefix base-uri))
                       (finish-prefix (concatenate 'string prefix "finish-setup"))
                       (finish-uri (merge-uris finish-prefix base-uri)))
-  (setf *op*
+  (setf *openid-provider*
         (make-instance 'sample-hunchentoot-op
                        :op-endpoint-uri op-endpoint-uri
                        :finish-uri finish-uri)
 
         *dispatch-table*
-        (nconc (list (create-prefix-dispatcher finish-prefix (finish-checkid-handle *op*))
-                     (create-prefix-dispatcher prefix (provider-ht-handle *op*)))))
+        (nconc (list (create-prefix-dispatcher finish-prefix 'finish-checkid-handle)
+                     (create-prefix-dispatcher prefix 'provider-ht-handle))))
 
-  ;; FIXME?: Hunchentoot headers.lisp:136 (START-OUTPUT)
   (pushnew 400 *approved-return-codes*))
 
-                                        ; (init-provider "http://example.com/" "/cl-openid-op/")
+; (init-provider "http://example.com/" "/cl-openid-op/")

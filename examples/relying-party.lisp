@@ -17,69 +17,81 @@
               (list (car c) (cdr c)))
           alist))
 
-(defun handle-openid-request (rp postfix)
-  "Handle single OpenID Relying Party request for URI postfix POSTFIX.
+(defvar *relying-party* nil
+  "A relying party instance.")
 
-Returns a string with HTML response and a redirect URI if applicable."
-  (if (null postfix) ;; POSTFIX is given for auth finalization
-      (if (null (get-parameter "openid_identifier"))
-          ;; No ID received, return login form.
-          (html "CL-OpenID login"
-                "<form method=\"GET\"><fieldset><legend>OpenID Login</legend>
+(defparameter *login-form*
+  (html "CL-OpenID login"
+        "<form method=\"GET\"><fieldset><legend>OpenID Login</legend>
 <input type=\"text\" name=\"openid_identifier\" value=\"\" style=\"background-image: url('http://openid.net/wp-content/uploads/2007/10/openid_small_logo.png');background-position: 0px 0px;background-repeat: no-repeat;padding-left: 20px;\">
 <input type=\"submit\" name=\"openid_action\" value=\"Login\">
-<br><label><input type=\"checkbox\" name=\"checkid_immediate\"> Immediate request</label></form>")
-          ;; ID received, initiate authentication process
-          (values nil
-                  (initiate-authentication rp (get-parameter "openid_identifier")
-                                           :immediate-p (get-parameter "checkid_immediate"))))
-      ;; POSTFIX received, finalize authentication process
-      (handler-case
-          (html "CL-OpenID result" ;; Format the result
-                "~A <p><strong>realm:</strong> ~A</p>
+<br><label><input type=\"checkbox\" name=\"checkid_immediate\"> Immediate request</label></form>"))
+
+(defun access-denied-screen ()
+  (html "CL-OpenID result"
+        "<h1 style=\"color: red; text-decoration: blink;\">ACCESS DENIED !!!</h1>
+<p><strong>realm:</strong> ~A</p>
 <h2>Response:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
-                (let ((id (handle-indirect-response rp (get-parameters) postfix)))
-                  (if id
-                      (format nil
-                              "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>"
-                              (escape-for-html (prin1-to-string id)))
-                      "<h1 style=\"color: red; text-decoration: blink;\">ACCESS DENIED !!!</h1>"))
-                (realm rp) (alist-to-lol (get-parameters)) (root-uri rp))
+        (realm *relying-party*)
+        (alist-to-lol (get-parameters))
+        (root-uri *relying-party*)))
 
-        ;; Catch assertion verification error
-        (openid-assertion-error (e)
-          (html "CL-OpenID assertion error"
+(defun access-granted-screen (id)
+  (html "CL-OpenID result"
+        "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>
+<p><strong>realm:</strong> ~A</p>
+<h2>Response:</h2>
+<dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
+<p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
+        (escape-for-html (prin1-to-string id))
+        (realm *relying-party*)
+        (alist-to-lol (get-parameters))
+        (root-uri *relying-party*)))
+
+(defun assertion-error-screen (err)
+  (html "CL-OpenID assertion error"
                 "<h1 style=\"color: red; text-decoration: blink;\">ERROR ERROR ERROR !!!</h1>
 <p><strong>~S</strong> ~A</p>
 <h2>Response:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
-                (code e) e (alist-to-lol (get-parameters)) (root-uri rp))))))
+                (code err)
+                err
+                (alist-to-lol (get-parameters))
+                (root-uri *relying-party*)))
 
-(defun openid-ht-handler (uri realm prefix)
-  "Return a Hunchentoot handler for OpenID request for URI and REALM (closure over HANDLE-OPENID-REQUEST)."
-  (let ((l (1+ (length prefix)))
-        (rp (make-instance 'relying-party
-                           :root-uri uri :realm realm)))
-    #'(lambda ()
-        (multiple-value-bind (content uri)
-            (handle-openid-request rp
-                                   ;; Postfix
-                                   (when (> (length (script-name)) l)
-                                     (subseq (script-name) l)))
-          (when uri
-            (redirect (princ-to-string uri)))
-          content))))
+(defvar *prefix-length* nil)
 
-(defun openid-ht-dispatcher (prefix realm &optional uri)
-  "Return a prefix dispatcher for OPENID-HT-HANDLER.
+(defun handle-openid-request
+    (&aux (transaction-id (when (> (length (script-name)) *prefix-length*)
+                            (subseq (script-name) *prefix-length*))))
+  "Handle request for an OpenID Relying Party."
+  (if (null transaction-id)
+      (if (null (get-parameter "openid_identifier"))
+          *login-form*          ; No ID supplied, present login form
+          (redirect             ; ID supplied, initiate authentication
+           (princ-to-string
+            (initiate-authentication *relying-party* (get-parameter "openid_identifier")
+                                     :immediate-p (get-parameter "checkid_immediate")))))
 
-If URI is not supplied, the PREFIX is merged with REALM uri"
-  (unless uri
-    (setf uri (merge-uris prefix realm)))
+      (handler-case
+          (let ((id (handle-indirect-response *relying-party* (get-parameters) transaction-id)))
+            (if id
+                (access-granted-screen id)
+                (access-denied-screen)))
+        (openid-assertion-error (e)
+          (assertion-error-screen e))))))
 
-  (create-prefix-dispatcher prefix (openid-ht-handler uri realm prefix)))
 
-; (push (openid-ht-dispatcher "/cl-openid" "http://example.com/") *dispatch-table*)
+(defun init-relying-party (realm prefix &optional (uri (merge-uris prefix realm)))
+  (setf *relying-party* (make-instance 'relying-party
+                                       :root-uri uri
+                                       :realm (uri realm))
+        *prefix-length* (length prefix))
+
+  (push (create-prefix-dispatcher prefix 'handle-openid-request)
+        *dispatch-table*))
+
+; (init-relying-party "http://lizard.tasak.gda.pl:4242/" "/cl-openid/")
