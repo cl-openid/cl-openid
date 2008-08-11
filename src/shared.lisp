@@ -93,18 +93,3 @@ If U is already an URI object, return a copy; otherwise, return (URI U)."
   "Return (URI U), unless U is NIL."
   (when u
     (uri u)))
-
-(defun add-postfix-to-uri (uri postfix
-                           &aux (rv (new-uri uri)))
-  "Add POSTFIX (string or symbol) to path part of URI, preserving
-query and adding trailing slash to URI if necessary."
-  (setf (uri-path rv)
-        (concatenate 'string
-                     (uri-path rv)
-                     (unless (and (uri-path rv)
-                                  (eql #\/ (aref (uri-path rv)
-                                                 (1- (length (uri-path rv))))))
-                       "/")
-                     (string postfix)))
-  rv)
-

@@ -94,13 +94,4 @@
   (is (uri-p (maybe-uri "http://example.com/")))
   (uri= (maybe-uri "http://example.com/") (uri "http://example.com/")))
 
-(test add-postfix-to-uri
-  (is (uri= (add-postfix-to-uri "http://example.com/" "test")
-            (uri "http://example.com/test")))
-  (is (uri= (add-postfix-to-uri "http://example.com/foo/" "test")
-            (uri "http://example.com/foo/test")))
-  (is (uri= (add-postfix-to-uri "http://example.com/foo" "test")
-            (uri "http://example.com/foo/test")))
-  (is (uri= (add-postfix-to-uri "http://example.com/foo?a=1&b=2" "test")
-            (uri "http://example.com/foo/test?a=1&b=2"))))
 
