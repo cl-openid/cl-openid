@@ -11,10 +11,34 @@
 <body>~?</body></html>"
           title body body-args))
 
-(defun handle-checkid-setup (message
-                             &aux
-                             (handle (cl-openid::register-op-request message))
-                             (finish-uri (merge-uris "finish-setup" cl-openid::*endpoint-uri*)))
+;;; Store handled requests
+(defvar *requests* (make-hash-table :test #'equal))
+(defvar *requests-counter* 0)
+(defun store-request
+    (message &aux (handle (cl-base64:integer-to-base64-string (incf *requests-counter*) :uri t)))
+  (setf (gethash handle *requests*) message)
+  handle)
+
+
+(defclass sample-hunchentoot-op (cl-openid::openid-provider)
+  ((finish-uri :initarg :finish-uri :reader finish-uri)))
+
+(defmethod cl-openid::allow-unencrypted-association-p ((op sample-hunchentoot-op) message)
+  "Allow unencrypted association in HTTPS sessions."
+  (declare (ignore message))
+  (ssl-p))
+
+
+;;; Handle checkid_immediate: accept every second request
+(defvar *checkid-immediate-counter* 0)
+(defmethod cl-openid::handle-checkid-immediate ((op sample-hunchentoot-op) message)
+  (declare (ignore message))
+  (oddp (incf *checkid-immediate-counter*)))
+
+(defmethod cl-openid::handle-checkid-setup
+    ((op sample-hunchentoot-op) message
+     &aux (handle (store-request message)))
+
   (html "Log in?"
         "<h2>Message:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
@@ -22,42 +46,60 @@
         (mapcar #'(lambda (c)
                     (list (car c) (cdr c)))
                 message)
-        (copy-uri finish-uri :query (format nil "handle=~A&allow=1" handle))
-        (copy-uri finish-uri :query (format nil "handle=~A&deny=1" handle))))
+        (copy-uri (finish-uri op) :query (format nil "handle=~A&allow=1" handle))
+        (copy-uri (finish-uri op) :query (format nil "handle=~A&deny=1" handle))))
 
-(defun finish-checkid-setup (&aux
+(defun finish-checkid-setup (op &aux
                              (handle (get-parameter "handle"))
-                             (message (gethash handle cl-openid::*op-requests*)))
-  (if (get-parameter "allow")
-      (cl-openid::indirect-response (cl-openid::message-field message "openid.return_to")
-                                    (cl-openid::successful-response message))
-      (cl-openid::indirect-response (cl-openid::message-field message "openid.return_to")
-                                    (cl-openid::cancel-response))))
+                             (message (gethash handle *requests*)))
+  (remhash handle *requests*)
+  (if (get-parameter "allow")           ; Lame and possibly insecure
+      (cl-openid::successful-response op message)
+      (cl-openid::cancel-response op message)))
 
-(defun finish-checkid-handle (endpoint)
+
+(defun hunchentoot-openid-response (body &optional code)
+  (cond
+    ((not code)
+     body)
+
+    ((= code cl-openid::+indirect-response-code+)
+     (redirect (princ-to-string body)
+               :code cl-openid::+indirect-response-code+)
+     nil)
+
+    (t (setf (return-code) code)
+       body)))
+
+(defun finish-checkid-handle (op)
   (lambda ()
-    (let ((cl-openid::*endpoint-uri* endpoint))
-      (finish-checkid-setup))))
+    (multiple-value-call 'hunchentoot-openid-response
+      (finish-checkid-setup op))))
 
-(defun provider-ht-handle (endpoint)
+(defun provider-ht-handle (op)
   (lambda ()
-    (let ((cl-openid::*endpoint-uri* endpoint))
-      (cl-openid::handle-openid-provider-request (append (post-parameters) (get-parameters))))))
+    (multiple-value-call 'hunchentoot-openid-response
+      (cl-openid::handle-openid-provider-request op
+                                                 (append (post-parameters)
+                                                         (get-parameters))))))
 
-(defun provider-ht-dispatcher (endpoint prefix)
-  (list (create-prefix-dispatcher (concatenate 'string prefix "finish-setup")
-                                  (finish-checkid-handle endpoint))
-        (create-prefix-dispatcher prefix
-                                  (provider-ht-handle (uri endpoint)))))
+(defvar *op* nil)
 
-#+eval-to-initialize
-(progn
-  (setf *dispatch-table*
-        (nconc (provider-ht-dispatcher "http://example.com/cl-openid-op/" "/cl-openid-op/")
-               *dispatch-table*))
+(defun init-provider (base-uri prefix
+                       &aux
+                       (op-endpoint-uri (merge-uris prefix base-uri))
+                       (finish-prefix (concatenate 'string prefix "finish-setup"))
+                       (finish-uri (merge-uris finish-prefix base-uri)))
+  (setf *op*
+        (make-instance 'sample-hunchentoot-op
+                       :op-endpoint-uri op-endpoint-uri
+                       :finish-uri finish-uri)
 
-  (setf cl-openid::*checkid-immediate-callback* (constantly t) ; trivial example
-        cl-openid::*checkid-setup-callback* 'handle-checkid-setup)
+        *dispatch-table*
+        (nconc (list (create-prefix-dispatcher finish-prefix (finish-checkid-handle *op*))
+                     (create-prefix-dispatcher prefix (provider-ht-handle *op*)))))
 
-  ;; FIXME: Hunchentoot headers.lisp:136 (START-OUTPUT)
-  (push 400 *approved-return-codes*))
+  ;; FIXME?: Hunchentoot headers.lisp:136 (START-OUTPUT)
+  (pushnew 400 *approved-return-codes*))
+
+; (init-provider "http://example.com/" "/cl-openid-op/")

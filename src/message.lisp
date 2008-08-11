@@ -104,20 +104,12 @@ Fields with NIL values are not included in returned alist."
 
 ;; OpenID Authentication 2.0, 5.1.2.2.  Error Responses
 ;; http://openid.net/specs/openid-authentication-2_0.html#direct_comm
-(defun error-response (err &key contact reference message)
-  (setf (hunchentoot:return-code) 400) ; FIXME:hunchentoot
-
-  ;; Spec is unclear on this, but it won't hurt.
-  (push (cons "mode" "error") message)
-
-  (push (cons "error" err) message)
-
-  (when contact
-    (push (cons "contact" contact) message))
-
-  (when reference
-    (push (cons "reference" reference) message))
-  (encode-kv (in-ns message)))
+(defun error-response-message (err &key contact reference message)
+  (in-ns (copy-message message
+                       :mode "error" ; Spec is unclear on this, but it won't hurt.
+                       :error err
+                       :contact contact
+                       :reference reference )))
 
 ;; OpenID Authentication 2.0, 5.2.  Indirect Communication,
 ;; http://openid.net/specs/openid-authentication-2_0.html#indirect_comm
@@ -142,7 +134,3 @@ Fields with NIL values are not included in returned alist."
                      (and (uri-query uri) "&")
                      (drakma::alist-to-url-encoded-string message :utf-8))) ; FIXME:unexported
   uri)
-
-(defun indirect-response (return-to message)
-  (hunchentoot:redirect                 ; FIXME:hunchentoot
-   (princ-to-string (indirect-response-uri return-to message))))
