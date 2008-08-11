@@ -11,13 +11,11 @@
 <body>~?</body></html>"
           title body body-args))
 
-(defun format-alist (stream argument colon-p at-p)
-  "Format function for ~/ FORMAT directive to output alist as a HTML definition list."
-  (declare (ignore colon-p at-p))
-  (format stream "<dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>"
-          (mapcar #'(lambda (c)
-                      (list (car c) (cdr c)))
-                  argument)))
+(defun alist-to-lol (alist)
+  "Return ALIST as list-of-lists for pretty formatting"
+  (mapcar #'(lambda (c)
+              (list (car c) (cdr c)))
+          alist))
 
 (defun handle-openid-request (rp message postfix)
   "Handle single OpenID Relying Party request for the received MESSAGE and URI postfix POSTFIX.
@@ -40,7 +38,8 @@ Returns a string with HTML response and a redirect URI if applicable."
       (handler-case
           (html "CL-OpenID result" ;; Format the result
                 "~A <p><strong>realm:</strong> ~A</p>
-<h2>Response:</h2>~/cl-openid.example-rp::format-alist/
+<h2>Response:</h2>
+<dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
                 (let ((id (cl-openid::handle-indirect-response rp message postfix)))
                   (if id
@@ -48,16 +47,17 @@ Returns a string with HTML response and a redirect URI if applicable."
                               "<h1 style=\"color: green; text-decoration: blink;\">ACCESS GRANTED !!!</h1><p>ID: <code>~A</code></p>"
                               (escape-for-html (prin1-to-string id)))
                       "<h1 style=\"color: red; text-decoration: blink;\">ACCESS DENIED !!!</h1>"))
-                (cl-openid::realm rp) message (cl-openid::root-uri rp))
+                (cl-openid::realm rp) (alist-to-lol message) (cl-openid::root-uri rp))
 
         ;; Catch assertion verification error
         (cl-openid::openid-assertion-error (e)
           (html "CL-OpenID assertion error"
                 "<h1 style=\"color: red; text-decoration: blink;\">ERROR ERROR ERROR !!!</h1>
 <p><strong>~S</strong> ~A</p>
-<h2>Response:</h2>~/cl-openid.example-rp::format-alist/
+<h2>Response:</h2>
+<dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
-                (cl-openid::code e) e message (cl-openid::root-uri rp))))))
+                (cl-openid::code e) e (alist-to-lol message) (cl-openid::root-uri rp))))))
 
 (defun openid-ht-handler (uri realm prefix)
   "Return a Hunchentoot handler for OpenID request for URI and REALM (closure over HANDLE-OPENID-REQUEST)."
