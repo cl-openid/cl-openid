@@ -69,24 +69,34 @@
                  (remhash k (authprocs rp))))
            (authprocs rp)))
 
-;; This will stay global, and I think it should be less predictable.
-(defvar *auth-handle-counter* 0
+(defun authproc-by-handle (rp handle)
+  (or (gethash handle (authprocs rp))
+      (error "Don't know authentication-process with handle ~A" handle)))
+
+(defvar *auth-handle-counter* 0 ; This will stay global, and I think it should be less predictable.
   "Counter for unique association handle generation")
 
-(defun new-auth-handle ()
+(defun new-authproc-handle ()
   "Return new unique authentication handle as string"
   (integer-to-base64-string (incf *auth-handle-counter*) :uri t))
+
+(define-constant +authproc-handle-parameter+ "cl-openid.authproc-handle")
 
 (defun initiate-authentication (rp given-id
                                &key immediate-p
                                &aux
                                (authproc (discover given-id))
-                               (handle (new-auth-handle)))
+                               (handle (new-authproc-handle)))
   "Initiate authentication process.  Returns URI to redirect user to."
   (gc-authprocs rp)
   (setf (timestamp authproc) (get-universal-time)
-        (return-to authproc) (add-postfix-to-uri (root-uri rp) handle)
-        (gethash handle (authprocs rp)) authproc)
+        (gethash handle (authprocs rp)) authproc
+
+        (return-to authproc)
+        (copy-uri (root-uri rp)
+                  :query (drakma::alist-to-url-encoded-string
+                          (acons +authproc-handle-parameter+ handle nil)
+                          :utf-8)))
   (request-authentication-uri authproc
                               :immediate-p immediate-p
                               :realm (realm rp)
@@ -121,14 +131,16 @@
                      (reason e) (reason-format-parameters e))))
   (:documentation "Error during OpenID assertion verification"))
 
-(defun handle-indirect-response (rp message authproc)
-  "Handle indirect response MESSAGE directed for AUTHPROC (either an AUTH-PROCESS structure, or a handle string).
+(defun handle-indirect-response (rp message &optional authproc)
+  "Handle indirect response MESSAGE directed for AUTHPROC.
 
+If AUTHPROC is not supplied, its handle is taken from MESSAGE.
 Returns AUTHPROC on success, NIL on failure."
-  (unless  (auth-process-p authproc)
-    (setf authproc
-          (or (gethash authproc (authprocs rp))
-              (error "Don't know authentication-process with handle ~A" authproc))))
+  (setf authproc
+        (etypecase authproc
+          (auth-process authproc)
+          (string (authproc-by-handle rp authproc))
+          (null (authproc-by-handle rp (message-field message +authproc-handle-parameter+)))))
   
   (let ((v1-compat (not (= 2 (protocol-version-major authproc)))))
     (labels ((err (code reason &rest args)

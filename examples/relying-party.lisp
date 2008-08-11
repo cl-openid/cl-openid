@@ -62,13 +62,10 @@
                 (alist-to-lol (get-parameters))
                 (root-uri *relying-party*)))
 
-(defvar *prefix-length* nil)
-
-(defun handle-openid-request
-    (&aux (transaction-id (when (> (length (script-name)) *prefix-length*)
-                            (subseq (script-name) *prefix-length*))))
+(defun handle-openid-request ()
   "Handle request for an OpenID Relying Party."
-  (if (null transaction-id)
+  (if (null (get-parameter +authproc-handle-parameter+)) ; parameter included on authentication process finalization
+
       (if (null (get-parameter "openid_identifier"))
           *login-form*          ; No ID supplied, present login form
           (redirect             ; ID supplied, initiate authentication
@@ -77,21 +74,20 @@
                                      :immediate-p (get-parameter "checkid_immediate")))))
 
       (handler-case
-          (let ((id (handle-indirect-response *relying-party* (get-parameters) transaction-id)))
+          (let ((id (handle-indirect-response *relying-party* (get-parameters))))
             (if id
                 (access-granted-screen id)
                 (access-denied-screen)))
         (openid-assertion-error (e)
-          (assertion-error-screen e))))))
+          (assertion-error-screen e)))))
 
 
 (defun init-relying-party (realm prefix &optional (uri (merge-uris prefix realm)))
   (setf *relying-party* (make-instance 'relying-party
                                        :root-uri uri
-                                       :realm (uri realm))
-        *prefix-length* (length prefix))
+                                       :realm (uri realm)))
 
   (push (create-prefix-dispatcher prefix 'handle-openid-request)
         *dispatch-table*))
 
-; (init-relying-party "http://lizard.tasak.gda.pl:4242/" "/cl-openid/")
+; (init-relying-party "http://example.com/" "/cl-openid/")
