@@ -170,10 +170,23 @@ Returns AUTHPROC on success, NIL on failure."
          (gc-associations rp (message-field message "openid.invalidate_handle"))
 
          ;; 11.1.  Verifying the Return URL
-         (ensure (uri= (return-to authproc)
-                       (uri (message-field message "openid.return_to")))
+         (ensure (let* ((original-return-to (return-to authproc))
+                        (received-return-to (uri (message-field message "openid.return_to")))
+                        (original-query-elements (split-sequence #\& (uri-query original-return-to)))
+                        (received-query-elements (split-sequence #\& (uri-query received-return-to))))
+                   (and (eq (uri-scheme original-return-to)
+                            (uri-scheme received-return-to))
+                        (string= (uri-authority original-return-to)
+                                 (uri-authority received-return-to))
+                        (string= (uri-path original-return-to)
+                                 (uri-path received-return-to))
+                        ;; FIXME: proper query string parsing, with uri-decoding (or not?)
+                        (every #'(lambda (param)
+                                   (member param received-query-elements :test #'string=))
+                               original-query-elements)))
                  :invalid-return-to
-                 "openid.return_to ~A doesn't match server's URI" (message-field message "openid.return_to"))
+                 "openid.return_to ~A doesn't match originally sent ~A"
+                 (message-field message "openid.return_to") (return-to authproc))
 
          ;; 11.2.  Verifying Discovered Information
          (unless v1-compat
