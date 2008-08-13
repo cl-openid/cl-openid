@@ -64,8 +64,8 @@
   (cond
     ((not code) body)
 
-    ((= code +indirect-response-code+)
-     (redirect (princ-to-string body) :code +indirect-response-code+)
+    ((<= 300 code 399) 			; Redirect, body is an URI
+     (redirect (princ-to-string body) :code code)
      nil)
 
     (t (setf (return-code) code)
