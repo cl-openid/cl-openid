@@ -6,7 +6,14 @@
 (defclass* openid-provider ()
   ((op-endpoint-uri :documentation "OP endpoint URI")
    (associations (make-hash-table :test #'equal)
-                 :documentation "List of OP's associations.")))
+                 :documentation "OP's associations.")))
+
+(defclass openid-provider ()
+  ((op-endpoint-uri :accessor op-endpoint-uri :initarg :op-endpoint-uri
+                    :documentation "OP endpoint URI")
+   (associations :initform (make-hash-table :test #'equal)
+                 :accessor associations :initarg :associations
+                 :documentation "OP's associations.")))
 
 (defvar *nonce-counter* 0
   "Counter for nonce generation")
