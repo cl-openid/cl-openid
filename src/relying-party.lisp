@@ -131,7 +131,7 @@
                      (reason e) (reason-format-parameters e))))
   (:documentation "Error during OpenID assertion verification"))
 
-(defun handle-indirect-response (rp message &optional authproc)
+(defun handle-indirect-response (rp message request-uri &optional authproc)
   "Handle indirect response MESSAGE directed for AUTHPROC.
 
 If AUTHPROC is not supplied, its handle is taken from MESSAGE.
@@ -171,7 +171,7 @@ Returns AUTHPROC on success, NIL on failure."
 
          ;; 11.1.  Verifying the Return URL
          (ensure (let* ((original-return-to (return-to authproc))
-                        (received-return-to (uri (message-field message "openid.return_to")))
+                        (received-return-to (uri request-uri))
                         (original-query-elements (split-sequence #\& (uri-query original-return-to)))
                         (received-query-elements (split-sequence #\& (uri-query received-return-to))))
                    (and (eq (uri-scheme original-return-to)
@@ -187,6 +187,10 @@ Returns AUTHPROC on success, NIL on failure."
                  :invalid-return-to
                  "openid.return_to ~A doesn't match originally sent ~A"
                  (message-field message "openid.return_to") (return-to authproc))
+
+         ;; Make sure received return_to is the same we sent
+         (uri= (return-to authproc)
+               (uri (message-field message "openid.return_to")))
 
          ;; 11.2.  Verifying Discovered Information
          (unless v1-compat

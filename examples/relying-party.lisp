@@ -81,7 +81,9 @@
     ;; is present, this request is an indirect response.
     ((get-parameter +authproc-handle-parameter+)
      (handler-case
-	 (let ((authproc (handle-indirect-response *relying-party* (get-parameters)))) ; The incoming message alist consists of GET parameters.
+	 (let ((authproc (handle-indirect-response
+                          *relying-party* (get-parameters) ; The incoming message alist consists of GET parameters.
+                          (merge-uris (request-uri) (root-uri *relying-party*))))) ; Figuring out actual request URI may be more complicated with proxies
 	   (if authproc	; On successful id_res, AUTH-PROCESS structure is returned; on cancel response, we get NIL.
 	       (access-granted-screen authproc)
 	       (access-denied-screen)))
