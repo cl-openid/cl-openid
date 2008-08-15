@@ -113,6 +113,8 @@ Fields with NIL values are not included in returned alist."
 
 ;; OpenID Authentication 2.0, 5.2.  Indirect Communication,
 ;; http://openid.net/specs/openid-authentication-2_0.html#indirect_comm
+
+;; FIXME:refactor Are those two actually needed?
 (defun indirect-request-uri (endpoint message
                              &aux
                              (uri (new-uri endpoint))
