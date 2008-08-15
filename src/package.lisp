@@ -14,6 +14,6 @@
            #:initiate-authentication #:+authproc-handle-parameter+ #:handle-indirect-response #:handle-openid-provider-request ; RP API
            #:openid-assertion-error #:code  ; assertion error condition
            #:openid-provider #:op-endpoint-uri  ; OP class
-           #:allow-unencrypted-association-p #:handle-checkid-immediate #:handle-checkid-setup ; OP API
+           #:allow-unencrypted-association-p #:handle-checkid-immediate #:handle-checkid-setup #:checkid-error #:with-checkid-error-handler ; OP API
            #:successful-response #:cancel-response #:+indirect-response-code+ ; responses
            ))

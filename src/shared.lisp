@@ -93,3 +93,9 @@ If U is already an URI object, return a copy; otherwise, return (URI U)."
   "Return (URI U), unless U is NIL."
   (when u
     (uri u)))
+
+(defun ensure-trailing-slash (path)
+  "Add trailing slash to PATH if it's not already there."
+  (if (eq #\/ (char path (1- (length path))))
+      path
+      (concatenate 'string path "/")))

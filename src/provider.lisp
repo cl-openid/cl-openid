@@ -42,6 +42,32 @@
 (defun direct-response (message)
   (encode-kv message))
 
+(define-condition checkid-error (error)
+  ((reason :initarg :reason :reader reason)
+   (return-to :initform nil :initarg :return-to :reader %return-to))
+  (:report (lambda (e s)
+             (princ (reason e) s)))
+  (:documentation "Error occured during OpenID chekid_setup or checkid_immediate handling.
+
+This condition is handled by HANDLE-OPENID-PROVIDER-REQUEST and, if it
+occurs, indirect error response is directed to user."))
+
+(defmacro with-checkid-error-handler (&body body)
+  "Handle CHECKID-ERROR in BODY.
+
+When CHECKID-ERROR is signaled, immediately return indirect error response."
+  (let ((block-name (gensym "CHECKID-ERROR-HANDLER-BLOCK")))
+    `(block ,block-name
+       (handler-bind ((checkid-error
+                       #'(lambda (e)
+                           (return-from ,block-name
+                             (if (%return-to e)
+                                 (indirect-response (%return-to e)
+                                                    (in-ns (make-message :openid.mode "error"
+                                                                         :openid.error (princ-to-string e))))
+                                 (values (princ-to-string e) 400))))))
+         ,@body))))
+
 ;;; Positive assertion generation
 (defun successful-response-message (op message)
   (let* ((assoc (or (gethash (message-field message "openid.assoc_handle")
@@ -121,6 +147,46 @@ By default, always disallow.")
     nil))
 
 
+;;; Realm checking: 9.2.  Realms
+(defun check-realm (realm uri)
+  "Check URI against REALM."
+
+  (setf realm (uri realm)
+        uri (uri uri))
+
+  ;; A URL matches a realm if:
+  (and
+   (null (uri-fragment realm))          ; Additional requirement on realm
+   
+   ;; The URL scheme and port of the URL are identical to those in the realm.
+   (eq (uri-scheme realm) (uri-scheme uri))
+   (eql (uri-port realm) (uri-port uri))
+
+   ;; The URL's path is equal to or a sub-directory of the realm's path.
+   (if (< (length (uri-path realm)) (length (uri-path uri))) ; Subdir.
+       (or (null (uri-path realm))      ; Any dir is subdir of root.
+           (let ((realm-path (ensure-trailing-slash (uri-path realm))))
+             (string= realm-path (subseq (uri-path uri) 0 (length realm-path)))))
+       (string= (uri-path uri) (uri-path realm)))
+
+   ;; Either:
+   (if (string= "*." (subseq (uri-host realm) 0 2)) ; 1. The realm's
+                                                    ; domain contains
+                                                    ; the wild-card
+                                                    ; characters "*.",
+
+       ;; and the trailing part of the URL's domain is identical to the
+       ;; part of the realm following the "*." wildcard,
+       (if (= (length (uri-host uri)) (- (length (uri-host realm)) 2))
+           (string-equal (uri-host uri) (subseq (uri-host realm) 2)) ; root domain (e.g. example.com vs *.example.com)
+           (string-equal (subseq (uri-host realm) 1) ; subdomain (e.g. foo.example.com vs *.example.com)
+                         (subseq (uri-host uri)
+                                 (- (length (uri-host uri))
+                                    (1- (length (uri-host realm)))))))
+
+       ;; or 2. The URL's domain is identical to the realm's domain
+       (string-equal (uri-host realm) (uri-host uri)))))
+
 (defun handle-openid-provider-request (op message &aux (v1-compat (not (message-v2-p message))))
   (string-case (message-field message "openid.mode")
     ("associate"
@@ -169,12 +235,33 @@ By default, always disallow.")
                                                  :assoc_type (if v1-compat "HMAC-SHA1" "HMAC-SHA256")))))))
 
     ("checkid_immediate"
-     (indirect-response (message-field message "openid.return_to")
-                        (if (handle-checkid-immediate op message)
-                            (successful-response-message op message)
-                            (setup-needed-response-message op message))))
+     (with-checkid-error-handler
+       (when (message-field message "openid.realm")
+         (unless (check-realm (message-field message "openid.realm")
+                              (message-field message "openid.return_to"))
+           (error 'checkid-error :reason "Realm does not match return_to URI.")))
+       (indirect-response (message-field message "openid.return_to")
+                          (if (handle-checkid-immediate op message)
+                              (successful-response-message op message)
+                              (setup-needed-response-message op message)))))
 
-    ("checkid_setup" (handle-checkid-setup op message))
+    ("checkid_setup"
+     (with-checkid-error-handler
+       (unless (or (message-field message "openid.realm")
+                   (message-field message "openid.return_to"))
+         (error 'checkid-error
+                :reason "At least one of: realm, return_to must be specified."
+                :return-to (message-field message "openid.return_to")))
+
+       (when (and (message-field message "openid.realm")
+                  (message-field message "openid.return_to"))
+         (unless (check-realm (message-field message "openid.realm")
+                              (message-field message "openid.return_to"))
+           (error 'checkid-error
+                  :reason "Realm does not match return_to URI."
+                  :return-to (message-field message "openid.return_to"))))
+
+       (handle-checkid-setup op message)))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
      (encode-kv (in-ns (make-message
