@@ -37,17 +37,17 @@
   (for-all ((i (gen-integer :min 0)))
     (is (= i (cl-base64:base64-string-to-integer (base64-btwoc i))))))
 
-(defparameter +vector-12345678+ (make-array 3
+(defparameter *vector-12345678* (make-array 3
                                             :element-type '(unsigned-byte 8)
                                             :initial-contents '(188 97 78)))
 
-(defparameter +btwoc-12345678+ (make-array 4
+(defparameter *btwoc-12345678* (make-array 4
                                            :element-type '(unsigned-byte 8)
                                            :initial-contents '(0 188 97 78)))
 
 (test ensure-integer
-  (is (= 12345678 (ensure-integer +vector-12345678+)))
-  (is (= 12345678 (ensure-integer +btwoc-12345678+)))
+  (is (= 12345678 (ensure-integer *vector-12345678*)))
+  (is (= 12345678 (ensure-integer *btwoc-12345678*)))
   (is (= 12345678 (ensure-integer "vGFO")))
   (is (= 12345678 (ensure-integer 12345678))))
 
@@ -59,10 +59,10 @@
     (is (= i (ensure-integer (integer-to-base64-string i))))))
 
 (test ensure-vector
-  (is (equalp +btwoc-12345678+ (ensure-vector 12345678)))
-  (is (equalp +vector-12345678+ (ensure-vector "vGFO")))
-  (is (equalp +btwoc-12345678+ (ensure-vector "ALxhTg==")))
-  (is (equalp +vector-12345678+ (ensure-vector +vector-12345678+))))
+  (is (equalp *btwoc-12345678* (ensure-vector 12345678)))
+  (is (equalp *vector-12345678* (ensure-vector "vGFO")))
+  (is (equalp *btwoc-12345678* (ensure-vector "ALxhTg==")))
+  (is (equalp *vector-12345678* (ensure-vector *vector-12345678*))))
 
 (test ensure-vector/random
   (for-all ((i (gen-integer :min 0)))
