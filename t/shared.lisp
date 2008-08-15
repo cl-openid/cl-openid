@@ -90,7 +90,7 @@
     (is (not (eq nu-str nu-uri)))))
 
 (test maybe-uri
-  (is (null (maybe-uri nill)))
+  (is (null (maybe-uri nil)))
   (is (uri-p (maybe-uri "http://example.com/")))
   (uri= (maybe-uri "http://example.com/") (uri "http://example.com/")))
 
