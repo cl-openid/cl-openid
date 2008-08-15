@@ -196,7 +196,11 @@ By default, always disallow.")
             (("DH-SHA1" "DH-SHA256")
              (let ((private (random +dh-prime+)) ; FIXME:random
                    (association (make-association :association-type (or (message-field message "openid.assoc_type")
-                                                                        (and v1-compat "HMAC-SHA1")))))
+                                                                        (and v1-compat "HMAC-SHA1"))
+                                                  :mac (ensure-vector-length (ensure-vector (random #.(expt 2 256))) ; FIXME:random
+                                                                             (string-case (message-field message "openid.session_type")
+                                                                               ("DH-SHA1" 20)
+                                                                               ("DH-SHA256" 32))))))
                (multiple-value-bind (emac public)
                    (dh-encrypt/decrypt-key
                     (session-digest-type (message-field message "openid.session_type"))

@@ -82,10 +82,7 @@
  - MAC is the literal, unencrypted MAC key."
   (%make-association :handle handle
                      :expires expires-at
-                     :mac (ensure-vector-length (ensure-vector mac)
-                                                (ecase hmac-digest
-                                                  (:sha1 20)
-                                                  (:sha256 32)))
+                     :mac (ensure-vector mac)
                      :hmac-digest hmac-digest))
 
 (defun associate (endpoint &key v1 assoc-type session-type &aux xa)
@@ -133,11 +130,15 @@
            (make-association :handle (aget "assoc_handle" response)
                              :expires-in (parse-integer (aget "expires_in" response)) 
                              :mac (or (aget "mac_key" response)
-                                      (dh-encrypt/decrypt-key (session-digest-type session-type)
-                                                              +dh-generator+ +dh-prime+
-                                                              (base64-string-to-integer (aget "dh_server_public" response))
-                                                              xa
-                                                              (aget "enc_mac_key" response)))
+                                      (ensure-vector-length
+                                       (dh-encrypt/decrypt-key (session-digest-type session-type)
+                                                               +dh-generator+ +dh-prime+
+                                                               (base64-string-to-integer (aget "dh_server_public" response))
+                                                               xa
+                                                               (aget "enc_mac_key" response))
+                                       (string-case session-type
+                                          ("DH-SHA1" 20)
+                                          ("DH-SHA256" 32)))) 
                              :association-type assoc-type)
            endpoint))))))
 
