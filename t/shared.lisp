@@ -94,4 +94,6 @@
   (is (uri-p (maybe-uri "http://example.com/")))
   (uri= (maybe-uri "http://example.com/") (uri "http://example.com/")))
 
-
+(test ensure-trailing-slash
+  (is (string= "foo/" (ensure-trailing-slash "foo/")))
+  (is (string= "foo/" (ensure-trailing-slash "foo"))))
