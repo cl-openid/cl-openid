@@ -41,6 +41,7 @@
   ((:module #:t
     :components ((:file "suite")
                  (:file "shared" :depends-on ("suite"))
+                 (:file "message" :depends-on ("suite"))
                  (:file "authproc" :depends-on ("suite"))
                  (:file "association" :depends-on ("suite"))
                  (:file "provider" :depends-on ("suite")))))
