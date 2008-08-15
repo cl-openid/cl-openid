@@ -129,7 +129,7 @@ to FINISH-URI with different parameters."
                                             (get-parameters)))))
 
 ;; Initialization
-(defun init-provider (base-uri prefix &optional
+(defun init-provider (base-uri prefix
                       &aux
                       (op-endpoint-uri (merge-uris prefix base-uri))
                       (finish-prefix (concatenate 'string prefix "finish-setup"))
