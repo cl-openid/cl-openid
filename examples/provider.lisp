@@ -91,9 +91,15 @@ to FINISH-URI with different parameters."
                              (message (gethash handle *requests*))) ; Recover stored message
   "Finish checkid setup."
   (remhash handle *requests*)		; Message no longer needed
-  (if (get-parameter "allow")		; Check which of the links was clicked:
-      (successful-response op message)	; - Allow
-      (cancel-response op message)))	; - Deny
+  (if (message-field message "openid.return_to" )
+      (if (get-parameter "allow") ; Check which of the links was clicked:
+          (successful-response op message) ; - Allow
+          (cancel-response op message))    ; - Deny
+      (html "What exactly do you want?"
+            "<h2>~:[ACCESS GRANTED~;ACCESS DENIED~]</h2>
+<p>But there is no <code>return_to</code> address, so I can only display this screen to you.</p>"
+            (get-parameter "allow"))))
+
 
 
 ;;; Provider object and Hunchentoot handlers

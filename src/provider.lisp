@@ -100,7 +100,9 @@
 (defgeneric handle-checkid-setup (op message)
   (:documentation "Handle checkid_setup requests.")
   (:method (op message)
-    (cancel-response op message)))
+    (if (message-field message "openid.return_to")
+        (cancel-response op message)
+        (values "CANCEL" 400))))
 
 (defgeneric handle-checkid-immediate (op message)
   (:documentation "Handle checkid_immediate requests.")
