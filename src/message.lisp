@@ -129,7 +129,7 @@ Fields with NIL values are not included in returned alist."
   uri)
 
 (defun indirect-response-uri (return-to message
-                           &aux (uri (new-uri return-to)))
+                              &aux (uri (new-uri return-to)))
   (setf (uri-query uri)
         (concatenate 'string
                      (uri-query uri)
