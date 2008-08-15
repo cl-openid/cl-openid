@@ -150,8 +150,8 @@ Returns AUTHPROC on success, NIL on failure."
                       :reason-format-parameters args
                       :message message
                       :authproc authproc))
-             (ensure (test code message &rest args)
-               (unless test
+             (ensure (condition code message &rest args)
+               (unless condition
                  (apply #'err code message args)))
              (same-uri (ap-accessor field-name)
                (uri= (uri (funcall ap-accessor authproc))
