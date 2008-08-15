@@ -41,7 +41,8 @@
   ((:module #:t
     :components ((:file "suite")
                  (:file "authproc" :depends-on ("suite"))
-                 (:file "association" :depends-on ("suite")))))
+                 (:file "association" :depends-on ("suite"))
+                 (:file "provider" :depends-on ("suite")))))
   :depends-on (#:cl-openid #:fiveam))
 
 (defmethod perform ((op asdf:test-op)
