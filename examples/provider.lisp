@@ -101,7 +101,6 @@ to FINISH-URI with different parameters."
             (get-parameter "allow"))))
 
 
-
 ;;; Provider object and Hunchentoot handlers
 (defvar *openid-provider* nil
   "OpenID Provider object.")
