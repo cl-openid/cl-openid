@@ -18,6 +18,7 @@
   (timestamp nil :type '(or integer null)))
 
 (defun protocol-version (auth-process)
+  "Protocol version of an authentication process, as a cons (MAJOR . MINOR)."
   (cons (protocol-version-major auth-process)
         (protocol-version-minor auth-process)))
 

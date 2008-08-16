@@ -16,11 +16,11 @@
       `(acons "openid.namespace" ,namespace ,message)))
 
 (defun message-field (message field-name)
-  "get field MESSAGE-FIELD from message MESSAGE."
+  "get value of FIELD-NAME field from MESSAGE."
   (cdr (assoc field-name message :test #'string=)))
 
 (defun message-v2-p (message)
-  "True if MESSAGE is an OpenID v2 message (checks namespace)"
+  "True if MESSAGE is an OpenID v2 message (namespace check)."
   (string= +openid2-namespace+ (message-field message "openid.ns")))
 
 (defun message-field-string (value)
@@ -31,27 +31,40 @@
     ((vector (unsigned-byte 8)) (usb8-array-to-base64-string value))
     ((or uri number) (princ-to-string value))))
 
-(defun make-message (&rest keys)
-  "Make new message alist from keyword parameters.
+(defun make-message (&rest parameters)
+  "Make new message from arbitrary keyword parameters.
 
-Fields with NIL values are not included in returned alist."
-  (loop for (k v) on keys by #'cddr
+Keyword specifies a message field key (actual key is lowercased symbol
+name), and value following the keyword specifies associated value.
+
+Value can be a string (which will be literal field value),
+symbol (symbol's name will be used as a value), vector
+of (UNSIGNED-BYTE 8) (which will be Base64-encoded), URI object or
+integer (which both will be PRINC-TO-STRING-ed).
+
+If value is NIL, field won't be included in the message at all."
+  (loop for (k v) on parameters by #'cddr
      if v collect (cons (string-downcase (string k))
                         (message-field-string v))))
 
-(defun copy-message (message &rest keys)
-  "Copy MESSAGE, possibly updating KEYS, provided as keyword parameters."
-  (if keys
+(defun copy-message (message &rest parameters)
+  "Create a copy of MESSAGE, updating PARAMETERS provided as keyword parameters.
+
+If MESSAGE already includes provided key, new value is used in the
+result; if a key is new, the field will be appended to result message.
+PARAMETERS are interpreted as by MAKE-MESSAGE function."
+  (if parameters
       (let ((rv (loop
                    for (k . v) in message
                    for kk = (intern (string-upcase k) :keyword)
-                   for vv = (getf keys kk)
+                   for vv = (getf parameters kk)
                    if vv
-                   collect (cons k (message-field-string vv)) and do (remf keys kk)
+                   collect (cons k (message-field-string vv)) and do (remf parameters kk)
                    else collect (cons k v))))
-        (if keys
-            (nconc rv (apply #'make-message keys))
-            rv))))
+        (if parameters
+            (nconc rv (apply #'make-message parameters))
+            rv))
+      (copy-alist message)))
 
 ;;; Data encoding and decoding
 

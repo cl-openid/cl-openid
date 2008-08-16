@@ -4,35 +4,42 @@
 ;; (setf *accessor-name-transformer* #'(lambda (n d) (declare (ignore d)) n))
 #+macroexpand-and-paste
 (defclass* relying-party ()
-  ((root-uri :documentation "RP's root URI")
-   (realm :documentation "Realm URI")
+  ((root-uri :documentation "Root URI address of the Relying Party instance.
+
+Used to generate return_to redirections.")
+   (realm :documentation "Relying Party realm.")
    (associations (make-hash-table :test #'equalp)
-                 :documentation "Associated endpoints, indexed by endpoint URIs")
+                 :documentation "Associations made by RP.")
    (authprocs (make-hash-table :test #'equal)
-              :documentation "Handled authenticaction processes")
-   (authproc-timeout 3600 :documentation "Number of seconds after which an AUTH-PROCESS is collected from AUTHPROCS slot")
+              :documentation "Authenticaction processes currently handled by RP.")
+   (authproc-timeout 3600 :documentation "Number of seconds after which an AUTH-PROCESS is considered timed out and is deleted from AUTHPROCS.")
    (nonces () :documentation "A list of openid.nonce response parameters to avoid duplicates.")
-   (nonce-timeout 3600 :documentation "Number of seconds the nonce times out."))
-  (:documentation "The Relying Party server class."))
+   (nonce-timeout 3600 :documentation "Number of seconds after which nonce is considered timed out."))
+  (:documentation "Relying Party server class."))
 
 (defclass relying-party ()
   ((root-uri :accessor root-uri :initarg :root-uri
-             :documentation "RP's root URI")
+             :documentation "Root URI address of the Relying Party instance.
+
+Used to generate return_to redirections.")
    (realm :accessor realm :initarg :realm
-          :documentation "Realm URI")
+          :documentation "Relying Party realm.")
    (associations :initform (make-hash-table :test #'equalp)
                  :accessor associations :initarg :associations
-                 :documentation "Associated endpoints, indexed by endpoint URIs")
+                 :documentation "Associations made by RP.")
    (authprocs :initform (make-hash-table :test #'equal)
               :accessor authprocs :initarg :authprocs
-              :documentation "Handled authenticaction processes")
-   (authproc-timeout :initform 3600 :accessor authproc-timeout :initarg :authproc-timeout
-                     :documentation "Number of seconds after which an AUTH-PROCESS is collected from AUTHPROCS slot")
-   (nonces :initform () :accessor nonces :initarg :nonces
+              :documentation "Authenticaction processes currently handled by RP.")
+   (authproc-timeout :initform 3600
+                     :accessor authproc-timeout :initarg :authproc-timeout
+                     :documentation "Number of seconds after which an AUTH-PROCESS is considered timed out and is deleted from AUTHPROCS.")
+   (nonces :initform nil
+           :accessor nonces :initarg :nonces
            :documentation "A list of openid.nonce response parameters to avoid duplicates.")
-   (nonce-timeout :initform 3600 :accessor nonce-timeout :initarg :nonce-timeout
-                  :documentation "Number of seconds the nonce times out."))
-  (:documentation "The Relying Party server class."))
+   (nonce-timeout :initform 3600
+                  :accessor nonce-timeout :initarg :nonce-timeout
+                  :documentation "Number of seconds after which nonce is considered timed out."))
+  (:documentation "Relying Party server class."))
 
 ;; RP associations
 (defun gc-associations (rp &optional invalidate-handle &aux (time (get-universal-time)))
@@ -80,14 +87,17 @@
   "Return new unique authentication handle as string"
   (integer-to-base64-string (incf *auth-handle-counter*) :uri t))
 
-(define-constant +authproc-handle-parameter+ "cl-openid.authproc-handle")
+(define-constant +authproc-handle-parameter+ "cl-openid.authproc-handle"
+  "Name of HTTP GET parameter, sent in return_to URI, which contains AUTH-PROCESS object unique handle.")
 
 (defun initiate-authentication (rp given-id
                                &key immediate-p
                                &aux
                                (authproc (discover given-id))
                                (handle (new-authproc-handle)))
-  "Initiate authentication process.  Returns URI to redirect user to."
+  "Initiate authentication process by relying party RP for identifier GIVEN-ID received from user.
+
+If IMMEDIATE-P is true, initiates immediate authentication process.  Returns URI to redirect user to."
   (gc-authprocs rp)
   (setf (timestamp authproc) (get-universal-time)
         (gethash handle (authprocs rp)) authproc
@@ -121,19 +131,38 @@
                    :key #'nonce-universal-time)))
 
 (define-condition openid-assertion-error (error)
-  ((code :initarg :code :reader code)
-   (reason :initarg :reason :reader reason)
-   (authproc :initarg :authproc :reader authproc)
-   (message :initarg :message :reader message))
+  ((code :initarg :code :reader code
+         :documentation "Keyword code of error.
+
+Possible values are
+ - :SERVER-ERROR (received response is an erroor message),
+ - :SETUP-NEEDED (negative response to immediate request),
+ - :INVALID-RETURN-TO (request doesn't match previously sent openid.return_to),
+ - :INVALID-NAMESPACE (invalid openid.ns in received message),
+ - :INVALID-ENDPOINT (endpoint specified in assertion does not match previously discovered information),
+ - :INVALID-CLAIMED-ID (received claimed_id differs from specified previously, discovery for received claimed ID returns other endpoint),
+ - :INVALID-NONCE (repeated openid.nonce),
+ - :INVALID-SIGNATURE (signature verification failed),
+ - :INVALID-SIGNED-FIELDS (not all fields that need to be signed, were signed).")
+   (reason :initarg :reason :reader reason
+           :documentation "Textual description of error.")
+   (authproc :initarg :authproc :reader authproc
+             :documentation "AUTH-PROCESS structure that was being verified.")
+   (message :initarg :message :reader message
+            :documentation "Received message."))
   (:report (lambda (e s)
              (format s "OpenID assertion error: ~A" (reason e))))
-  (:documentation "Error during OpenID assertion verification"))
+  (:documentation "Error signaled by RP when indirect response cannot be verified correctly."))
 
 (defun handle-indirect-response (rp message request-uri &optional authproc)
-  "Handle indirect response MESSAGE directed for AUTHPROC.
+  "Handle indirect response MESSAGE for RP, coming at REQUEST-URI, concerning AUTHPROC.
 
-If AUTHPROC is not supplied, its handle is taken from MESSAGE.
-Returns AUTHPROC on success, NIL on failure."
+AUTHPROC can be a literal AUTH-PROCESS object, or a string (unique
+authproc handle, sent earlier by RP). When AUTHPROC is NIL or not
+supplied, its handle is taken from MESSAGE.
+
+Returns claimed ID URI on success, NIL on failure.
+As second value, always returns AUTH-PROCESS object."
   (setf authproc
         (etypecase authproc
           (auth-process authproc)

@@ -4,16 +4,26 @@
 ;; (setf *accessor-name-transformer* #'(lambda (n d) (declare (ignore d)) n))
 #+macroexpand-and-paste
 (defclass* openid-provider ()
-  ((op-endpoint-uri :documentation "OP endpoint URI")
+  ((op-endpoint-uri :documentation "Provider endpoint URI")
    (associations (make-hash-table :test #'equal)
-                 :documentation "OP's associations.")))
+                 :documentation "OP's associations."))
+  (:documentation "OpenID Provider server abstract class.
+
+This class should be subclassed, and specialized methods should be
+provided at least for HANDLE-CHECKID-SETUP (preferably also for
+HANDLE-CHECKID-IMMEDIATE)."))
 
 (defclass openid-provider ()
   ((op-endpoint-uri :accessor op-endpoint-uri :initarg :op-endpoint-uri
-                    :documentation "OP endpoint URI")
+                    :documentation "Provider endpoint URI")
    (associations :initform (make-hash-table :test #'equal)
                  :accessor associations :initarg :associations
-                 :documentation "OP's associations.")))
+                 :documentation "OP's associations."))
+  (:documentation "OpenID Provider server abstract class.
+
+This class should be subclassed, and specialized methods should be
+provided at least for HANDLE-CHECKID-SETUP (preferably also for
+HANDLE-CHECKID-IMMEDIATE)."))
 
 (defvar *nonce-counter* 0
   "Counter for nonce generation")
@@ -26,9 +36,11 @@
             year mon day hr min sec
             (integer-to-base64-string (incf *nonce-counter*)))))
 
-(defconstant +indirect-response-code+ 303)
+(defconstant +indirect-response-code+ 303
+  "HTTP code used for indirect response redirections.")
 
 (defun indirect-response (return-to message)
+  "Return indirect response (URI as body +INDIRECT-RESPONSE-CODE+ as second value)."
   (values (indirect-message-uri return-to message)
           +indirect-response-code+))
 
@@ -42,6 +54,7 @@ body, 400 Error code as second value)."
           400))
 
 (defun direct-response (message)
+  "Return direct response (key-value-encoded MESSAGE as body, no second value)."
   (encode-kv message))
 
 (define-condition indirect-error (error)
@@ -105,12 +118,16 @@ arguments."
     (in-ns (signed assoc rv))))
 
 (defun successful-response (op message)
+  "Return successful response to MESSAGE by OP."
   (indirect-response (message-field message "openid.return_to")
                      (successful-response-message op message)))
 
 ;;; Setup needed message generation
 (defgeneric user-setup-url (op message)
-  (:documentation "Return URI for user setup to return on failed immediate request.")
+  (:documentation "URI for user setup to return on failed immediate request.
+
+This generic should be specialized on concrete Provider classes to
+provide entry point to user authentication dialogue.")
   (:method (op message)
     (declare (ignore op message))
     nil))
@@ -123,6 +140,7 @@ arguments."
                 :openid.user_setup_url (user-setup-url op message)))
 
 (defun setup-needed-response (op message)
+  "Send setup_needed (immediate authentication failure) response to MESSAGE from OP."
   (indirect-response (message-field message "openid.return_to")
                      (setup-needed-response-message op message)))
 
@@ -131,22 +149,33 @@ arguments."
     (in-ns (make-message :openid.mode "cancel")))
 
 (defun cancel-response (op message)
+  "Send cancel (authenticaction failure) response to MESSAGE from OP."
   (declare (ignore op))
   (indirect-response (message-field message "openid.return_to")
                      +cancel-response-message+))
 
 
 (defgeneric handle-checkid-setup (op message)
-  (:documentation "Handle checkid_setup requests.")
+  (:documentation "Handle checkid_setup requests.
+
+This generic should be specialized on concrete Provider classes to
+perform login checks with user dialogue, that would (possibly after
+some HTTP request-response cycles) end in either SUCCESSFUL-RESPONSE,
+or in CANCEL-RESPONSE.")
   (:method (op message)
     (if (message-field message "openid.return_to")
         (cancel-response op message)
         (values "CANCEL" 400))))
 
 (defgeneric handle-checkid-immediate (op message)
-  (:documentation "Handle checkid_immediate requests.")
+  (:documentation "Handle checkid_immediate requests.
+
+This generic should be specialized on concrete Provider classes to
+perform immediate login checks on MESSAGE.  It should return at once,
+either true value (to indicate successful login), or NIL (to indicate
+immediate login failure).")
   (:method (op message)
-    "Always fail"
+    "Always fail."
     (declare (ignore op message))
     nil))
 
@@ -192,9 +221,23 @@ arguments."
 
 (defun handle-openid-provider-request (op message &key secure-p
                                        &aux (v1-compat (not (message-v2-p message))))
+  "Handle request MESSAGE for OpenID Provider instance OP.
+
+SECURE-P should be passed by caller to indicate whether it is secure
+to use unencrypted association method.
+
+Returns two values: first is body, and second is HTTP code.  If second
+value is not returned, 200 OK HTTP code should be assumed.
+
+On HTTP redirections (second value between 300 and 399 inclusive,
+actually it will be +INDIRECT-RESPONSE-CODE+), primary returned value
+will be an URI to redirect user to.
+
+The same rules apply to all *-RESPONSE functions and
+WITH-INDIRECT-ERROR-HANDLER form return values."
   (string-case (message-field message "openid.mode")
     ("associate"
-     (encode-kv ; Direct response
+     (encode-kv                         ; Direct response
       (handler-case
           (string-case (message-field message "openid.session_type")
             (("DH-SHA1" "DH-SHA256")
