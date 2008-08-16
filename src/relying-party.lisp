@@ -123,12 +123,10 @@
 (define-condition openid-assertion-error (error)
   ((code :initarg :code :reader code)
    (reason :initarg :reason :reader reason)
-   (reason-format-parameters :initarg :reason-format-parameters :reader reason-format-parameters)
    (authproc :initarg :authproc :reader authproc)
    (message :initarg :message :reader message))
   (:report (lambda (e s)
-             (format s "OpenID assertion error: ~?"
-                     (reason e) (reason-format-parameters e))))
+             (format s "OpenID assertion error: ~A" (reason e))))
   (:documentation "Error during OpenID assertion verification"))
 
 (defun handle-indirect-response (rp message request-uri &optional authproc)
@@ -146,8 +144,7 @@ Returns AUTHPROC on success, NIL on failure."
     (labels ((err (code reason &rest args)
                (error 'openid-assertion-error
                       :code code
-                      :reason reason
-                      :reason-format-parameters args
+                      :reason (format nil reason args)
                       :message message
                       :authproc authproc))
              (ensure (condition code message &rest args)
