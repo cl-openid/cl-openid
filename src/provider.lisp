@@ -32,7 +32,9 @@
   (values (indirect-message-uri return-to message)
           +indirect-response-code+))
 
-(defun error-response (err &key contact reference message)
+(defun direct-error-response (err &key contact reference message)
+  "Return error direct response (key-value-encoded error message as
+body, 400 Error code as second value)."
   (values (encode-kv (error-response-message err
                                              :contact contact
                                              :reference reference
@@ -224,10 +226,10 @@ When CHECKID-ERROR is signaled, immediately return indirect error response."
             (t (openid-association-error "Unsupported association type")))
 
         (openid-association-error (e)
-          (error-response (princ-to-string e)
-                          :message (make-message :error_code "unsupported-type"
-                                                 :session_type (if v1-compat "DH-SHA1" "DH-SHA256") ; We do not prefer cleartext session, regardless of SSL
-                                                 :assoc_type (if v1-compat "HMAC-SHA1" "HMAC-SHA256")))))))
+          (direct-error-response (princ-to-string e)
+                                 :message (make-message :error_code "unsupported-type"
+                                                        :session_type (if v1-compat "DH-SHA1" "DH-SHA256") ; We do not prefer cleartext session, regardless of SSL
+                                                        :assoc_type (if v1-compat "HMAC-SHA1" "HMAC-SHA256")))))))
 
     ("checkid_immediate"
      (with-checkid-error-handler
@@ -266,6 +268,6 @@ When CHECKID-ERROR is signaled, immediately return indirect error response."
                                       "true"
                                       "false")))))
 
-    (t (error-response (format nil "Unknown openid.mode ~S"
-                               (message-field message "openid.mode"))))))
+    (t (direct-error-response (format nil "Unknown openid.mode ~S"
+                                      (message-field message "openid.mode"))))))
 
