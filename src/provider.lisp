@@ -137,16 +137,6 @@ When CHECKID-ERROR is signaled, immediately return indirect error response."
     (declare (ignore op message))
     nil))
 
-
-(defgeneric allow-unencrypted-association-p (op message)
-  (:documentation "Decide whether to allow unencrypted associations.
-
-By default, always disallow.")
-  (:method (op message)
-    (declare (ignore op message))
-    nil))
-
-
 ;;; Realm checking: 9.2.  Realms
 (defun check-realm (realm uri)
   "Check URI against REALM."
@@ -187,7 +177,8 @@ By default, always disallow.")
        ;; or 2. The URL's domain is identical to the realm's domain
        (string-equal (uri-host realm) (uri-host uri)))))
 
-(defun handle-openid-provider-request (op message &aux (v1-compat (not (message-v2-p message))))
+(defun handle-openid-provider-request (op message &key secure-p
+                                       &aux (v1-compat (not (message-v2-p message))))
   (string-case (message-field message "openid.mode")
     ("associate"
      (encode-kv ; Direct response
@@ -219,7 +210,7 @@ By default, always disallow.")
                                       :dh_server_public (btwoc public)
                                       :enc_mac_key emac)))))
             (("" "no-encryption")
-             (if (allow-unencrypted-association-p op message)
+             (if secure-p
                  (let ((association (make-association :association-type (message-field message "openid.assoc_type"))))
                    (setf (gethash (association-handle association) (associations op))
                          association)

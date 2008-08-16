@@ -35,13 +35,6 @@ user, between initial checkid_setup request and final decision.")
   ((finish-uri :initarg :finish-uri :reader finish-uri
 	       :documentation "URI for setup finalization, filled on instance initialization.")))
 
-;; This method is called during association to determine valid
-;; association types.
-(defmethod allow-unencrypted-association-p ((op sample-hunchentoot-op) message)
-  "Allow unencrypted association in HTTPS sessions only."
-  (declare (ignore message))
-  (ssl-p))
-
 
 ;; HANDLE-CHECKID-IMMEDIATE method is called on checkid_immediate
 ;; request.  It should examine the request and message, and return
@@ -126,7 +119,8 @@ to FINISH-URI with different parameters."
   (multiple-value-call 'hunchentoot-openid-response
     (handle-openid-provider-request *openid-provider*
                                     (append (post-parameters)
-                                            (get-parameters)))))
+                                            (get-parameters))
+                                    :secure-p (ssl-p))))
 
 ;; Initialization
 (defun init-provider (base-uri prefix
