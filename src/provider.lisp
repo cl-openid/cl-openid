@@ -44,9 +44,11 @@ body, 400 Error code as second value)."
 (defun direct-response (message)
   (encode-kv message))
 
-(define-condition checkid-error (error)
-  ((reason :initarg :reason :reader reason)
-   (return-to :initform nil :initarg :return-to :reader %return-to))
+(define-condition indirect-error (error)
+  ((reason :initarg :reason :reader reason
+           :documentation "Textual error description.")
+   (return-to-uri :initform nil :initarg :return-to-uri :reader return-to-uri
+                  :documentation "return_to address to direct indirect error message to."))
   (:report (lambda (e s)
              (princ (reason e) s)))
   (:documentation "Error occured during OpenID chekid_setup or checkid_immediate handling.
@@ -54,21 +56,30 @@ body, 400 Error code as second value)."
 This condition is handled by HANDLE-OPENID-PROVIDER-REQUEST and, if it
 occurs, indirect error response is directed to user."))
 
-(defmacro with-checkid-error-handler (&body body)
-  "Handle CHECKID-ERROR in BODY.
+(defmacro with-indirect-error-handler (&body body)
+  "Handle INDIRECT-ERROR in BODY.
 
-When CHECKID-ERROR is signaled, immediately return indirect error response."
-  (let ((block-name (gensym "CHECKID-ERROR-HANDLER-BLOCK")))
+When INDIRECT-ERROR is signaled, immediately return indirect error response."
+  (let ((block-name (gensym "INDIRECT-ERROR-HANDLER-BLOCK")))
     `(block ,block-name
-       (handler-bind ((checkid-error
+       (handler-bind ((indirect-error
                        #'(lambda (e)
                            (return-from ,block-name
-                             (if (%return-to e)
-                                 (indirect-response (%return-to e)
+                             (if (return-to-uri e)
+                                 (indirect-response (return-to-uri e)
                                                     (in-ns (make-message :openid.mode "error"
                                                                          :openid.error (princ-to-string e))))
                                  (values (princ-to-string e) 400))))))
          ,@body))))
+
+(defun signal-indirect-error (message reason &rest args)
+  "Signal INDIRECT-ERROR condition for MESSAGE, effectively returning indirect error reply from WITH-INDIRECT-ERROR-HANDLER.
+
+REASON is textual error message format string, with ARGS being its
+arguments."
+  (error 'indirect-error
+         :reason (format nil reason args)
+         :return-to-uri (message-field message "openid.return_to")))
 
 ;;; Positive assertion generation
 (defun successful-response-message (op message)
@@ -232,31 +243,27 @@ When CHECKID-ERROR is signaled, immediately return indirect error response."
                                                         :assoc_type (if v1-compat "HMAC-SHA1" "HMAC-SHA256")))))))
 
     ("checkid_immediate"
-     (with-checkid-error-handler
+     (with-indirect-error-handler
        (when (message-field message "openid.realm")
          (unless (check-realm (message-field message "openid.realm")
                               (message-field message "openid.return_to"))
-           (error 'checkid-error :reason "Realm does not match return_to URI.")))
+           (signal-indirect-error message "Realm does not match return_to URI.")))
        (indirect-response (message-field message "openid.return_to")
                           (if (handle-checkid-immediate op message)
                               (successful-response-message op message)
                               (setup-needed-response-message op message)))))
 
     ("checkid_setup"
-     (with-checkid-error-handler
+     (with-indirect-error-handler
        (unless (or (message-field message "openid.realm")
                    (message-field message "openid.return_to"))
-         (error 'checkid-error
-                :reason "At least one of: realm, return_to must be specified."
-                :return-to (message-field message "openid.return_to")))
+         (signal-indirect-error message "At least one of: realm, return_to must be specified."))
 
        (when (and (message-field message "openid.realm")
                   (message-field message "openid.return_to"))
          (unless (check-realm (message-field message "openid.realm")
                               (message-field message "openid.return_to"))
-           (error 'checkid-error
-                  :reason "Realm does not match return_to URI."
-                  :return-to (message-field message "openid.return_to"))))
+           (signal-indirect-error message "Realm does not match return_to URI.")))
 
        (handle-checkid-setup op message)))
 
