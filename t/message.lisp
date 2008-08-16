@@ -116,17 +116,7 @@ error:This is an example message
     (is (equalp (string-to-utf-8-bytes (first test-case))
                 (encode-kv (rest test-case))))))
 
-(test indirect-request-uri
-  (let ((message '(("foo" . "1")
-                   ("bar" . "2")
-                   ("baz" . "3"))))
-    (dolist (test-case `(("http://www.example.com/" ,message "http://www.example.com/?openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&foo=1&bar=2&baz=3")
-                         ("http://www.example.com/ep" ,message "http://www.example.com/ep?openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&foo=1&bar=2&baz=3")
-                         ("http://www.example.com/ep/?test=query-string" ,message "http://www.example.com/ep/?test=query-string&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&foo=1&bar=2&baz=3")))
-      (is (uri= (uri (third test-case))
-                (indirect-request-uri (first test-case) (second test-case)))))))
-
-(test indirect-response-uri
+(test indirect-message-uri
   (let ((message '(("foo" . "1")
                    ("bar" . "2")
                    ("baz" . "3"))))
@@ -134,5 +124,5 @@ error:This is an example message
                          ("http://www.example.com/ep" ,message "http://www.example.com/ep?foo=1&bar=2&baz=3")
                          ("http://www.example.com/ep/?test=query-string" ,message "http://www.example.com/ep/?test=query-string&foo=1&bar=2&baz=3")))
       (is (uri= (uri (third test-case))
-                (indirect-response-uri (first test-case) (second test-case)))))))
+                (indirect-message-uri (first test-case) (second test-case)))))))
 

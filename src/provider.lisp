@@ -29,7 +29,7 @@
 (defconstant +indirect-response-code+ 303)
 
 (defun indirect-response (return-to message)
-  (values (indirect-response-uri return-to message)
+  (values (indirect-message-uri return-to message)
           +indirect-response-code+))
 
 (defun error-response (err &key contact reference message)

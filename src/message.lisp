@@ -113,26 +113,15 @@ Fields with NIL values are not included in returned alist."
 
 ;; OpenID Authentication 2.0, 5.2.  Indirect Communication,
 ;; http://openid.net/specs/openid-authentication-2_0.html#indirect_comm
+(defun indirect-message-uri (endpoint message
+                             &aux (uri (new-uri endpoint)))
+  "Return URI to send indirect message MESSAGE to endpoint URI ENDPOINT.
 
-;; FIXME:refactor Are those two actually needed?
-(defun indirect-request-uri (endpoint message
-                             &aux
-                             (uri (new-uri endpoint))
-                             (q (drakma::alist-to-url-encoded-string ; FIXME:unexported
-                                 (in-ns message)
-                                 :utf-8)))
-  "Return an URI for an indirect request to OpenID Provider ENDPOINT, sending MESSAGE."
-  (setf (uri-query uri)
-        (if (uri-query uri)
-            (concatenate 'string (uri-query uri) "&" q)
-            q))
-  uri)
-
-(defun indirect-response-uri (return-to message
-                              &aux (uri (new-uri return-to)))
+Usable for both indirect requests and responses."
   (setf (uri-query uri)
         (concatenate 'string
                      (uri-query uri)
-                     (and (uri-query uri) "&")
+                     (when (uri-query uri)
+                       "&")
                      (drakma::alist-to-url-encoded-string message :utf-8))) ; FIXME:unexported
   uri)

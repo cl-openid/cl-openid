@@ -312,18 +312,18 @@ user-given ID string."
   "URI for an authentication request for AUTHPROC"
   (unless (or (return-to authproc) realm)
     (error "At least one of: (RETURN-TO AUTHPROC), REALM must be specified."))
-  (indirect-request-uri (endpoint-uri authproc)
-                        (make-message :openid.mode (if immediate-p
-                                                       "checkid_immediate"
-                                                       "checkid_setup")
-                                      :openid.claimed_id (claimed-id authproc)
-                                      :openid.identity (or (op-local-id authproc)
-                                                           (claimed-id authproc))
-                                      :openid.assoc_handle (when association
-                                                             (association-handle association))
-                                      :openid.return_to (return-to authproc)
+  (indirect-message-uri (endpoint-uri authproc)
+                        (in-ns (make-message :openid.mode (if immediate-p
+                                                              "checkid_immediate"
+                                                              "checkid_setup")
+                                             :openid.claimed_id (claimed-id authproc)
+                                             :openid.identity (or (op-local-id authproc)
+                                                                  (claimed-id authproc))
+                                             :openid.assoc_handle (when association
+                                                                    (association-handle association))
+                                             :openid.return_to (return-to authproc)
 
-                                      (if (= 2 (protocol-version-major authproc))
-                                          :openid.realm  ; OpenID 1.x compat: trust_root instead of realm
-                                          :openid.trust_root)
-                                      realm)))
+                                             (if (= 2 (protocol-version-major authproc))
+                                                 :openid.realm ; OpenID 1.x compat: trust_root instead of realm
+                                                 :openid.trust_root)
+                                             realm))))
