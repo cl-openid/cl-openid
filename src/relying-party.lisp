@@ -159,7 +159,7 @@ Returns AUTHPROC on success, NIL on failure."
 
         ("setup_needed" (err :setup-needed "Setup needed."))
 
-        ("cancel" nil)
+        ("cancel" (values nil authproc))
 
         ("id_res"
 
@@ -254,4 +254,5 @@ Returns AUTHPROC on success, NIL on failure."
                      :invalid-signed-fields
                      "Not all fields that are required to be signed, are so.")))
 
-         authproc)))))
+         (values (claimed-id authproc)
+                 authproc))))))
