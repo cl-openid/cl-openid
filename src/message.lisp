@@ -9,9 +9,11 @@
 (define-constant +openid2-ns-cons+ (cons "openid.ns" +openid2-namespace+)
   "Helper constant pair for constructing messages.")
 
-(defmacro in-ns (message &optional (namespace '+openid2-ns-cons+))
-  "Add NAMESPACE cons to MESSAGE."
-  `(cons ,namespace ,message))
+(defmacro in-ns (message &optional (namespace '+openid2-namespace+))
+  "Add openid.namespace NAMESPACE to MESSAGE."
+  (if (equal namespace +openid2-namespace+)
+      `(cons ,namespace ,message)
+      `(acons "openid.namespace" ,namespace ,message)))
 
 (defun message-field (message field-name)
   "get field MESSAGE-FIELD from message MESSAGE."
