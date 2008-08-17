@@ -1,0 +1,314 @@
+# -*- org -*-
+#+TITLE:     CL-OpenID
+#+AUTHOR:    Maciej Pasternacki
+#+EMAIL:     maciej@pasternacki.net
+#+LANGUAGE:  en
+#+OPTIONS:   H:5 num:t toc:t \n:nil @:t ::t |:t ^:nil f:t *:t TeX:t LaTeX:t skip:nil d:nil tags:not-in-toc
+
+Cl-OpenID is an implementation of [[http://openid.net/][OpenID]] protocol in Common Lisp.  It
+implements [[http://openid.net/specs/openid-authentication-2_0.html][OpenID Authentication 2.0]] standard and is compatible with
+[[http://openid.net/specs/openid-authentication-1_1.html][OpenID Authentication 1.1]].  Both Relying Party (formerly called OpenID
+Consumer), and OpenID Provider are implemented.
+
+CL-OpenID is available on terms of [[http://opensource.franz.com/license.html][GNU Lesser General Public License
+version 2.1]] with Franz Inc.'s [[http://opensource.franz.com/preamble.html][preamble]], also known as LLGPL (Lisp
+Lesser General Public License).
+
+The project is developed as a [[http://code.google.com/soc/2008][Google Summer of Code 2008]] project,
+developed by Maciej Pasternacki and mentored by Anton Vodonosov.
+Original application is published at
+[[http://trac.common-lisp.net/cl-openid/wiki/OriginalProposal]].
+
+* Contact
+  Discussions regarding development are conducted on [[http://common-lisp.net/cgi-bin/mailman/listinfo/cl-openid-devel][cl-openid-devel]]
+  mailing list.  This is the best place to bring up questions,
+  suggestions or to discuss issues connected with CL-OpenID.
+
+  Important announcements are posted to [[http://common-lisp.net/cgi-bin/mailman/listinfo/cl-openid-announce][cl-openid-announce]] mailing
+  list.  This is a low-volume, announcement-only list.  All the
+  announcements are also posted on development list.
+
+  Bugs are tracked on [[http://trac.common-lisp.net/cl-openid/report/1][project's Trac bugtracker]].  Interface for
+  submitting new tickets is available at
+  [[http://trac.common-lisp.net/cl-openid/newticket]].  All ticket change
+  notifications are sent to [[http://common-lisp.net/cgi-bin/mailman/listinfo/cl-openid-ticket][cl-openid-ticket]] mailing list.
+
+  Miscellaneous information on project, of various quality and
+  relevance, can be found on project's [[http://trac.common-lisp.net/cl-openid/][Trac wiki]].
+
+* Downloading
+  Project Web page is [[http://common-lisp.net/project/cl-openid/]].  Most
+  recent version of the code can be downloaded with [[http://www.darcs.net][darcs]]:
+
+  : darcs get http://common-lisp.net/project/cl-openid/
+
+** Dependencies
+   Project depends on following libraries:
+   - [[http://weitz.de/drakma/][drakma]],
+   - [[http://www.method-combination.net/lisp/ironclad/][ironclad]],
+   - [[http://common-lisp.net/project/xmls/][xmls]],
+   - [[http://cliki.net/split-sequence][split-sequence]],
+   - [[http://www.cliki.net/cl-base64][cl-base64]],
+   - [[http://common-lisp.net/project/trivial-utf-8/darcs/trivial-utf-8][trivial-utf-8]],
+   - [[http://puri.b9.com/][puri]] (on implementations other than Allegro CL),
+   - [[http://www.cliki.net/CL-HTML-Parse][cl-html-parse]] (on implementations other than Allegro CL).
+
+   Example code depends also on [[http://weitz.de/hunchentoot/][Hunchentoot]].  Unit tests depend on
+   [[http://common-lisp.net/project/bese/FiveAM.html][FiveAM]] testing framework.
+
+   All required libraries should be ASDF-installable, so running =darcs
+   dist= and then calling =ASDF-INSTALL:INSTALL= on resulting tarball
+   should provide complete dependencies.
+
+*** CL-Librarian shelf
+    As an alternative to ASDF-Install, a [[http://www.pasternacki.net/en/code/cl-librarian/][CL-Librarian]] shelf definition
+    for dependencies is provided.  To use it, run following shell
+    commands in CL-OpenID directory:
+    : darcs get http://www.pasternacki.net/repos/cl-librarian/ lib
+    : cd lib
+    : sh bootstrap.sh
+    : cd ..
+    Then start your favourite Lisp implementation and call:
+    : (load "shelf")
+    : (cl-librarian:download-shelf 'cl-openid.deps) ; for the first time or when new dependency is added
+    : (cl-librarian:use-shelf 'cl-openid.deps) ; when libraries are already downloaded
+    : (asdf:oos 'asdf:load-op :cl-openid)
+    : (asdf:oos 'asdf:test-op :cl-openid) ; run 5am unit tests
+
+** Example code
+   Example implementation of Relying Party and OpenID Provider for
+   [[http://weitz.de/hunchentoot/][Hunchentoot]] web server is included in =examples/= subdirectory.  For
+   convenience, both examples can be loaded as =CL-OPENID.EXAMPLES=
+   ASDF system:
+   : (asdf:oos 'asdf:load-op :cl-openid.examples)
+
+* Provided API
+
+** Relying Party
+
+*** Class =RELYING-PARTY=
+    Relying Party class.
+
+**** Accessor =ROOT-URI= /relying-party/ ⇒ /uri/
+     Root URI address of the Relying Party instance.
+
+     Used to generate return_to redirections.
+
+**** Accessor =REALM= /relying-party/ ⇒ /uri/
+     Relying Party realm.
+
+*** Constant =+AUTHPROC-HANDLE-PARAMETER+=
+    Name of HTTP GET parameter, sent in return_to URI, which contains
+    AUTH-PROCESS object unique handle.
+
+*** Function =INITIATE-AUTHENTICATION= /relying-party given-id &key immediate-p/ ⇒ /uri/
+    Initiate authentication process by /relying-party/ for identifier
+    /given-id/ received from user.
+
+    If /immediate-p/ is true, initiates immediate authentication
+    process.  Returns URI to redirect user to.
+
+*** Function =HANDLE-INDIRECT-RESPONSE= /relying-party message request-uri &optional auth-process/ ⇒ /authendicated-id auth-process/
+    Handle indirect response /message/ for /relying-party/, coming at /request-uri/, concerning /authproc/.
+
+    /authproc/ can be a literal AUTH-PROCESS object, or a string
+    (unique authproc handle, sent earlier by Relying Party). When
+    /authproc/ is NIL or not supplied, its handle is taken from
+    /message/ field named =+AUTHPROC-HANDLE-PARAMETER+=.
+
+    Returns claimed ID URI on success, NIL on failure.  As second
+    value, always returns AUTH-PROCESS object.
+
+*** Condition =OPENID-ASSERTION-ERROR=
+    Error signaled by Relying Party when indirect response cannot be
+    verified correctly.
+
+**** Accessor =CODE= /openid-assertion-error/ ⇒ /keyword/
+     Keyword code of error.
+
+     Possible values are
+     - =:SERVER-ERROR= (received response is an erroor message),
+     - =:SETUP-NEEDED= (negative response to immediate request),
+     - =:INVALID-RETURN-TO= (request doesn't match previously sent openid.return_to),
+     - =:INVALID-NAMESPACE= (invalid openid.ns in received message),
+     - =:INVALID-ENDPOINT= (endpoint specified in assertion does not match previously discovered information),
+     - =:INVALID-CLAIMED-ID= (received claimed_id differs from specified previously, discovery for received claimed ID returns other endpoint),
+     - =:INVALID-NONCE= (repeated openid.nonce),
+     - =:INVALID-SIGNATURE= (signature verification failed),
+     - =:INVALID-SIGNED-FIELDS= (not all fields that need to be signed, were signed).
+
+**** Accessor =REASON= /openid-assertion-error/ ⇒ /string/
+     Textual description of error.
+
+**** Accessor =AUTHPROC= /openid-assertion-error/ ⇒ /auth-process/
+     The =AUTH-PROCESS= structure that was being verified.
+
+**** Accessor =MESSAGE= /openid-assertion-error/ ⇒ /message/
+     Received message (an association list).
+
+*** Structure =AUTH-PROCESS=
+    Data structure gathering information about an ongoing
+    authentication process.
+
+**** Function =AUTH-PROCESS-P= /object/ ⇒ /boolean/
+     Returns true if /object/ is an =AUTH-PROCESS= structure.
+
+**** Accessor =PROTOCOL-VERSION-MAJOR= /auth-process/ ⇒ /integer/
+     Protocol version major number of /auth-process/.
+
+**** Accessor =PROTOCOL-VERSION-MINOR= /auth-process/ ⇒ /integer/
+     Protocol version minor number of /auth-process/.
+
+**** Accessor =PROTOCOL-VERSION= /auth-process/ ⇒ /cons/
+     Protocol version of an authentication process, as a cons =(MAJOR . MINOR)=.
+
+**** Accessor =CLAIMED-ID= /auth-process/ ⇒ /uri/
+     Claimed ID of an auth proces.
+
+**** Accessor =OP-LOCAL-ID= /auth-process/ ⇒ /uri/
+     OP-local id of an auth process.
+
+**** Accessor =ENDPOINT-URI= /auth-process/ ⇒ /uri/
+     Discovered endpoint URI.
+
+**** Accessor =RETURN-TO= /auth-process/ ⇒ /uri/
+     Authentication process' return_to address.
+
+     It is Relying Party's root URI with added HTTP GET parameter
+     named =+AUTHPROC-HANDLE-PARAMETER+= whose value is authproc's
+     unique handle.
+
+**** Accessor =TIMESTAMP= /auth-process/ ⇒ /universal-time/
+     Universal time of authentication process structure's creation.
+
+**** Accessor =XRDS-LOCATION= /auth-process/ ⇒ /uri/
+     Address of XRDS file used in /auth-process/ discovery.
+
+** OpenID Provider
+*** Class =OPENID-PROVIDER=
+    OpenID Provider server abstract class.
+
+    This class should be subclassed, and specialized methods should be
+    provided at least for =HANDLE-CHECKID-SETUP= (preferably also for
+    =HANDLE-CHECKID-IMMEDIATE=).
+
+**** Accessor =OP-ENDPOINT-URI= /op/ ⇒ /uri/
+     OpenID Provider instance's endpoint URI
+
+*** Constant =+INDIRECT-RESPONSE-CODE+=
+    HTTP code used for indirect response redirections.
+
+*** Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key secure-p/ ⇒ /response values/
+    Handle request /message/ for OpenID Provider instance /op/.
+
+    /secure-p/ should be passed by caller to indicate whether it is
+    secure to use unencrypted association method.
+
+    Returns two values: first is body, and second is HTTP code.  If
+    second value is not returned, 200 OK HTTP code should be assumed.
+
+    On HTTP redirections (second value between 300 and 399 inclusive,
+    actually it will be =+INDIRECT-RESPONSE-CODE+=), primary returned
+    value will be an URI to redirect user to.
+
+    The same rules apply to all =*-RESPONSE= functions and
+    =WITH-INDIRECT-ERROR-HANDLER= form return values.
+
+*** Function =CANCEL-RESPONSE= /op/ /message/ ⇒ /response values/
+    Send cancel (authenticaction failure) response to MESSAGE from OP.
+
+*** Function =SUCCESSFUL-RESPONSE= /op/ /message/ ⇒ /response values/
+    Return successful response to /message/ by /op/.
+
+*** Macro =WITH-INDIRECT-ERROR-HANDLER= /&body body/ ⇒ /response values/
+    Handle =INDIRECT-ERROR= in /body/.
+
+    When =INDIRECT-ERROR= condition is signaled, immediately return
+    indirect error response.
+
+*** Function =SIGNAL-INDIRECT-ERROR= /message reason &rest reason-args/
+    Signal =INDIRECT-ERROR= condition as reply to /message/,
+    effectively returning indirect error reply from
+    =WITH-INDIRECT-ERROR-HANDLER= block.
+
+    /Reason/ is textual error message format string, with
+    /reason-args/ being its arguments.
+
+
+*** Generic =HANDLE-CHECKID-IMMEDIATE= /op message/ ⇒ /generalized-boolean/
+    Handle checkid_immediate requests.
+
+    This generic should be specialized on concrete Provider classes to
+    perform immediate login checks on /MESSAGE/.  It should return at
+    once, either true value (to indicate successful login), or NIL (to
+    indicate immediate login failure).
+
+    Default method always fails.
+
+    This generic is called within scope of
+    =WITH-INDIRECT-ERROR-HANDLER=.
+
+*** Generic =USER-SETUP-URL= /op message/ ⇒ /uri/
+    URI for user setup to return on failed immediate request.
+
+    When NIL is returned, no user_setup_url is sent in setup_needed
+    responses.
+
+    This generic should be specialized on concrete Provider classes to
+    provide entry point to user authentication dialogue.
+
+    Default method always returns NIL.
+
+*** Generic =HANDLE-CHECKID-SETUP= /op message/ ⇒ /response values/
+    Handle checkid_setup requests.
+
+    This generic should be specialized on concrete Provider classes to
+    perform login checks with user dialogue, that would (possibly
+    after some HTTP request-response cycles) end in either
+    =SUCCESSFUL-RESPONSE=, or in =CANCEL-RESPONSE=.
+
+    Default method always fails.
+
+    This generic is called within scope of
+    =WITH-INDIRECT-ERROR-HANDLER=.
+
+
+*** Protocol messages
+    Messages passed between OpenID Provider and the Relying Party are
+    composed of key-value pairs.  Natural Lisp representation of
+    those, and the one used in CL-OpenID, is an association list.  A
+    handful of conveniense function is provided to avoid tweaking
+    messages on cons level.
+
+**** Function =MAKE-MESSAGE= /&rest parameters/ ⇒ /message/
+     Make new message from arbitrary keyword parameters.
+
+     Keyword specifies a message field key (actual key is lowercased
+     symbol name), and value following the keyword specifies
+     associated value.
+
+     Value can be a string (which will be literal field value), symbol
+     (symbol's name will be used as a value), vector of
+     (UNSIGNED-BYTE 8) (which will be Base64-encoded), URI object or
+     integer (which both will be PRINC-TO-STRING-ed).
+
+     If value is NIL, field won't be included in the message at all.
+
+**** Function =COPY-MESSAGE= /message &rest parameters/ ⇒ /message/
+     Create a copy of MESSAGE, updating PARAMETERS provided as keyword parameters.
+
+     If MESSAGE already includes provided key, new value is used in
+     the result; if a key is new, the field will be appended to result
+     message.  PARAMETERS are interpreted as by MAKE-MESSAGE function.
+
+**** Function =IN-NS= /message &optional namespace/ ⇒ /message/
+     Add openid.namespace /namespace/ to /message/.
+
+     Default namespace is OpenID v2.  Returns updated message alist.
+
+**** Function =MESSAGE-FIELD= /message field-name/ ⇒ /value/
+     Get value of /field-name/ field from /message/.
+
+**** Function =MESSAGE-V2-P= /message/ ⇒ /boolean/
+     True if /message/ is an OpenID v2 message (namespace check).
+

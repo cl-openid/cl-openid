@@ -1,0 +1,696 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>CL-OpenID</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2008/08/18 01:39:41"/>
+<meta name="author" content="Maciej Pasternacki"/>
+<style type="text/css">
+  html {
+	font-family: Times, serif;
+	font-size: 12pt;
+  }
+  .title { text-align: center; }
+  .todo  { color: red; }
+  .done { color: green; }
+  .timestamp { color: grey }
+  .timestamp-kwd { color: CadetBlue }
+  .tag { background-color:lightblue; font-weight:normal }
+  .target { background-color: lavender; }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+  }
+  table { border-collapse: collapse; }
+  td, th {
+	vertical-align: top;
+	<!--border: 1pt solid #ADB9CC;-->
+  }
+</style>
+</head><body>
+<h1 class="title">CL-OpenID</h1>
+Cl-OpenID is an implementation of <a href="http://openid.net/">OpenID</a> protocol in Common Lisp.  It
+implements <a href="http://openid.net/specs/openid-authentication-2_0.html">OpenID Authentication 2.0</a> standard and is compatible with
+<a href="http://openid.net/specs/openid-authentication-1_1.html">OpenID Authentication 1.1</a>.  Both Relying Party (formerly called OpenID
+Consumer), and OpenID Provider are implemented.
+
+<p>
+CL-OpenID is available on terms of <a href="http://opensource.franz.com/license.html">GNU Lesser General Public License version 2.1</a> with Franz Inc.'s <a href="http://opensource.franz.com/preamble.html">preamble</a>, also known as LLGPL (Lisp
+Lesser General Public License).
+</p>
+<p>
+The project is developed as a <a href="http://code.google.com/soc/2008">Google Summer of Code 2008</a> project,
+developed by Maciej Pasternacki and mentored by Anton Vodonosov.
+Original application is published at
+<a href="http://trac.common-lisp.net/cl-openid/wiki/OriginalProposal">http://trac.common-lisp.net/cl-openid/wiki/OriginalProposal</a>.
+</p>
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#sec-1">1 Contact</a></li>
+<li><a href="#sec-2">2 Downloading</a>
+<ul>
+<li><a href="#sec-3">2.1 Dependencies</a>
+<ul>
+<li><a href="#sec-4">2.1.1 CL-Librarian shelf</a></li>
+</ul>
+</li>
+<li><a href="#sec-5">2.2 Example code</a></li>
+</ul>
+</li>
+<li><a href="#sec-6">3 Provided API</a>
+<ul>
+<li><a href="#sec-7">3.1 Relying Party</a>
+<ul>
+<li><a href="#sec-8">3.1.1 Class <code>RELYING-PARTY</code></a>
+<ul>
+<li><a href="#sec-9">3.1.1.1 Accessor <code>ROOT-URI</code> <i>relying-party</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-10">3.1.1.2 Accessor <code>REALM</code> <i>relying-party</i> ⇒ <i>uri</i></a></li>
+</ul>
+</li>
+<li><a href="#sec-11">3.1.2 Constant <code>+AUTHPROC-HANDLE-PARAMETER+</code></a></li>
+<li><a href="#sec-12">3.1.3 Function <code>INITIATE-AUTHENTICATION</code> <i>relying-party given-id &amp;key immediate-p</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-13">3.1.4 Function <code>HANDLE-INDIRECT-RESPONSE</code> <i>relying-party message request-uri &amp;optional auth-process</i> ⇒ <i>authendicated-id auth-process</i></a></li>
+<li><a href="#sec-14">3.1.5 Condition <code>OPENID-ASSERTION-ERROR</code></a>
+<ul>
+<li><a href="#sec-15">3.1.5.1 Accessor <code>CODE</code> <i>openid-assertion-error</i> ⇒ <i>keyword</i></a></li>
+<li><a href="#sec-16">3.1.5.2 Accessor <code>REASON</code> <i>openid-assertion-error</i> ⇒ <i>string</i></a></li>
+<li><a href="#sec-17">3.1.5.3 Accessor <code>AUTHPROC</code> <i>openid-assertion-error</i> ⇒ <i>auth-process</i></a></li>
+<li><a href="#sec-18">3.1.5.4 Accessor <code>MESSAGE</code> <i>openid-assertion-error</i> ⇒ <i>message</i></a></li>
+</ul>
+</li>
+<li><a href="#sec-19">3.1.6 Structure <code>AUTH-PROCESS</code></a>
+<ul>
+<li><a href="#sec-20">3.1.6.1 Function <code>AUTH-PROCESS-P</code> <i>object</i> ⇒ <i>boolean</i></a></li>
+<li><a href="#sec-21">3.1.6.2 Accessor <code>PROTOCOL-VERSION-MAJOR</code> <i>auth-process</i> ⇒ <i>integer</i></a></li>
+<li><a href="#sec-22">3.1.6.3 Accessor <code>PROTOCOL-VERSION-MINOR</code> <i>auth-process</i> ⇒ <i>integer</i></a></li>
+<li><a href="#sec-23">3.1.6.4 Accessor <code>PROTOCOL-VERSION</code> <i>auth-process</i> ⇒ <i>cons</i></a></li>
+<li><a href="#sec-24">3.1.6.5 Accessor <code>CLAIMED-ID</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-25">3.1.6.6 Accessor <code>OP-LOCAL-ID</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-26">3.1.6.7 Accessor <code>ENDPOINT-URI</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-27">3.1.6.8 Accessor <code>RETURN-TO</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-28">3.1.6.9 Accessor <code>TIMESTAMP</code> <i>auth-process</i> ⇒ <i>universal-time</i></a></li>
+<li><a href="#sec-29">3.1.6.10 Accessor <code>XRDS-LOCATION</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-30">3.2 OpenID Provider</a>
+<ul>
+<li><a href="#sec-31">3.2.1 Class <code>OPENID-PROVIDER</code></a>
+<ul>
+<li><a href="#sec-32">3.2.1.1 Accessor <code>OP-ENDPOINT-URI</code> <i>op</i> ⇒ <i>uri</i></a></li>
+</ul>
+</li>
+<li><a href="#sec-33">3.2.2 Constant <code>+INDIRECT-RESPONSE-CODE+</code></a></li>
+<li><a href="#sec-34">3.2.3 Function <code>HANDLE-OPENID-PROVIDER-REQUEST</code> <i>op message &amp;key secure-p</i> ⇒ <i>response values</i></a></li>
+<li><a href="#sec-35">3.2.4 Function <code>CANCEL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i></a></li>
+<li><a href="#sec-36">3.2.5 Function <code>SUCCESSFUL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i></a></li>
+<li><a href="#sec-37">3.2.6 Macro <code>WITH-INDIRECT-ERROR-HANDLER</code> <i>&amp;body body</i> ⇒ <i>response values</i></a></li>
+<li><a href="#sec-38">3.2.7 Function <code>SIGNAL-INDIRECT-ERROR</code> <i>message reason &amp;rest reason-args</i></a></li>
+<li><a href="#sec-39">3.2.8 Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i></a></li>
+<li><a href="#sec-40">3.2.9 Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-41">3.2.10 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i></a></li>
+<li><a href="#sec-42">3.2.11 Protocol messages</a>
+<ul>
+<li><a href="#sec-43">3.2.11.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i></a></li>
+<li><a href="#sec-44">3.2.11.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i></a></li>
+<li><a href="#sec-45">3.2.11.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i></a></li>
+<li><a href="#sec-46">3.2.11.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i></a></li>
+<li><a href="#sec-47">3.2.11.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+
+<div class="outline-2">
+<h2 id="sec-1">1 Contact</h2>
+
+<p>Discussions regarding development are conducted on <a href="http://common-lisp.net/cgi-bin/mailman/listinfo/cl-openid-devel">cl-openid-devel</a>
+mailing list.  This is the best place to bring up questions,
+suggestions or to discuss issues connected with CL-OpenID.
+</p>
+<p>
+Important announcements are posted to <a href="http://common-lisp.net/cgi-bin/mailman/listinfo/cl-openid-announce">cl-openid-announce</a> mailing
+list.  This is a low-volume, announcement-only list.  All the
+announcements are also posted on development list.
+</p>
+<p>
+Bugs are tracked on <a href="http://trac.common-lisp.net/cl-openid/report/1">project's Trac bugtracker</a>.  Interface for
+submitting new tickets is available at
+<a href="http://trac.common-lisp.net/cl-openid/newticket">http://trac.common-lisp.net/cl-openid/newticket</a>.  All ticket change
+notifications are sent to <a href="http://common-lisp.net/cgi-bin/mailman/listinfo/cl-openid-ticket">cl-openid-ticket</a> mailing list.
+</p>
+<p>
+Miscellaneous information on project, of various quality and
+relevance, can be found on project's <a href="http://trac.common-lisp.net/cl-openid/">Trac wiki</a>.
+</p>
+</div>
+
+<div class="outline-2">
+<h2 id="sec-2">2 Downloading</h2>
+
+<p>Project Web page is <a href="http://common-lisp.net/project/cl-openid/">http://common-lisp.net/project/cl-openid/</a>.  Most
+recent version of the code can be downloaded with <a href="http://www.darcs.net">darcs</a>:
+</p>
+<p>
+<pre>
+ darcs get http://common-lisp.net/project/cl-openid/
+</pre>
+</p>
+
+<div class="outline-3">
+<h3 id="sec-3">2.1 Dependencies</h3>
+
+<p>Project depends on following libraries:
+</p><ul>
+<li>
+<a href="http://weitz.de/drakma/">drakma</a>,
+</li>
+<li>
+<a href="http://www.method-combination.net/lisp/ironclad/">ironclad</a>,
+</li>
+<li>
+<a href="http://common-lisp.net/project/xmls/">xmls</a>,
+</li>
+<li>
+<a href="http://cliki.net/split-sequence">split-sequence</a>,
+</li>
+<li>
+<a href="http://www.cliki.net/cl-base64">cl-base64</a>,
+</li>
+<li>
+<a href="http://common-lisp.net/project/trivial-utf-8/darcs/trivial-utf-8">trivial-utf-8</a>,
+</li>
+<li>
+<a href="http://puri.b9.com/">puri</a> (on implementations other than Allegro CL),
+</li>
+<li>
+<a href="http://www.cliki.net/CL-HTML-Parse">cl-html-parse</a> (on implementations other than Allegro CL).
+
+</li>
+</ul>
+<p>Example code depends also on <a href="http://weitz.de/hunchentoot/">Hunchentoot</a>.  Unit tests depend on
+<a href="http://common-lisp.net/project/bese/FiveAM.html">FiveAM</a> testing framework.
+</p>
+<p>
+All required libraries should be ASDF-installable, so running <code>darcs    dist</code> and then calling <code>ASDF-INSTALL:INSTALL</code> on resulting tarball
+should provide complete dependencies.
+</p>
+
+<div class="outline-4">
+<h4 id="sec-4">2.1.1 CL-Librarian shelf</h4>
+
+<p>As an alternative to ASDF-Install, a <a href="http://www.pasternacki.net/en/code/cl-librarian/">CL-Librarian</a> shelf definition
+for dependencies is provided.  To use it, run following shell
+commands in CL-OpenID directory:
+<pre>
+ darcs get http://www.pasternacki.net/repos/cl-librarian/ lib
+ cd lib
+ sh bootstrap.sh
+ cd ..
+</pre>
+Then start your favourite Lisp implementation and call:
+<pre>
+ (load "shelf")
+ (cl-librarian:download-shelf 'cl-openid.deps) ; for the first time or when new dependency is added
+ (cl-librarian:use-shelf 'cl-openid.deps) ; when libraries are already downloaded
+ (asdf:oos 'asdf:load-op :cl-openid)
+ (asdf:oos 'asdf:test-op :cl-openid) ; run 5am unit tests
+</pre>
+</p>
+</div>
+</div>
+
+<div class="outline-3">
+<h3 id="sec-5">2.2 Example code</h3>
+
+<p>Example implementation of Relying Party and OpenID Provider for
+<a href="http://weitz.de/hunchentoot/">Hunchentoot</a> web server is included in <code>examples/</code> subdirectory.  For
+convenience, both examples can be loaded as <code>CL-OPENID.EXAMPLES</code>
+ASDF system:
+<pre>
+ (asdf:oos 'asdf:load-op :cl-openid.examples)
+</pre>
+</p>
+</div>
+</div>
+
+<div class="outline-2">
+<h2 id="sec-6">3 Provided API</h2>
+
+
+
+<div class="outline-3">
+<h3 id="sec-7">3.1 Relying Party</h3>
+
+
+
+<div class="outline-4">
+<h4 id="sec-8">3.1.1 Class <code>RELYING-PARTY</code></h4>
+
+<p>Relying Party class.
+</p>
+
+<div class="outline-5">
+<h5 id="sec-9">3.1.1.1 Accessor <code>ROOT-URI</code> <i>relying-party</i> ⇒ <i>uri</i></h5>
+
+<p>Root URI address of the Relying Party instance.
+</p>
+<p>
+Used to generate return_to redirections.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-10">3.1.1.2 Accessor <code>REALM</code> <i>relying-party</i> ⇒ <i>uri</i></h5>
+
+<p>Relying Party realm.
+</p>
+</div>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-11">3.1.2 Constant <code>+AUTHPROC-HANDLE-PARAMETER+</code></h4>
+
+<p>Name of HTTP GET parameter, sent in return_to URI, which contains
+AUTH-PROCESS object unique handle.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-12">3.1.3 Function <code>INITIATE-AUTHENTICATION</code> <i>relying-party given-id &amp;key immediate-p</i> ⇒ <i>uri</i></h4>
+
+<p>Initiate authentication process by <i>relying-party</i> for identifier
+<i>given-id</i> received from user.
+</p>
+<p>
+If <i>immediate-p</i> is true, initiates immediate authentication
+process.  Returns URI to redirect user to.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-13">3.1.4 Function <code>HANDLE-INDIRECT-RESPONSE</code> <i>relying-party message request-uri &amp;optional auth-process</i> ⇒ <i>authendicated-id auth-process</i></h4>
+
+<p>Handle indirect response <i>message</i> for <i>relying-party</i>, coming at <i>request-uri</i>, concerning <i>authproc</i>.
+</p>
+<p>
+<i>authproc</i> can be a literal AUTH-PROCESS object, or a string
+(unique authproc handle, sent earlier by Relying Party). When
+<i>authproc</i> is NIL or not supplied, its handle is taken from
+<i>message</i> field named <code>+AUTHPROC-HANDLE-PARAMETER+</code>.
+</p>
+<p>
+Returns claimed ID URI on success, NIL on failure.  As second
+value, always returns AUTH-PROCESS object.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-14">3.1.5 Condition <code>OPENID-ASSERTION-ERROR</code></h4>
+
+<p>Error signaled by Relying Party when indirect response cannot be
+verified correctly.
+</p>
+
+<div class="outline-5">
+<h5 id="sec-15">3.1.5.1 Accessor <code>CODE</code> <i>openid-assertion-error</i> ⇒ <i>keyword</i></h5>
+
+<p>Keyword code of error.
+</p>
+<p>
+Possible values are
+</p><ul>
+<li>
+<code>:SERVER-ERROR</code> (received response is an erroor message),
+</li>
+<li>
+<code>:SETUP-NEEDED</code> (negative response to immediate request),
+</li>
+<li>
+<code>:INVALID-RETURN-TO</code> (request doesn't match previously sent openid.return_to),
+</li>
+<li>
+<code>:INVALID-NAMESPACE</code> (invalid openid.ns in received message),
+</li>
+<li>
+<code>:INVALID-ENDPOINT</code> (endpoint specified in assertion does not match previously discovered information),
+</li>
+<li>
+<code>:INVALID-CLAIMED-ID</code> (received claimed_id differs from specified previously, discovery for received claimed ID returns other endpoint),
+</li>
+<li>
+<code>:INVALID-NONCE</code> (repeated openid.nonce),
+</li>
+<li>
+<code>:INVALID-SIGNATURE</code> (signature verification failed),
+</li>
+<li>
+<code>:INVALID-SIGNED-FIELDS</code> (not all fields that need to be signed, were signed).
+
+</li>
+</ul></div>
+
+<div class="outline-5">
+<h5 id="sec-16">3.1.5.2 Accessor <code>REASON</code> <i>openid-assertion-error</i> ⇒ <i>string</i></h5>
+
+<p>Textual description of error.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-17">3.1.5.3 Accessor <code>AUTHPROC</code> <i>openid-assertion-error</i> ⇒ <i>auth-process</i></h5>
+
+<p>The <code>AUTH-PROCESS</code> structure that was being verified.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-18">3.1.5.4 Accessor <code>MESSAGE</code> <i>openid-assertion-error</i> ⇒ <i>message</i></h5>
+
+<p>Received message (an association list).
+</p>
+</div>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-19">3.1.6 Structure <code>AUTH-PROCESS</code></h4>
+
+<p>Data structure gathering information about an ongoing
+authentication process.
+</p>
+
+<div class="outline-5">
+<h5 id="sec-20">3.1.6.1 Function <code>AUTH-PROCESS-P</code> <i>object</i> ⇒ <i>boolean</i></h5>
+
+<p>Returns true if <i>object</i> is an <code>AUTH-PROCESS</code> structure.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-21">3.1.6.2 Accessor <code>PROTOCOL-VERSION-MAJOR</code> <i>auth-process</i> ⇒ <i>integer</i></h5>
+
+<p>Protocol version major number of <i>auth-process</i>.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-22">3.1.6.3 Accessor <code>PROTOCOL-VERSION-MINOR</code> <i>auth-process</i> ⇒ <i>integer</i></h5>
+
+<p>Protocol version minor number of <i>auth-process</i>.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-23">3.1.6.4 Accessor <code>PROTOCOL-VERSION</code> <i>auth-process</i> ⇒ <i>cons</i></h5>
+
+<p>Protocol version of an authentication process, as a cons <code>(MAJOR . MINOR)</code>.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-24">3.1.6.5 Accessor <code>CLAIMED-ID</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+
+<p>Claimed ID of an auth proces.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-25">3.1.6.6 Accessor <code>OP-LOCAL-ID</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+
+<p>OP-local id of an auth process.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-26">3.1.6.7 Accessor <code>ENDPOINT-URI</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+
+<p>Discovered endpoint URI.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-27">3.1.6.8 Accessor <code>RETURN-TO</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+
+<p>Authentication process' return_to address.
+</p>
+<p>
+It is Relying Party's root URI with added HTTP GET parameter
+named <code>+AUTHPROC-HANDLE-PARAMETER+</code> whose value is authproc's
+unique handle.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-28">3.1.6.9 Accessor <code>TIMESTAMP</code> <i>auth-process</i> ⇒ <i>universal-time</i></h5>
+
+<p>Universal time of authentication process structure's creation.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-29">3.1.6.10 Accessor <code>XRDS-LOCATION</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+
+<p>Address of XRDS file used in <i>auth-process</i> discovery.
+</p>
+</div>
+</div>
+</div>
+
+<div class="outline-3">
+<h3 id="sec-30">3.2 OpenID Provider</h3>
+
+
+<div class="outline-4">
+<h4 id="sec-31">3.2.1 Class <code>OPENID-PROVIDER</code></h4>
+
+<p>OpenID Provider server abstract class.
+</p>
+<p>
+This class should be subclassed, and specialized methods should be
+provided at least for <code>HANDLE-CHECKID-SETUP</code> (preferably also for
+<code>HANDLE-CHECKID-IMMEDIATE</code>).
+</p>
+
+<div class="outline-5">
+<h5 id="sec-32">3.2.1.1 Accessor <code>OP-ENDPOINT-URI</code> <i>op</i> ⇒ <i>uri</i></h5>
+
+<p>OpenID Provider instance's endpoint URI
+</p>
+</div>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-33">3.2.2 Constant <code>+INDIRECT-RESPONSE-CODE+</code></h4>
+
+<p>HTTP code used for indirect response redirections.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-34">3.2.3 Function <code>HANDLE-OPENID-PROVIDER-REQUEST</code> <i>op message &amp;key secure-p</i> ⇒ <i>response values</i></h4>
+
+<p>Handle request <i>message</i> for OpenID Provider instance <i>op</i>.
+</p>
+<p>
+<i>secure-p</i> should be passed by caller to indicate whether it is
+secure to use unencrypted association method.
+</p>
+<p>
+Returns two values: first is body, and second is HTTP code.  If
+second value is not returned, 200 OK HTTP code should be assumed.
+</p>
+<p>
+On HTTP redirections (second value between 300 and 399 inclusive,
+actually it will be <code>+INDIRECT-RESPONSE-CODE+</code>), primary returned
+value will be an URI to redirect user to.
+</p>
+<p>
+The same rules apply to all <code>*-RESPONSE</code> functions and
+<code>WITH-INDIRECT-ERROR-HANDLER</code> form return values.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-35">3.2.4 Function <code>CANCEL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i></h4>
+
+<p>Send cancel (authenticaction failure) response to MESSAGE from OP.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-36">3.2.5 Function <code>SUCCESSFUL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i></h4>
+
+<p>Return successful response to <i>message</i> by <i>op</i>.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-37">3.2.6 Macro <code>WITH-INDIRECT-ERROR-HANDLER</code> <i>&amp;body body</i> ⇒ <i>response values</i></h4>
+
+<p>Handle <code>INDIRECT-ERROR</code> in <i>body</i>.
+</p>
+<p>
+When <code>INDIRECT-ERROR</code> condition is signaled, immediately return
+indirect error response.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-38">3.2.7 Function <code>SIGNAL-INDIRECT-ERROR</code> <i>message reason &amp;rest reason-args</i></h4>
+
+<p>Signal <code>INDIRECT-ERROR</code> condition as reply to <i>message</i>,
+effectively returning indirect error reply from
+<code>WITH-INDIRECT-ERROR-HANDLER</code> block.
+</p>
+<p>
+<i>Reason</i> is textual error message format string, with
+<i>reason-args</i> being its arguments.
+</p>
+
+</div>
+
+<div class="outline-4">
+<h4 id="sec-39">3.2.8 Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i></h4>
+
+<p>Handle checkid_immediate requests.
+</p>
+<p>
+This generic should be specialized on concrete Provider classes to
+perform immediate login checks on <i>MESSAGE</i>.  It should return at
+once, either true value (to indicate successful login), or NIL (to
+indicate immediate login failure).
+</p>
+<p>
+Default method always fails.
+</p>
+<p>
+This generic is called within scope of
+<code>WITH-INDIRECT-ERROR-HANDLER</code>.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-40">3.2.9 Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i></h4>
+
+<p>URI for user setup to return on failed immediate request.
+</p>
+<p>
+When NIL is returned, no user_setup_url is sent in setup_needed
+responses.
+</p>
+<p>
+This generic should be specialized on concrete Provider classes to
+provide entry point to user authentication dialogue.
+</p>
+<p>
+Default method always returns NIL.
+</p>
+</div>
+
+<div class="outline-4">
+<h4 id="sec-41">3.2.10 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i></h4>
+
+<p>Handle checkid_setup requests.
+</p>
+<p>
+This generic should be specialized on concrete Provider classes to
+perform login checks with user dialogue, that would (possibly
+after some HTTP request-response cycles) end in either
+<code>SUCCESSFUL-RESPONSE</code>, or in <code>CANCEL-RESPONSE</code>.
+</p>
+<p>
+Default method always fails.
+</p>
+<p>
+This generic is called within scope of
+<code>WITH-INDIRECT-ERROR-HANDLER</code>.
+</p>
+
+</div>
+
+<div class="outline-4">
+<h4 id="sec-42">3.2.11 Protocol messages</h4>
+
+<p>Messages passed between OpenID Provider and the Relying Party are
+composed of key-value pairs.  Natural Lisp representation of
+those, and the one used in CL-OpenID, is an association list.  A
+handful of conveniense function is provided to avoid tweaking
+messages on cons level.
+</p>
+
+<div class="outline-5">
+<h5 id="sec-43">3.2.11.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i></h5>
+
+<p>Make new message from arbitrary keyword parameters.
+</p>
+<p>
+Keyword specifies a message field key (actual key is lowercased
+symbol name), and value following the keyword specifies
+associated value.
+</p>
+<p>
+Value can be a string (which will be literal field value), symbol
+(symbol's name will be used as a value), vector of
+(UNSIGNED-BYTE 8) (which will be Base64-encoded), URI object or
+integer (which both will be PRINC-TO-STRING-ed).
+</p>
+<p>
+If value is NIL, field won't be included in the message at all.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-44">3.2.11.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i></h5>
+
+<p>Create a copy of MESSAGE, updating PARAMETERS provided as keyword parameters.
+</p>
+<p>
+If MESSAGE already includes provided key, new value is used in
+the result; if a key is new, the field will be appended to result
+message.  PARAMETERS are interpreted as by MAKE-MESSAGE function.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-45">3.2.11.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i></h5>
+
+<p>Add openid.namespace <i>namespace</i> to <i>message</i>.
+</p>
+<p>
+Default namespace is OpenID v2.  Returns updated message alist.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-46">3.2.11.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i></h5>
+
+<p>Get value of <i>field-name</i> field from <i>message</i>.
+</p>
+</div>
+
+<div class="outline-5">
+<h5 id="sec-47">3.2.11.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i></h5>
+
+<p>True if <i>message</i> is an OpenID v2 message (namespace check).
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble"><p class="author"> Author: Maciej Pasternacki
+<a href="mailto:maciej@pasternacki.net">&lt;maciej@pasternacki.net&gt;</a>
+</p>
+<p class="date"> Date: 2008/08/18 01:39:41</p>
+</div></body>
+</html>
