@@ -34,6 +34,17 @@
   (require 'uri)
   (require 'phtml))
 
+
+(defsystem #:cl-openid.examples
+  :description "Examples for cl-openid"
+  :components
+  ((:module #:examples
+            :components
+            ((:file "relying-party")
+             (:file "provider"))))
+  :depends-on (#:hunchentoot))
+
+
 (defsystem #:cl-openid.test
   :version "0.1"
   :description "Test suite for cl-openid"
