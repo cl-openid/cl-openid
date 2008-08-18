@@ -169,7 +169,7 @@ Original application is published at
 **** Accessor =OP-LOCAL-ID= /auth-process/ ⇒ /uri/
      OP-local id of an auth process.
 
-**** Accessor =ENDPOINT-URI= /auth-process/ ⇒ /uri/
+**** Accessor =PROVIDER-ENDPOINT-URI= /auth-process/ ⇒ /uri/
      Discovered endpoint URI.
 
 **** Accessor =RETURN-TO= /auth-process/ ⇒ /uri/

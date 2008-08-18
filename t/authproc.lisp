@@ -116,28 +116,28 @@
          reference))
 
 (test perform-html-discovery
-  (dolist (test-case '(("sanity test" (endpoint-uri) (op-local-id) (xrds-location))
+  (dolist (test-case '(("sanity test" (provider-endpoint-uri) (op-local-id) (xrds-location))
 
                        ;; single tags
                        ("<link rel=\"openid2.provider\" href=\"http://example.com/\">" ; simple endpoint URI
-                        (protocol-version . (2 . 0)) (endpoint-uri . "http://example.com/") (op-local-id) (xrds-location))
+                        (protocol-version . (2 . 0)) (provider-endpoint-uri . "http://example.com/") (op-local-id) (xrds-location))
                        ("<link rel=\"openid2.local_id\" href=\"http://example.com/\">" ; local_id only, nothing should be discovered
-                        (endpoint-uri) (op-local-id) (xrds-location))
+                        (provider-endpoint-uri) (op-local-id) (xrds-location))
                        ("<link rel=\"openid2.provider\" href=\"http://example.com/ep\"> <link rel=\"openid2.local_id\" href=\"http://example.com/oploc\">"
-                        (protocol-version . (2 . 0)) (endpoint-uri . "http://example.com/ep") (op-local-id  . "http://example.com/oploc") (xrds-location))
+                        (protocol-version . (2 . 0)) (provider-endpoint-uri . "http://example.com/ep") (op-local-id  . "http://example.com/oploc") (xrds-location))
                        ("<link rel=\"openid.server\" href=\"http://example.com/\">"
-                        (protocol-version . (1 . 1)) (op-local-id) (endpoint-uri . "http://example.com/") (xrds-location))
+                        (protocol-version . (1 . 1)) (op-local-id) (provider-endpoint-uri . "http://example.com/") (xrds-location))
                        ("<link rel=\"openid.delegate\" href=\"http://example.com/\">"
-                        (endpoint-uri) (op-local-id) (xrds-location))
+                        (provider-endpoint-uri) (op-local-id) (xrds-location))
                        ("<link rel=\"openid.server\" href=\"http://example.com/ep\"> <link rel=\"openid.delegate\" href=\"http://example.com/oploc\">"
-                        (protocol-version . (1 . 1)) (endpoint-uri . "http://example.com/ep") (op-local-id . "http://example.com/oploc") (xrds-location))
+                        (protocol-version . (1 . 1)) (provider-endpoint-uri . "http://example.com/ep") (op-local-id . "http://example.com/oploc") (xrds-location))
                        ("<meta http-equiv=\"X-XRDS-Location\" content=\"http://example.com/\">"
-                        (endpoint-uri) (op-local-id) (xrds-location . "http://example.com/"))
+                        (provider-endpoint-uri) (op-local-id) (xrds-location . "http://example.com/"))
 
                        ;; combo
                        ("<link rel=\"openid2.provider\" href=\"http://example.com/ep\"> <link rel=\"openid2.local_id\" href=\"http://example.com/oploc\"> <link rel=\"openid.server\" href=\"http://example.com/epv1\"> <link rel=\"openid.delegate\" href=\"http://example.com/oplocv1\"> <meta http-equiv=\"X-XRDS-Location\" content=\"http://example.com/xrds\">"
                         (protocol-version . (2 . 0))
-                        (endpoint-uri . "http://example.com/ep")
+                        (provider-endpoint-uri . "http://example.com/ep")
                         (op-local-id . "http://example.com/oploc")
                         (xrds-location . "http://example.com/xrds"))))
     (let ((authproc (perform-html-discovery (make-auth-process "http://example.com/")
@@ -161,7 +161,7 @@
 
     (dolist (test-case (xrds
                         ;; Sanity check
-                        "" '((endpoint-uri) (op-local-id))
+                        "" '((provider-endpoint-uri) (op-local-id))
 
                         ;; Simple endpoint 2.0 (Yahoo)
                         "<Service>
@@ -169,7 +169,7 @@
 <URI>http://example.com/</URI>
 </Service>"
                         '((protocol-version . (2 . 0))
-                          (endpoint-uri . "http://example.com/")
+                          (provider-endpoint-uri . "http://example.com/")
                           (op-local-id))
 
                         ;; Simple OP-local ID 2.0 (example in OpenID 2.0 standard, Appendix A.3
@@ -179,7 +179,7 @@
 <LocalID>https://exampleuser.exampleprovider.com/</LocalID>
 </Service>"
                         '((protocol-version . (2 . 0))
-                          (endpoint-uri . "https://www.exampleprovider.com/endpoint/")
+                          (provider-endpoint-uri . "https://www.exampleprovider.com/endpoint/")
                           (op-local-id . "https://exampleuser.exampleprovider.com/"))
 
                         ;; Simple endpoint 1.0
@@ -188,7 +188,7 @@
 <URI>http://example.com/endpoint/</URI>
 </Service>"
                         '((protocol-version . (1 . 0))
-                          (endpoint-uri . "http://example.com/endpoint/")
+                          (provider-endpoint-uri . "http://example.com/endpoint/")
                           (op-local-id))
 
                         ;; type variants
@@ -197,7 +197,7 @@
 <URI>http://example.com/endpoint/</URI>
 </Service>"
                         '((protocol-version . (1 . 0))
-                          (endpoint-uri . "http://example.com/endpoint/")
+                          (provider-endpoint-uri . "http://example.com/endpoint/")
                           (op-local-id))
  
                         "<Service>
@@ -205,7 +205,7 @@
 <URI>http://example.com/endpoint/</URI>
 </Service>"
                         '((protocol-version . (1 . 1))
-                          (endpoint-uri . "http://example.com/endpoint/")
+                          (provider-endpoint-uri . "http://example.com/endpoint/")
                           (op-local-id))
 
                         "<Service>
@@ -213,7 +213,7 @@
 <URI>http://example.com/endpoint/</URI>
 </Service>"
                         '((protocol-version . (1 . 1))
-                          (endpoint-uri . "http://example.com/endpoint/")
+                          (provider-endpoint-uri . "http://example.com/endpoint/")
                           (op-local-id))                        
 
                         ;; Simple OP-local ID 1.0
@@ -223,7 +223,7 @@
 <openid:Delegate>http://example.com/oplocal/</openid:Delegate>
 </Service>"
                         '((protocol-version . (1 . 0))
-                          (endpoint-uri . "http://example.com/endpoint/")
+                          (provider-endpoint-uri . "http://example.com/endpoint/")
                           (op-local-id . "http://example.com/oplocal/"))
 
                         ;; Combo example from Wikipedia
@@ -257,7 +257,7 @@
     </Service>"
                         '((protocol-version . (2 . 0))
                           (op-local-id . "http://example.myopenid.com/")
-                          (endpoint-uri . "http://www.myopenid.com/server"))
+                          (provider-endpoint-uri . "http://www.myopenid.com/server"))
 
                         ;; Priority / 1.0, openid.pl
                         "<Service priority=\"10\">
@@ -272,7 +272,7 @@
       <URI>http://example.com/server</URI>
     </Service>"
                         '((protocol-version . (1 . 1))
-                          (endpoint-uri . "http://example.com/server"))
+                          (provider-endpoint-uri . "http://example.com/server"))
 
                         ;; Combo 1.0/2.0 in single Service tag (vinismo.com Wiki)
                         "<Service priority=\"0\">
@@ -282,7 +282,7 @@
     <Type>http://specs.openid.net/auth/2.0/signon</Type>
   </Service>"
                         '((protocol-version . (2 . 0))
-                          (endpoint-uri . "http://example.com/endpoint/"))))
+                          (provider-endpoint-uri . "http://example.com/endpoint/"))))
       (let ((authproc (perform-xrds-discovery (make-auth-process "example.com")
                                               (first test-case))))
         (dolist (check (rest test-case))

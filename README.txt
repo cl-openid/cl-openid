@@ -2,7 +2,7 @@
                                    =========
 
 Author: Maciej Pasternacki <maciej@pasternacki.net>
-Date: 2008/08/18 19:47:17
+Date: 2008/08/18 20:02:01
 
 
 Cl-OpenID is an implementation of [OpenID] protocol in Common Lisp.  It
@@ -45,7 +45,7 @@ Table of Contents
             3.1.6.4 Accessor =PROTOCOL-VERSION= /auth-process/ ⇒ /cons/
             3.1.6.5 Accessor =CLAIMED-ID= /auth-process/ ⇒ /uri/
             3.1.6.6 Accessor =OP-LOCAL-ID= /auth-process/ ⇒ /uri/
-            3.1.6.7 Accessor =ENDPOINT-URI= /auth-process/ ⇒ /uri/
+            3.1.6.7 Accessor =PROVIDER-ENDPOINT-URI= /auth-process/ ⇒ /uri/
             3.1.6.8 Accessor =RETURN-TO= /auth-process/ ⇒ /uri/
             3.1.6.9 Accessor =TIMESTAMP= /auth-process/ ⇒ /universal-time/
             3.1.6.10 Accessor =XRDS-LOCATION= /auth-process/ ⇒ /uri/
@@ -244,8 +244,8 @@ Table of Contents
 =====================================================
      OP-local id of an auth process.
 
-3.1.6.7 Accessor =ENDPOINT-URI= /auth-process/ ⇒ /uri/
-======================================================
+3.1.6.7 Accessor =PROVIDER-ENDPOINT-URI= /auth-process/ ⇒ /uri/
+===============================================================
      Discovered endpoint URI.
 
 3.1.6.8 Accessor =RETURN-TO= /auth-process/ ⇒ /uri/

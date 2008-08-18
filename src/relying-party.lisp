@@ -74,7 +74,7 @@ OPENID-PROVIDER instance."
               (associate endpoint :v1 v1)))))
 
 (defun ap-association (rp authproc)
-  (association rp (endpoint-uri authproc)
+  (association rp (provider-endpoint-uri authproc)
                (= 1 (protocol-version-major authproc))))
 
 (defun association-by-handle (rp handle)
@@ -248,7 +248,7 @@ As second value, always returns AUTH-PROCESS object."
                    "Wrong namespace ~A" (message-field message "openid.ns")))
 
          (unless (and v1-compat (null (message-field message "openid.op_endpoint")))
-           (ensure (same-uri #'endpoint-uri "openid.op_endpoint")
+           (ensure (same-uri #'provider-endpoint-uri "openid.op_endpoint")
                    :invalid-endpoint
                    "Endpoint URL does not match previously discovered information."))
 
@@ -256,11 +256,11 @@ As second value, always returns AUTH-PROCESS object."
                           (null (message-field message "openid.claimed_id")))
                      (same-uri #'claimed-id "openid.claimed_id"))
            (let ((cap (discover (message-field message "openid.claimed_id"))))
-             (if (uri= (endpoint-uri cap) (endpoint-uri authproc))
+             (if (uri= (provider-endpoint-uri cap) (provider-endpoint-uri authproc))
                  (setf (claimed-id authproc) (claimed-id cap)) ; Accept claimed ID change
                  (err :invalid-claimed-id
                       "Received Claimed ID ~A differs from user-supplied ~A, and discovery for received one did not find the same endpoint."
-                      (endpoint-uri authproc) (endpoint-uri cap)))))
+                      (provider-endpoint-uri authproc) (provider-endpoint-uri cap)))))
 
          ;; 11.3.  Checking the Nonce
          (let ((nonce (message-field message "openid.response_nonce")))
@@ -283,7 +283,7 @@ As second value, always returns AUTH-PROCESS object."
                        ;; 11.4.1.  Verifying with an Association
                        (check-signature association message)
                        ;; 11.4.2.  Verifying Directly with the OpenID Provider
-                       (let ((response (direct-request (endpoint-uri authproc)
+                       (let ((response (direct-request (provider-endpoint-uri authproc)
                                                        (acons "openid.mode" "check_authentication"
                                                               (remove "openid.mode" message
                                                                       :key #'car
