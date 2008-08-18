@@ -6,7 +6,8 @@
         #:split-sequence
         #:cl-base64
         #:trivial-utf-8
-        #:ironclad)
+        #:ironclad
+        #:bordeaux-threads)
   (:shadowing-import-from :cl #:null) ; Ironclad shadows NULL, we don't want to
   (:export #:in-ns #:message-field #:message-v2-p #:make-message #:copy-message  ; Message API
            #:relying-party #:realm #:root-uri   ; RP class

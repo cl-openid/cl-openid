@@ -6,7 +6,8 @@
 (defclass* openid-provider ()
   ((op-endpoint-uri :documentation "Provider endpoint URI")
    (associations (make-hash-table :test #'equal)
-                 :documentation "OP's associations."))
+                 :documentation "OP's associations.")
+   (associations-lock (make-lock)))
   (:documentation "OpenID Provider server abstract class.
 
 This class should be subclassed, and specialized methods should be
@@ -18,7 +19,9 @@ HANDLE-CHECKID-IMMEDIATE)."))
                     :documentation "Provider endpoint URI")
    (associations :initform (make-hash-table :test #'equal)
                  :accessor associations :initarg :associations
-                 :documentation "OP's associations."))
+                 :documentation "OP's associations.")
+   (associations-lock :initform (make-lock)
+                      :accessor associations-lock :initarg :associations-lock))
   (:documentation "OpenID Provider server abstract class.
 
 This class should be subclassed, and specialized methods should be
@@ -96,15 +99,16 @@ arguments."
 
 ;;; Positive assertion generation
 (defun successful-response-message (op message)
-  (let* ((assoc (or (gethash (message-field message "openid.assoc_handle")
-                             (associations op))
-                    (let ((new-association (make-association
-                                            :hmac-digest (if (message-v2-p message)
-                                                             :sha256
-                                                             :sha1))))
-                      (setf (gethash (association-handle new-association) (associations op))
-                            new-association)
-                      new-association)))
+  (let* ((assoc (with-lock-held ((associations-lock op))
+                  (or (gethash (message-field message "openid.assoc_handle")
+                               (associations op))
+                      (let ((new-association (make-association
+                                              :hmac-digest (if (message-v2-p message)
+                                                               :sha256
+                                                               :sha1))))
+                        (setf (gethash (association-handle new-association) (associations op))
+                              new-association)
+                        new-association))))
          (rv (make-message :openid.mode "id_res"
                            :openid.op_endpoint (op-endpoint-uri op)
                            :openid.claimed_id (message-field message "openid.identity")
@@ -256,8 +260,9 @@ WITH-INDIRECT-ERROR-HANDLER form return values."
                     (ensure-integer (message-field message "openid.dh_consumer_public"))
                     private
                     (association-mac association))
-                 (setf (gethash (association-handle association) (associations op))
-                       association)
+                 (with-lock-held ((associations-lock op))
+                   (setf (gethash (association-handle association) (associations op))
+                         association))
                  (in-ns (make-message :assoc_handle (association-handle association)
                                       :session_type (message-field message "openid.session_type")
                                       :assoc_type (message-field message "openid.assoc_type")
@@ -268,8 +273,9 @@ WITH-INDIRECT-ERROR-HANDLER form return values."
             (("" "no-encryption")
              (if secure-p
                  (let ((association (make-association :association-type (message-field message "openid.assoc_type"))))
-                   (setf (gethash (association-handle association) (associations op))
-                         association)
+                   (with-lock-held ((associations-lock op))
+                     (setf (gethash (association-handle association) (associations op))
+                           association))
                    (in-ns (make-message :assoc_handle (association-handle association)
                                         :session_type (message-field message "openid.session_type")
                                         :assoc_type (message-field message "openid.assoc_type")
@@ -312,8 +318,9 @@ WITH-INDIRECT-ERROR-HANDLER form return values."
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
      (encode-kv (in-ns (make-message
-                        :is_valid (if (check-signature (gethash (message-field message "openid.assoc_handle")
-                                                                (associations op))
+                        :is_valid (if (check-signature (with-lock-held ((associations-lock op))
+                                                         (gethash (message-field message "openid.assoc_handle")
+                                                                  (associations op)))
                                                        message)
                                       "true"
                                       "false")))))

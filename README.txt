@@ -2,7 +2,7 @@
                                    =========
 
 Author: Maciej Pasternacki <maciej@pasternacki.net>
-Date: 2008/08/18 01:38:55
+Date: 2008/08/18 19:46:38
 
 
 Cl-OpenID is an implementation of [OpenID] protocol in Common Lisp.  It
@@ -103,6 +103,7 @@ Table of Contents
    - [split-sequence],
    - [cl-base64],
    - [trivial-utf-8],
+   - [bordeaux-threads]
    - [puri] (on implementations other than Allegro CL),
    - [cl-html-parse] (on implementations other than Allegro CL).
 

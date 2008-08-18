@@ -10,11 +10,14 @@ Used to generate return_to redirections.")
    (realm :documentation "Relying Party realm.")
    (associations (make-hash-table :test #'equalp)
                  :documentation "Associations made by RP.")
+   (associations-lock (make-lock))
    (authprocs (make-hash-table :test #'equal)
               :documentation "Authenticaction processes currently handled by RP.")
    (authproc-timeout 3600 :documentation "Number of seconds after which an AUTH-PROCESS is considered timed out and is deleted from AUTHPROCS.")
+   (authprocs-lock (make-lock))
    (nonces () :documentation "A list of openid.nonce response parameters to avoid duplicates.")
-   (nonce-timeout 3600 :documentation "Number of seconds after which nonce is considered timed out."))
+   (nonce-timeout 3600 :documentation "Number of seconds after which nonce is considered timed out.")
+   (nonces-lock (make-lock)))
   (:documentation "Relying Party server class."))
 
 (defclass relying-party ()
@@ -27,57 +30,68 @@ Used to generate return_to redirections.")
    (associations :initform (make-hash-table :test #'equalp)
                  :accessor associations :initarg :associations
                  :documentation "Associations made by RP.")
+   (associations-lock :initform (make-lock)
+                      :accessor associations-lock :initarg :associations-lock)
    (authprocs :initform (make-hash-table :test #'equal)
               :accessor authprocs :initarg :authprocs
               :documentation "Authenticaction processes currently handled by RP.")
    (authproc-timeout :initform 3600
                      :accessor authproc-timeout :initarg :authproc-timeout
                      :documentation "Number of seconds after which an AUTH-PROCESS is considered timed out and is deleted from AUTHPROCS.")
+   (authprocs-lock :initform (make-lock)
+                   :accessor authprocs-lock :initarg :authprocs-lock)
    (nonces :initform nil
            :accessor nonces :initarg :nonces
            :documentation "A list of openid.nonce response parameters to avoid duplicates.")
    (nonce-timeout :initform 3600
                   :accessor nonce-timeout :initarg :nonce-timeout
-                  :documentation "Number of seconds after which nonce is considered timed out."))
+                  :documentation "Number of seconds after which nonce is considered timed out.")
+   (nonces-lock :initform (make-lock)
+                :accessor nonces-lock :initarg :nonces-lock))
   (:documentation "Relying Party server class."))
 
 ;; RP associations
 (defun gc-associations (rp &optional invalidate-handle &aux (time (get-universal-time)))
-  (maphash #'(lambda (ep association)
-               (when (or (> time (association-expires association))
-                         (and invalidate-handle
-                              (string= invalidate-handle (association-handle association))))
-                 (remhash ep (associations rp))))
-           (associations rp)))
+  (with-lock-held ((associations-lock rp))
+    (maphash #'(lambda (ep association)
+                 (when (or (> time (association-expires association))
+                           (and invalidate-handle
+                                (string= invalidate-handle (association-handle association))))
+                   (remhash ep (associations rp))))
+             (associations rp))))
 
 (defun association (rp endpoint &optional v1)
   (gc-associations rp)                  ; keep clean
   (setf endpoint (uri endpoint))        ; make sure it's an URI object
-  (or (gethash endpoint (associations rp))
-      (setf (gethash endpoint (associations rp))
-            (associate endpoint :v1 v1))))
+  (with-lock-held ((associations-lock rp))
+    (or (gethash endpoint (associations rp))
+        (setf (gethash endpoint (associations rp))
+              (associate endpoint :v1 v1)))))
 
 (defun ap-association (rp authproc)
   (association rp (endpoint-uri authproc)
                (= 1 (protocol-version-major authproc))))
 
 (defun association-by-handle (rp handle)
-  (maphash #'(lambda (ep assoc)
-               (declare (ignore ep))
-               (when (string= handle (association-handle assoc))
-                 (return-from association-by-handle assoc)))
-           (associations rp)))
+  (with-lock-held ((associations-lock rp))
+    (maphash #'(lambda (ep assoc)
+                 (declare (ignore ep))
+                 (when (string= handle (association-handle assoc))
+                   (return-from association-by-handle assoc)))
+             (associations rp))))
 
 ;; Auth processes
 (defun gc-authprocs (rp &aux (time-limit (- (get-universal-time) (authproc-timeout rp))))
   "Collect old auth-process objects from relying party RP."
-  (maphash #'(lambda (k v)
-               (when (< (timestamp v) time-limit)
-                 (remhash k (authprocs rp))))
-           (authprocs rp)))
+  (with-lock-held ((authprocs-lock rp))
+    (maphash #'(lambda (k v)
+                 (when (< (timestamp v) time-limit)
+                   (remhash k (authprocs rp))))
+             (authprocs rp))))
 
 (defun authproc-by-handle (rp handle)
-  (or (gethash handle (authprocs rp))
+  (or (with-lock-held ((authprocs-lock rp))
+        (gethash handle (authprocs rp)))
       (error "Don't know authentication-process with handle ~A" handle)))
 
 (defvar *auth-handle-counter* 0 ; This will stay global, and I think it should be less predictable.
@@ -100,13 +114,16 @@ Used to generate return_to redirections.")
 If IMMEDIATE-P is true, initiates immediate authentication process.  Returns URI to redirect user to."
   (gc-authprocs rp)
   (setf (timestamp authproc) (get-universal-time)
-        (gethash handle (authprocs rp)) authproc
 
         (return-to authproc)
         (copy-uri (root-uri rp)
                   :query (drakma::alist-to-url-encoded-string
                           (acons +authproc-handle-parameter+ handle nil)
                           :utf-8)))
+
+  (with-lock-held ((authprocs-lock rp))
+    (setf (gethash handle (authprocs rp)) authproc))
+
   (request-authentication-uri authproc
                               :immediate-p immediate-p
                               :realm (realm rp)
@@ -124,11 +141,12 @@ If IMMEDIATE-P is true, initiates immediate authentication process.  Returns URI
                          ))
 
 (defun gc-nonces (rp &aux (time-limit (- (get-universal-time) (nonce-timeout rp))))
-  (setf (nonces rp)
-        (delete-if #'(lambda (nonce-time)
-                       (< nonce-time time-limit))
-                   (nonces rp)
-                   :key #'nonce-universal-time)))
+  (with-lock-held ((nonces-lock rp))
+    (setf (nonces rp)
+          (delete-if #'(lambda (nonce-time)
+                         (< nonce-time time-limit))
+                     (nonces rp)
+                     :key #'nonce-universal-time))))
 
 (define-condition openid-assertion-error (error)
   ((code :initarg :code :reader code
@@ -242,13 +260,14 @@ As second value, always returns AUTH-PROCESS object."
          ;; 11.3.  Checking the Nonce
          (let ((nonce (message-field message "openid.response_nonce")))
            (if nonce
-               (progn (ensure (not (or (> (- (get-universal-time)
-                                             (nonce-universal-time nonce))
-                                          (nonce-timeout rp))
-                                       (member nonce (nonces rp) :test #'string=)))
-                              :invalid-nonce
-                              "Repeated nonce.")
-                      (push nonce (nonces rp)))
+               (with-lock-held ((nonces-lock rp))
+                 (progn (ensure (not (or (> (- (get-universal-time)
+                                               (nonce-universal-time nonce))
+                                            (nonce-timeout rp))
+                                         (member nonce (nonces rp) :test #'string=)))
+                                :invalid-nonce
+                                "Repeated or timed out nonce.")
+                        (push nonce (nonces rp))))
                (unless v1-compat
                  (err :missing-nonce "No openid.response_noce"))))
          (gc-nonces rp)
