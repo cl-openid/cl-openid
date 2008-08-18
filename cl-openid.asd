@@ -54,6 +54,7 @@
                  (:file "message" :depends-on ("suite"))
                  (:file "association" :depends-on ("suite"))
                  (:file "authproc" :depends-on ("suite"))
+                 (:file "relying-party" :depends-on ("suite"))
                  (:file "provider" :depends-on ("suite")))))
   :depends-on (#:cl-openid #:fiveam))
 
