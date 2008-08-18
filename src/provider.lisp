@@ -99,6 +99,7 @@ arguments."
 
 ;;; Positive assertion generation
 (defun successful-response-message (op message)
+  (gc-associations op)
   (let* ((assoc (with-lock-held ((associations-lock op))
                   (or (gethash (message-field message "openid.assoc_handle")
                                (associations op))
@@ -241,6 +242,7 @@ The same rules apply to all *-RESPONSE functions and
 WITH-INDIRECT-ERROR-HANDLER form return values."
   (string-case (message-field message "openid.mode")
     ("associate"
+     (gc-associations op)
      (encode-kv                         ; Direct response
       (handler-case
           (string-case (message-field message "openid.session_type")

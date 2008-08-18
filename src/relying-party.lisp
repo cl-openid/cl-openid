@@ -51,14 +51,19 @@ Used to generate return_to redirections.")
   (:documentation "Relying Party server class."))
 
 ;; RP associations
-(defun gc-associations (rp &optional invalidate-handle &aux (time (get-universal-time)))
-  (with-lock-held ((associations-lock rp))
+(defun gc-associations (server &optional invalidate-handle &aux (time (get-universal-time)))
+  "Garbage-collect timed out associations from SERVER.
+
+INVALIDATE-HANDLE is a handle of association that needs to be
+collected regardless of validity.  SERVER may be a RELYING-PARTY or
+OPENID-PROVIDER instance."
+  (with-lock-held ((associations-lock server))
     (maphash #'(lambda (ep association)
                  (when (or (> time (association-expires association))
                            (and invalidate-handle
                                 (string= invalidate-handle (association-handle association))))
-                   (remhash ep (associations rp))))
-             (associations rp))))
+                   (remhash ep (associations server))))
+             (associations server))))
 
 (defun association (rp endpoint &optional v1)
   (gc-associations rp)                  ; keep clean
