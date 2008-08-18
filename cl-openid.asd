@@ -20,8 +20,8 @@
                          (:file "message" :depends-on ("package" "shared"))
                          (:file "association" :depends-on ("package" "shared" "message"))
                          (:file "authproc" :depends-on ("package" "shared" "message" "association"))
-                         (:file "relying-party")
-                         (:file "provider"))))
+                         (:file "relying-party" :depends-on ("package" "shared" "message" "association" "authproc"))
+                         (:file "provider" :depends-on ("package" "shared" "message" "association")))))
   :depends-on (#:drakma #:ironclad #:xmls #:split-sequence #:puri
                         #-allegro #:cl-html-parse
                         #:cl-base64 #:trivial-utf-8))
