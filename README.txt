@@ -2,7 +2,7 @@
                                    =========
 
 Author: Maciej Pasternacki <maciej@pasternacki.net>
-Date: 2008/08/18 20:02:01
+Date: 2008/08/18 20:05:03
 
 
 Cl-OpenID is an implementation of [OpenID] protocol in Common Lisp.  It
@@ -51,7 +51,7 @@ Table of Contents
             3.1.6.10 Accessor =XRDS-LOCATION= /auth-process/ ⇒ /uri/
     3.2 OpenID Provider
         3.2.1 Class =OPENID-PROVIDER=
-            3.2.1.1 Accessor =OP-ENDPOINT-URI= /op/ ⇒ /uri/
+            3.2.1.1 Accessor =ENDPOINT-URI= /op/ ⇒ /uri/
         3.2.2 Constant =+INDIRECT-RESPONSE-CODE+=
         3.2.3 Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key secure-p/ ⇒ /response values/
         3.2.4 Function =CANCEL-RESPONSE= /op/ /message/ ⇒ /response values/
@@ -275,8 +275,8 @@ Table of Contents
     provided at least for =HANDLE-CHECKID-SETUP= (preferably also for
     =HANDLE-CHECKID-IMMEDIATE=).
 
-3.2.1.1 Accessor =OP-ENDPOINT-URI= /op/ ⇒ /uri/
-===============================================
+3.2.1.1 Accessor =ENDPOINT-URI= /op/ ⇒ /uri/
+============================================
      OpenID Provider instance's endpoint URI
 
 3.2.2 Constant =+INDIRECT-RESPONSE-CODE+=
