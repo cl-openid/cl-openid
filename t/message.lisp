@@ -27,7 +27,9 @@
                ("symbol" . ,(string 'foo))
                ("integer" . "123")
                ("uri" . "http://example.com/foo")
-               ("octet-vector" . ,(usb8-array-to-base64-string #(1 2 3 4)))
+               ("octet-vector" . ,(usb8-array-to-base64-string (make-array 4
+                                                                           :element-type '(unsigned-byte 8)
+                                                                           :initial-contents '(1 2 3 4))))
                ("dot.in.name" . "works"))
              (make-message :string "bar"
                            :symbol 'foo
