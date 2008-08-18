@@ -51,7 +51,7 @@ Original application is published at
    - [[http://www.cliki.net/cl-base64][cl-base64]],
    - [[http://common-lisp.net/project/trivial-utf-8/darcs/trivial-utf-8][trivial-utf-8]],
    - [[http://common-lisp.net/project/bordeaux-threads/][bordeaux-threads]]
-   - [[http://puri.b9.com/][puri]] (on implementations other than Allegro CL),
+   - [[http://puri.b9.com/][puri]],
    - [[http://www.cliki.net/CL-HTML-Parse][cl-html-parse]] (on implementations other than Allegro CL).
 
    Example code depends also on [[http://weitz.de/hunchentoot/][Hunchentoot]].  Unit tests depend on
