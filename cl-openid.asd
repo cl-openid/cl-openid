@@ -22,8 +22,7 @@
                          (:file "authproc" :depends-on ("package" "shared" "message" "association"))
                          (:file "relying-party")
                          (:file "provider"))))
-  :depends-on (#:drakma #:ironclad #:xmls #:split-sequence
-                        #-allegro #:puri
+  :depends-on (#:drakma #:ironclad #:xmls #:split-sequence #:puri
                         #-allegro #:cl-html-parse
                         #:cl-base64 #:trivial-utf-8))
 
