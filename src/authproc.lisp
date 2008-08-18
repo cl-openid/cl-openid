@@ -8,14 +8,14 @@
              :conc-name
              (:constructor %make-auth-process))
   "Data structure gathering information about an ongoing authentication process."
-  (protocol-version-major 2 :type '(unsigned-byte 8))
-  (protocol-version-minor 0 :type '(unsigned-byte 8))
-  (claimed-id nil :type 'uri)
-  (op-local-id nil :type '(or uri null))
-  (return-to nil :type '(or uri null))
-  (xrds-location nil :type '(or uri null))
-  (endpoint-uri nil :type '(or uri null))
-  (timestamp nil :type '(or integer null)))
+  (protocol-version-major 2 :type (unsigned-byte 8))
+  (protocol-version-minor 0 :type (unsigned-byte 8))
+  (claimed-id nil :type uri)
+  (op-local-id nil :type (or uri null))
+  (return-to nil :type (or uri null))
+  (xrds-location nil :type (or uri null))
+  (endpoint-uri nil :type (or uri null))
+  (timestamp nil :type (or integer null)))
 
 (defun protocol-version (auth-process)
   "Protocol version of an authentication process, as a cons (MAJOR . MINOR)."
