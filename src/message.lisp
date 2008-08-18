@@ -13,7 +13,7 @@
   "Add openid.namespace NAMESPACE to MESSAGE."
   (if (equal namespace +openid2-namespace+)
       `(cons ,namespace ,message)
-      `(acons "openid.namespace" ,namespace ,message)))
+      `(acons "openid.ns" ,namespace ,message)))
 
 (defun message-field (message field-name)
   "get value of FIELD-NAME field from MESSAGE."
