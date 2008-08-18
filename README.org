@@ -193,7 +193,7 @@ Original application is published at
     provided at least for =HANDLE-CHECKID-SETUP= (preferably also for
     =HANDLE-CHECKID-IMMEDIATE=).
 
-**** Accessor =OP-ENDPOINT-URI= /op/ ⇒ /uri/
+**** Accessor =ENDPOINT-URI= /op/ ⇒ /uri/
      OpenID Provider instance's endpoint URI
 
 *** Constant =+INDIRECT-RESPONSE-CODE+=

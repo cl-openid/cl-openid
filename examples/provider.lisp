@@ -125,12 +125,12 @@ to FINISH-URI with different parameters."
 ;; Initialization
 (defun init-provider (base-uri prefix
                       &aux
-                      (op-endpoint-uri (merge-uris prefix base-uri))
+                      (endpoint-uri (merge-uris prefix base-uri))
                       (finish-prefix (concatenate 'string prefix "finish-setup"))
                       (finish-uri (merge-uris finish-prefix base-uri)))
   (setf *openid-provider*
         (make-instance 'sample-hunchentoot-op
-                       :op-endpoint-uri op-endpoint-uri
+                       :endpoint-uri endpoint-uri
                        :finish-uri finish-uri)
 
         *dispatch-table*

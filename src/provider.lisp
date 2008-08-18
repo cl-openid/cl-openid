@@ -4,7 +4,7 @@
 ;; (setf *accessor-name-transformer* #'(lambda (n d) (declare (ignore d)) n))
 #+macroexpand-and-paste
 (defclass* openid-provider ()
-  ((op-endpoint-uri :documentation "Provider endpoint URI")
+  ((endpoint-uri :documentation "Provider endpoint URI")
    (associations (make-hash-table :test #'equal)
                  :documentation "OP's associations.")
    (associations-lock (make-lock)))
@@ -15,7 +15,7 @@ provided at least for HANDLE-CHECKID-SETUP (preferably also for
 HANDLE-CHECKID-IMMEDIATE)."))
 
 (defclass openid-provider ()
-  ((op-endpoint-uri :accessor op-endpoint-uri :initarg :op-endpoint-uri
+  ((endpoint-uri :accessor endpoint-uri :initarg :endpoint-uri
                     :documentation "Provider endpoint URI")
    (associations :initform (make-hash-table :test #'equal)
                  :accessor associations :initarg :associations
@@ -111,7 +111,7 @@ arguments."
                               new-association)
                         new-association))))
          (rv (make-message :openid.mode "id_res"
-                           :openid.op_endpoint (op-endpoint-uri op)
+                           :openid.op_endpoint (endpoint-uri op)
                            :openid.claimed_id (message-field message "openid.identity")
                            :openid.identity (message-field message "openid.identity")
                            :openid.return_to (message-field message "openid.return_to")
