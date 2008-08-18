@@ -31,7 +31,7 @@ user, between initial checkid_setup request and final decision.")
 
 ;; To customize OP behaviour and use httpd-specific functions, we need
 ;; to create subclass of provided abstract OPENID-PROVIDER class.
-(defclass sample-hunchentoot-op (openid-provider)
+(defclass example-op (openid-provider)
   ((finish-uri :initarg :finish-uri :reader finish-uri
 	       :documentation "URI for setup finalization, filled on instance initialization.")))
 
@@ -42,7 +42,7 @@ user, between initial checkid_setup request and final decision.")
 ;; avoid complicating the example too much, and accept every second
 ;; request.
 (defvar *checkid-immediate-counter* 0)
-(defmethod handle-checkid-immediate ((op sample-hunchentoot-op) message)
+(defmethod handle-checkid-immediate ((op example-op) message)
   "Handle checkid_immediate: accept every second request"
   (declare (ignore message))
   (oddp (incf *checkid-immediate-counter*)))
@@ -58,7 +58,7 @@ user, between initial checkid_setup request and final decision.")
 ;; is supposed to handle dialogue with end-user, and is responsible
 ;; for storing MESSAGE object for time of the dialogue.
 (defmethod handle-checkid-setup
-    ((op sample-hunchentoot-op) message
+    ((op example-op) message
      &aux (handle (store-request message)))
   "Response for checkid_setup request.
 
@@ -129,7 +129,7 @@ to FINISH-URI with different parameters."
                       (finish-prefix (concatenate 'string prefix "finish-setup"))
                       (finish-uri (merge-uris finish-prefix base-uri)))
   (setf *openid-provider*
-        (make-instance 'sample-hunchentoot-op
+        (make-instance 'example-op
                        :endpoint-uri endpoint-uri
                        :finish-uri finish-uri)
 
