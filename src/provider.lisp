@@ -111,7 +111,8 @@ arguments."
                               new-association)
                         new-association))))
          (rv (make-message :openid.mode "id_res"
-                           :openid.op_endpoint (endpoint-uri op)
+                           :openid.op_endpoint (when (message-v2-p message)
+                                                 (endpoint-uri op))
                            :openid.claimed_id (message-field message "openid.identity")
                            :openid.identity (message-field message "openid.identity")
                            :openid.return_to (message-field message "openid.return_to")
