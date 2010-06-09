@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
                "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
@@ -6,39 +7,77 @@ lang="en" xml:lang="en">
 <title>CL-OpenID</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2008/08/18 20:05:00"/>
+<meta name="generated" content="2010-06-09 03:35:41 "/>
 <meta name="author" content="Maciej Pasternacki"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
 <style type="text/css">
-  html {
-	font-family: Times, serif;
-	font-size: 12pt;
-  }
-  .title { text-align: center; }
-  .todo  { color: red; }
-  .done { color: green; }
-  .timestamp { color: grey }
-  .timestamp-kwd { color: CadetBlue }
-  .tag { background-color:lightblue; font-weight:normal }
-  .target { background-color: lavender; }
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  p.verse { margin-left: 3% }
   pre {
 	border: 1pt solid #AEBDCC;
 	background-color: #F3F5F7;
 	padding: 5pt;
 	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
   }
   table { border-collapse: collapse; }
-  td, th {
-	vertical-align: top;
-	<!--border: 1pt solid #ADB9CC;-->
-  }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
 </style>
-</head><body>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+
 <h1 class="title">CL-OpenID</h1>
-Cl-OpenID is an implementation of <a href="http://openid.net/">OpenID</a> protocol in Common Lisp.  It
+
+<p>Cl-OpenID is an implementation of <a href="http://openid.net/">OpenID</a> protocol in Common Lisp.  It
 implements <a href="http://openid.net/specs/openid-authentication-2_0.html">OpenID Authentication 2.0</a> standard and is compatible with
 <a href="http://openid.net/specs/openid-authentication-1_1.html">OpenID Authentication 1.1</a>.  Both Relying Party (formerly called OpenID
 Consumer), and OpenID Provider are implemented.
-
+</p>
 <p>
 CL-OpenID is available on terms of <a href="http://opensource.franz.com/license.html">GNU Lesser General Public License version 2.1</a> with Franz Inc.'s <a href="http://opensource.franz.com/preamble.html">preamble</a>, also known as LLGPL (Lisp
 Lesser General Public License).
@@ -52,77 +91,78 @@ Original application is published at
 
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
+<div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 Contact</a></li>
-<li><a href="#sec-2">2 Downloading</a>
+<li><a href="#sec-1">1 Contact </a></li>
+<li><a href="#sec-2">2 Downloading </a>
 <ul>
-<li><a href="#sec-3">2.1 Dependencies</a>
+<li><a href="#sec-2_1">2.1 Dependencies </a>
 <ul>
-<li><a href="#sec-4">2.1.1 CL-Librarian shelf</a></li>
+<li><a href="#sec-2_1_1">2.1.1 CL-Librarian shelf </a></li>
 </ul>
 </li>
-<li><a href="#sec-5">2.2 Example code</a></li>
+<li><a href="#sec-2_2">2.2 Example code </a></li>
 </ul>
 </li>
-<li><a href="#sec-6">3 Provided API</a>
+<li><a href="#sec-3">3 Provided API </a>
 <ul>
-<li><a href="#sec-7">3.1 Relying Party</a>
+<li><a href="#sec-3_1">3.1 Relying Party </a>
 <ul>
-<li><a href="#sec-8">3.1.1 Class <code>RELYING-PARTY</code></a>
+<li><a href="#sec-3_1_1">3.1.1 Class <code>RELYING-PARTY</code> </a>
 <ul>
-<li><a href="#sec-9">3.1.1.1 Accessor <code>ROOT-URI</code> <i>relying-party</i> ⇒ <i>uri</i></a></li>
-<li><a href="#sec-10">3.1.1.2 Accessor <code>REALM</code> <i>relying-party</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-3_1_1_1">3.1.1.1 Accessor <code>ROOT-URI</code> <i>relying-party</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_1_1_2">3.1.1.2 Accessor <code>REALM</code> <i>relying-party</i> ⇒ <i>uri</i> </a></li>
 </ul>
 </li>
-<li><a href="#sec-11">3.1.2 Constant <code>+AUTHPROC-HANDLE-PARAMETER+</code></a></li>
-<li><a href="#sec-12">3.1.3 Function <code>INITIATE-AUTHENTICATION</code> <i>relying-party given-id &amp;key immediate-p</i> ⇒ <i>uri</i></a></li>
-<li><a href="#sec-13">3.1.4 Function <code>HANDLE-INDIRECT-RESPONSE</code> <i>relying-party message request-uri &amp;optional auth-process</i> ⇒ <i>authendicated-id auth-process</i></a></li>
-<li><a href="#sec-14">3.1.5 Condition <code>OPENID-ASSERTION-ERROR</code></a>
+<li><a href="#sec-3_1_2">3.1.2 Constant <code>+AUTHPROC-HANDLE-PARAMETER+</code> </a></li>
+<li><a href="#sec-3_1_3">3.1.3 Function <code>INITIATE-AUTHENTICATION</code> <i>relying-party given-id &amp;key immediate-p extra-parameters</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_1_4">3.1.4 Function <code>HANDLE-INDIRECT-RESPONSE</code> <i>relying-party message request-uri &amp;optional auth-process</i> ⇒ <i>authendicated-id auth-process</i> </a></li>
+<li><a href="#sec-3_1_5">3.1.5 Condition <code>OPENID-ASSERTION-ERROR</code> </a>
 <ul>
-<li><a href="#sec-15">3.1.5.1 Accessor <code>CODE</code> <i>openid-assertion-error</i> ⇒ <i>keyword</i></a></li>
-<li><a href="#sec-16">3.1.5.2 Accessor <code>REASON</code> <i>openid-assertion-error</i> ⇒ <i>string</i></a></li>
-<li><a href="#sec-17">3.1.5.3 Accessor <code>AUTHPROC</code> <i>openid-assertion-error</i> ⇒ <i>auth-process</i></a></li>
-<li><a href="#sec-18">3.1.5.4 Accessor <code>MESSAGE</code> <i>openid-assertion-error</i> ⇒ <i>message</i></a></li>
+<li><a href="#sec-3_1_5_1">3.1.5.1 Accessor <code>CODE</code> <i>openid-assertion-error</i> ⇒ <i>keyword</i> </a></li>
+<li><a href="#sec-3_1_5_2">3.1.5.2 Accessor <code>REASON</code> <i>openid-assertion-error</i> ⇒ <i>string</i> </a></li>
+<li><a href="#sec-3_1_5_3">3.1.5.3 Accessor <code>AUTHPROC</code> <i>openid-assertion-error</i> ⇒ <i>auth-process</i> </a></li>
+<li><a href="#sec-3_1_5_4">3.1.5.4 Accessor <code>MESSAGE</code> <i>openid-assertion-error</i> ⇒ <i>message</i> </a></li>
 </ul>
 </li>
-<li><a href="#sec-19">3.1.6 Structure <code>AUTH-PROCESS</code></a>
+<li><a href="#sec-3_1_6">3.1.6 Structure <code>AUTH-PROCESS</code> </a>
 <ul>
-<li><a href="#sec-20">3.1.6.1 Function <code>AUTH-PROCESS-P</code> <i>object</i> ⇒ <i>boolean</i></a></li>
-<li><a href="#sec-21">3.1.6.2 Accessor <code>PROTOCOL-VERSION-MAJOR</code> <i>auth-process</i> ⇒ <i>integer</i></a></li>
-<li><a href="#sec-22">3.1.6.3 Accessor <code>PROTOCOL-VERSION-MINOR</code> <i>auth-process</i> ⇒ <i>integer</i></a></li>
-<li><a href="#sec-23">3.1.6.4 Accessor <code>PROTOCOL-VERSION</code> <i>auth-process</i> ⇒ <i>cons</i></a></li>
-<li><a href="#sec-24">3.1.6.5 Accessor <code>CLAIMED-ID</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
-<li><a href="#sec-25">3.1.6.6 Accessor <code>OP-LOCAL-ID</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
-<li><a href="#sec-26">3.1.6.7 Accessor <code>PROVIDER-ENDPOINT-URI</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
-<li><a href="#sec-27">3.1.6.8 Accessor <code>RETURN-TO</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
-<li><a href="#sec-28">3.1.6.9 Accessor <code>TIMESTAMP</code> <i>auth-process</i> ⇒ <i>universal-time</i></a></li>
-<li><a href="#sec-29">3.1.6.10 Accessor <code>XRDS-LOCATION</code> <i>auth-process</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-3_1_6_1">3.1.6.1 Function <code>AUTH-PROCESS-P</code> <i>object</i> ⇒ <i>boolean</i> </a></li>
+<li><a href="#sec-3_1_6_2">3.1.6.2 Accessor <code>PROTOCOL-VERSION-MAJOR</code> <i>auth-process</i> ⇒ <i>integer</i> </a></li>
+<li><a href="#sec-3_1_6_3">3.1.6.3 Accessor <code>PROTOCOL-VERSION-MINOR</code> <i>auth-process</i> ⇒ <i>integer</i> </a></li>
+<li><a href="#sec-3_1_6_4">3.1.6.4 Accessor <code>PROTOCOL-VERSION</code> <i>auth-process</i> ⇒ <i>cons</i> </a></li>
+<li><a href="#sec-3_1_6_5">3.1.6.5 Accessor <code>CLAIMED-ID</code> <i>auth-process</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_1_6_6">3.1.6.6 Accessor <code>OP-LOCAL-ID</code> <i>auth-process</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_1_6_7">3.1.6.7 Accessor <code>PROVIDER-ENDPOINT-URI</code> <i>auth-process</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_1_6_8">3.1.6.8 Accessor <code>RETURN-TO</code> <i>auth-process</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_1_6_9">3.1.6.9 Accessor <code>TIMESTAMP</code> <i>auth-process</i> ⇒ <i>universal-time</i> </a></li>
+<li><a href="#sec-3_1_6_10">3.1.6.10 Accessor <code>XRDS-LOCATION</code> <i>auth-process</i> ⇒ <i>uri</i> </a></li>
 </ul></li>
 </ul>
 </li>
-<li><a href="#sec-30">3.2 OpenID Provider</a>
+<li><a href="#sec-3_2">3.2 OpenID Provider </a>
 <ul>
-<li><a href="#sec-31">3.2.1 Class <code>OPENID-PROVIDER</code></a>
+<li><a href="#sec-3_2_1">3.2.1 Class <code>OPENID-PROVIDER</code> </a>
 <ul>
-<li><a href="#sec-32">3.2.1.1 Accessor <code>ENDPOINT-URI</code> <i>op</i> ⇒ <i>uri</i></a></li>
+<li><a href="#sec-3_2_1_1">3.2.1.1 Accessor <code>ENDPOINT-URI</code> <i>op</i> ⇒ <i>uri</i> </a></li>
 </ul>
 </li>
-<li><a href="#sec-33">3.2.2 Constant <code>+INDIRECT-RESPONSE-CODE+</code></a></li>
-<li><a href="#sec-34">3.2.3 Function <code>HANDLE-OPENID-PROVIDER-REQUEST</code> <i>op message &amp;key secure-p</i> ⇒ <i>response values</i></a></li>
-<li><a href="#sec-35">3.2.4 Function <code>CANCEL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i></a></li>
-<li><a href="#sec-36">3.2.5 Function <code>SUCCESSFUL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i></a></li>
-<li><a href="#sec-37">3.2.6 Macro <code>WITH-INDIRECT-ERROR-HANDLER</code> <i>&amp;body body</i> ⇒ <i>response values</i></a></li>
-<li><a href="#sec-38">3.2.7 Function <code>SIGNAL-INDIRECT-ERROR</code> <i>message reason &amp;rest reason-args</i></a></li>
-<li><a href="#sec-39">3.2.8 Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i></a></li>
-<li><a href="#sec-40">3.2.9 Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i></a></li>
-<li><a href="#sec-41">3.2.10 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i></a></li>
-<li><a href="#sec-42">3.2.11 Protocol messages</a>
+<li><a href="#sec-3_2_2">3.2.2 Constant <code>+INDIRECT-RESPONSE-CODE+</code> </a></li>
+<li><a href="#sec-3_2_3">3.2.3 Function <code>HANDLE-OPENID-PROVIDER-REQUEST</code> <i>op message &amp;key secure-p</i> ⇒ <i>response values</i> </a></li>
+<li><a href="#sec-3_2_4">3.2.4 Function <code>CANCEL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i> </a></li>
+<li><a href="#sec-3_2_5">3.2.5 Function <code>SUCCESSFUL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i> </a></li>
+<li><a href="#sec-3_2_6">3.2.6 Macro <code>WITH-INDIRECT-ERROR-HANDLER</code> <i>&amp;body body</i> ⇒ <i>response values</i> </a></li>
+<li><a href="#sec-3_2_7">3.2.7 Function <code>SIGNAL-INDIRECT-ERROR</code> <i>message reason &amp;rest reason-args</i> </a></li>
+<li><a href="#sec-3_2_8">3.2.8 Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i> </a></li>
+<li><a href="#sec-3_2_9">3.2.9 Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_2_10">3.2.10 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </a></li>
+<li><a href="#sec-3_2_11">3.2.11 Protocol messages </a>
 <ul>
-<li><a href="#sec-43">3.2.11.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i></a></li>
-<li><a href="#sec-44">3.2.11.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i></a></li>
-<li><a href="#sec-45">3.2.11.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i></a></li>
-<li><a href="#sec-46">3.2.11.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i></a></li>
-<li><a href="#sec-47">3.2.11.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i></a></li>
+<li><a href="#sec-3_2_11_1">3.2.11.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_11_2">3.2.11.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_11_3">3.2.11.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_11_4">3.2.11.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </a></li>
+<li><a href="#sec-3_2_11_5">3.2.11.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </a></li>
 </ul>
 </li>
 </ul>
@@ -131,9 +171,11 @@ Original application is published at
 </li>
 </ul>
 </div>
+</div>
 
-<div class="outline-2">
-<h2 id="sec-1">1 Contact</h2>
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Contact </h2>
+<div class="outline-text-2" id="text-1">
 
 <p>Discussions regarding development are conducted on <a href="http://common-lisp.net/cgi-bin/mailman/listinfo/cl-openid-devel">cl-openid-devel</a>
 mailing list.  This is the best place to bring up questions,
@@ -156,20 +198,26 @@ relevance, can be found on project's <a href="http://trac.common-lisp.net/cl-ope
 </p>
 </div>
 
-<div class="outline-2">
-<h2 id="sec-2">2 Downloading</h2>
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Downloading </h2>
+<div class="outline-text-2" id="text-2">
 
 <p>Project Web page is <a href="http://common-lisp.net/project/cl-openid/">http://common-lisp.net/project/cl-openid/</a>.  Most
 recent version of the code can be downloaded with <a href="http://www.darcs.net">darcs</a>:
 </p>
-<p>
-<pre>
- darcs get http://common-lisp.net/project/cl-openid/
+<pre class="example">
+darcs get http://common-lisp.net/project/cl-openid/
 </pre>
-</p>
 
-<div class="outline-3">
-<h3 id="sec-3">2.1 Dependencies</h3>
+
+
+</div>
+
+<div id="outline-container-2_1" class="outline-3">
+<h3 id="sec-2_1"><span class="section-number-3">2.1</span> Dependencies </h3>
+<div class="outline-text-3" id="text-2_1">
 
 <p>Project depends on following libraries:
 </p><ul>
@@ -202,6 +250,7 @@ recent version of the code can be downloaded with <a href="http://www.darcs.net"
 
 </li>
 </ul>
+
 <p>Example code depends also on <a href="http://weitz.de/hunchentoot/">Hunchentoot</a>.  Unit tests depend on
 <a href="http://common-lisp.net/project/bese/FiveAM.html">FiveAM</a> testing framework.
 </p>
@@ -210,62 +259,83 @@ All required libraries should be ASDF-installable, so running <code>darcs    dis
 should provide complete dependencies.
 </p>
 
-<div class="outline-4">
-<h4 id="sec-4">2.1.1 CL-Librarian shelf</h4>
+</div>
+
+<div id="outline-container-2_1_1" class="outline-4">
+<h4 id="sec-2_1_1"><span class="section-number-4">2.1.1</span> CL-Librarian shelf </h4>
+<div class="outline-text-4" id="text-2_1_1">
 
 <p>As an alternative to ASDF-Install, a <a href="http://www.pasternacki.net/en/code/cl-librarian/">CL-Librarian</a> shelf definition
 for dependencies is provided.  To use it, run following shell
 commands in CL-OpenID directory:
-<pre>
- darcs get http://www.pasternacki.net/repos/cl-librarian/ lib
- cd lib
- sh bootstrap.sh
- cd ..
+</p><pre class="example">
+darcs get http://www.pasternacki.net/repos/cl-librarian/ lib
+cd lib
+sh bootstrap.sh
+cd ..
 </pre>
-Then start your favourite Lisp implementation and call:
-<pre>
- (load "shelf")
- (cl-librarian:download-shelf 'cl-openid.deps) ; for the first time or when new dependency is added
- (cl-librarian:use-shelf 'cl-openid.deps) ; when libraries are already downloaded
- (asdf:oos 'asdf:load-op :cl-openid)
- (asdf:oos 'asdf:test-op :cl-openid) ; run 5am unit tests
+
+<p>Then start your favourite Lisp implementation and call:
+</p><pre class="example">
+(load "shelf")
+(cl-librarian:download-shelf 'cl-openid.deps) ; for the first time or when new dependency is added
+(cl-librarian:use-shelf 'cl-openid.deps) ; when libraries are already downloaded
+(asdf:oos 'asdf:load-op :cl-openid)
+(asdf:oos 'asdf:test-op :cl-openid) ; run 5am unit tests
 </pre>
-</p>
+
+
 </div>
 </div>
 
-<div class="outline-3">
-<h3 id="sec-5">2.2 Example code</h3>
+</div>
+
+<div id="outline-container-2_2" class="outline-3">
+<h3 id="sec-2_2"><span class="section-number-3">2.2</span> Example code </h3>
+<div class="outline-text-3" id="text-2_2">
 
 <p>Example implementation of Relying Party and OpenID Provider for
 <a href="http://weitz.de/hunchentoot/">Hunchentoot</a> web server is included in <code>examples/</code> subdirectory.  For
 convenience, both examples can be loaded as <code>CL-OPENID.EXAMPLES</code>
 ASDF system:
-<pre>
- (asdf:oos 'asdf:load-op :cl-openid.examples)
+</p><pre class="example">
+(asdf:oos 'asdf:load-op :cl-openid.examples)
 </pre>
-</p>
+
+
 </div>
 </div>
 
-<div class="outline-2">
-<h2 id="sec-6">3 Provided API</h2>
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Provided API </h2>
+<div class="outline-text-2" id="text-3">
 
 
 
-<div class="outline-3">
-<h3 id="sec-7">3.1 Relying Party</h3>
+</div>
+
+<div id="outline-container-3_1" class="outline-3">
+<h3 id="sec-3_1"><span class="section-number-3">3.1</span> Relying Party </h3>
+<div class="outline-text-3" id="text-3_1">
 
 
 
-<div class="outline-4">
-<h4 id="sec-8">3.1.1 Class <code>RELYING-PARTY</code></h4>
+</div>
+
+<div id="outline-container-3_1_1" class="outline-4">
+<h4 id="sec-3_1_1"><span class="section-number-4">3.1.1</span> Class <code>RELYING-PARTY</code> </h4>
+<div class="outline-text-4" id="text-3_1_1">
 
 <p>Relying Party class.
 </p>
 
-<div class="outline-5">
-<h5 id="sec-9">3.1.1.1 Accessor <code>ROOT-URI</code> <i>relying-party</i> ⇒ <i>uri</i></h5>
+</div>
+
+<div id="outline-container-3_1_1_1" class="outline-5">
+<h5 id="sec-3_1_1_1"><span class="section-number-5">3.1.1.1</span> Accessor <code>ROOT-URI</code> <i>relying-party</i> ⇒ <i>uri</i> </h5>
+<div class="outline-text-5" id="text-3_1_1_1">
 
 <p>Root URI address of the Relying Party instance.
 </p>
@@ -274,36 +344,70 @@ Used to generate return_to redirections.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-10">3.1.1.2 Accessor <code>REALM</code> <i>relying-party</i> ⇒ <i>uri</i></h5>
+</div>
+
+<div id="outline-container-3_1_1_2" class="outline-5">
+<h5 id="sec-3_1_1_2"><span class="section-number-5">3.1.1.2</span> Accessor <code>REALM</code> <i>relying-party</i> ⇒ <i>uri</i> </h5>
+<div class="outline-text-5" id="text-3_1_1_2">
 
 <p>Relying Party realm.
 </p>
 </div>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-11">3.1.2 Constant <code>+AUTHPROC-HANDLE-PARAMETER+</code></h4>
+</div>
+
+<div id="outline-container-3_1_2" class="outline-4">
+<h4 id="sec-3_1_2"><span class="section-number-4">3.1.2</span> Constant <code>+AUTHPROC-HANDLE-PARAMETER+</code> </h4>
+<div class="outline-text-4" id="text-3_1_2">
 
 <p>Name of HTTP GET parameter, sent in return_to URI, which contains
 AUTH-PROCESS object unique handle.
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-12">3.1.3 Function <code>INITIATE-AUTHENTICATION</code> <i>relying-party given-id &amp;key immediate-p</i> ⇒ <i>uri</i></h4>
+</div>
+
+<div id="outline-container-3_1_3" class="outline-4">
+<h4 id="sec-3_1_3"><span class="section-number-4">3.1.3</span> Function <code>INITIATE-AUTHENTICATION</code> <i>relying-party given-id &amp;key immediate-p extra-parameters</i> ⇒ <i>uri</i> </h4>
+<div class="outline-text-4" id="text-3_1_3">
 
 <p>Initiate authentication process by <i>relying-party</i> for identifier
 <i>given-id</i> received from user.
 </p>
 <p>
 If <i>immediate-p</i> is true, initiates immediate authentication
-process.  Returns URI to redirect user to.
+process.  
+</p>
+<p>
+The <i>extra-parameters</i> is an optional key-value list to be added to the authentication request message. 
+The list format is the same as for the <code>MAKE-MESSAGE</code> function. This parameter is needed for OpenID 
+extensions, for example OAuth or Attribute Exchange.
+</p>
+<p>
+Returns multiple values:
+</p><ul>
+<li>
+the URI to redirect the user's browser to;
+</li>
+<li>
+Unique handle (string) identifying the started authentication process;
+</li>
+<li>
+the AUTH-PROCESS structure identified by the handle.
+
+</li>
+</ul>
+
+<p>The latter two values are useful if the client code needs to track the process.
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-13">3.1.4 Function <code>HANDLE-INDIRECT-RESPONSE</code> <i>relying-party message request-uri &amp;optional auth-process</i> ⇒ <i>authendicated-id auth-process</i></h4>
+</div>
+
+<div id="outline-container-3_1_4" class="outline-4">
+<h4 id="sec-3_1_4"><span class="section-number-4">3.1.4</span> Function <code>HANDLE-INDIRECT-RESPONSE</code> <i>relying-party message request-uri &amp;optional auth-process</i> ⇒ <i>authendicated-id auth-process</i> </h4>
+<div class="outline-text-4" id="text-3_1_4">
 
 <p>Handle indirect response <i>message</i> for <i>relying-party</i>, coming at <i>request-uri</i>, concerning <i>authproc</i>.
 </p>
@@ -319,15 +423,21 @@ value, always returns AUTH-PROCESS object.
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-14">3.1.5 Condition <code>OPENID-ASSERTION-ERROR</code></h4>
+</div>
+
+<div id="outline-container-3_1_5" class="outline-4">
+<h4 id="sec-3_1_5"><span class="section-number-4">3.1.5</span> Condition <code>OPENID-ASSERTION-ERROR</code> </h4>
+<div class="outline-text-4" id="text-3_1_5">
 
 <p>Error signaled by Relying Party when indirect response cannot be
 verified correctly.
 </p>
 
-<div class="outline-5">
-<h5 id="sec-15">3.1.5.1 Accessor <code>CODE</code> <i>openid-assertion-error</i> ⇒ <i>keyword</i></h5>
+</div>
+
+<div id="outline-container-3_1_5_1" class="outline-5">
+<h5 id="sec-3_1_5_1"><span class="section-number-5">3.1.5.1</span> Accessor <code>CODE</code> <i>openid-assertion-error</i> ⇒ <i>keyword</i> </h5>
+<div class="outline-text-5" id="text-3_1_5_1">
 
 <p>Keyword code of error.
 </p>
@@ -362,88 +472,125 @@ Possible values are
 <code>:INVALID-SIGNED-FIELDS</code> (not all fields that need to be signed, were signed).
 
 </li>
-</ul></div>
+</ul>
+</div>
 
-<div class="outline-5">
-<h5 id="sec-16">3.1.5.2 Accessor <code>REASON</code> <i>openid-assertion-error</i> ⇒ <i>string</i></h5>
+</div>
+
+<div id="outline-container-3_1_5_2" class="outline-5">
+<h5 id="sec-3_1_5_2"><span class="section-number-5">3.1.5.2</span> Accessor <code>REASON</code> <i>openid-assertion-error</i> ⇒ <i>string</i> </h5>
+<div class="outline-text-5" id="text-3_1_5_2">
 
 <p>Textual description of error.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-17">3.1.5.3 Accessor <code>AUTHPROC</code> <i>openid-assertion-error</i> ⇒ <i>auth-process</i></h5>
+</div>
+
+<div id="outline-container-3_1_5_3" class="outline-5">
+<h5 id="sec-3_1_5_3"><span class="section-number-5">3.1.5.3</span> Accessor <code>AUTHPROC</code> <i>openid-assertion-error</i> ⇒ <i>auth-process</i> </h5>
+<div class="outline-text-5" id="text-3_1_5_3">
 
 <p>The <code>AUTH-PROCESS</code> structure that was being verified.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-18">3.1.5.4 Accessor <code>MESSAGE</code> <i>openid-assertion-error</i> ⇒ <i>message</i></h5>
+</div>
+
+<div id="outline-container-3_1_5_4" class="outline-5">
+<h5 id="sec-3_1_5_4"><span class="section-number-5">3.1.5.4</span> Accessor <code>MESSAGE</code> <i>openid-assertion-error</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_1_5_4">
 
 <p>Received message (an association list).
 </p>
 </div>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-19">3.1.6 Structure <code>AUTH-PROCESS</code></h4>
+</div>
+
+<div id="outline-container-3_1_6" class="outline-4">
+<h4 id="sec-3_1_6"><span class="section-number-4">3.1.6</span> Structure <code>AUTH-PROCESS</code> </h4>
+<div class="outline-text-4" id="text-3_1_6">
 
 <p>Data structure gathering information about an ongoing
 authentication process.
 </p>
 
-<div class="outline-5">
-<h5 id="sec-20">3.1.6.1 Function <code>AUTH-PROCESS-P</code> <i>object</i> ⇒ <i>boolean</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_1" class="outline-5">
+<h5 id="sec-3_1_6_1"><span class="section-number-5">3.1.6.1</span> Function <code>AUTH-PROCESS-P</code> <i>object</i> ⇒ <i>boolean</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_1">
 
 <p>Returns true if <i>object</i> is an <code>AUTH-PROCESS</code> structure.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-21">3.1.6.2 Accessor <code>PROTOCOL-VERSION-MAJOR</code> <i>auth-process</i> ⇒ <i>integer</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_2" class="outline-5">
+<h5 id="sec-3_1_6_2"><span class="section-number-5">3.1.6.2</span> Accessor <code>PROTOCOL-VERSION-MAJOR</code> <i>auth-process</i> ⇒ <i>integer</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_2">
 
 <p>Protocol version major number of <i>auth-process</i>.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-22">3.1.6.3 Accessor <code>PROTOCOL-VERSION-MINOR</code> <i>auth-process</i> ⇒ <i>integer</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_3" class="outline-5">
+<h5 id="sec-3_1_6_3"><span class="section-number-5">3.1.6.3</span> Accessor <code>PROTOCOL-VERSION-MINOR</code> <i>auth-process</i> ⇒ <i>integer</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_3">
 
 <p>Protocol version minor number of <i>auth-process</i>.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-23">3.1.6.4 Accessor <code>PROTOCOL-VERSION</code> <i>auth-process</i> ⇒ <i>cons</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_4" class="outline-5">
+<h5 id="sec-3_1_6_4"><span class="section-number-5">3.1.6.4</span> Accessor <code>PROTOCOL-VERSION</code> <i>auth-process</i> ⇒ <i>cons</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_4">
 
 <p>Protocol version of an authentication process, as a cons <code>(MAJOR . MINOR)</code>.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-24">3.1.6.5 Accessor <code>CLAIMED-ID</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_5" class="outline-5">
+<h5 id="sec-3_1_6_5"><span class="section-number-5">3.1.6.5</span> Accessor <code>CLAIMED-ID</code> <i>auth-process</i> ⇒ <i>uri</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_5">
 
 <p>Claimed ID of an auth proces.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-25">3.1.6.6 Accessor <code>OP-LOCAL-ID</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_6" class="outline-5">
+<h5 id="sec-3_1_6_6"><span class="section-number-5">3.1.6.6</span> Accessor <code>OP-LOCAL-ID</code> <i>auth-process</i> ⇒ <i>uri</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_6">
 
 <p>OP-local id of an auth process.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-26">3.1.6.7 Accessor <code>PROVIDER-ENDPOINT-URI</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_7" class="outline-5">
+<h5 id="sec-3_1_6_7"><span class="section-number-5">3.1.6.7</span> Accessor <code>PROVIDER-ENDPOINT-URI</code> <i>auth-process</i> ⇒ <i>uri</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_7">
 
 <p>Discovered endpoint URI.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-27">3.1.6.8 Accessor <code>RETURN-TO</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_8" class="outline-5">
+<h5 id="sec-3_1_6_8"><span class="section-number-5">3.1.6.8</span> Accessor <code>RETURN-TO</code> <i>auth-process</i> ⇒ <i>uri</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_8">
 
 <p>Authentication process' return_to address.
 </p>
@@ -454,15 +601,21 @@ unique handle.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-28">3.1.6.9 Accessor <code>TIMESTAMP</code> <i>auth-process</i> ⇒ <i>universal-time</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_9" class="outline-5">
+<h5 id="sec-3_1_6_9"><span class="section-number-5">3.1.6.9</span> Accessor <code>TIMESTAMP</code> <i>auth-process</i> ⇒ <i>universal-time</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_9">
 
 <p>Universal time of authentication process structure's creation.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-29">3.1.6.10 Accessor <code>XRDS-LOCATION</code> <i>auth-process</i> ⇒ <i>uri</i></h5>
+</div>
+
+<div id="outline-container-3_1_6_10" class="outline-5">
+<h5 id="sec-3_1_6_10"><span class="section-number-5">3.1.6.10</span> Accessor <code>XRDS-LOCATION</code> <i>auth-process</i> ⇒ <i>uri</i> </h5>
+<div class="outline-text-5" id="text-3_1_6_10">
 
 <p>Address of XRDS file used in <i>auth-process</i> discovery.
 </p>
@@ -470,12 +623,18 @@ unique handle.
 </div>
 </div>
 
-<div class="outline-3">
-<h3 id="sec-30">3.2 OpenID Provider</h3>
+</div>
+
+<div id="outline-container-3_2" class="outline-3">
+<h3 id="sec-3_2"><span class="section-number-3">3.2</span> OpenID Provider </h3>
+<div class="outline-text-3" id="text-3_2">
 
 
-<div class="outline-4">
-<h4 id="sec-31">3.2.1 Class <code>OPENID-PROVIDER</code></h4>
+</div>
+
+<div id="outline-container-3_2_1" class="outline-4">
+<h4 id="sec-3_2_1"><span class="section-number-4">3.2.1</span> Class <code>OPENID-PROVIDER</code> </h4>
+<div class="outline-text-4" id="text-3_2_1">
 
 <p>OpenID Provider server abstract class.
 </p>
@@ -485,23 +644,32 @@ provided at least for <code>HANDLE-CHECKID-SETUP</code> (preferably also for
 <code>HANDLE-CHECKID-IMMEDIATE</code>).
 </p>
 
-<div class="outline-5">
-<h5 id="sec-32">3.2.1.1 Accessor <code>ENDPOINT-URI</code> <i>op</i> ⇒ <i>uri</i></h5>
+</div>
+
+<div id="outline-container-3_2_1_1" class="outline-5">
+<h5 id="sec-3_2_1_1"><span class="section-number-5">3.2.1.1</span> Accessor <code>ENDPOINT-URI</code> <i>op</i> ⇒ <i>uri</i> </h5>
+<div class="outline-text-5" id="text-3_2_1_1">
 
 <p>OpenID Provider instance's endpoint URI
 </p>
 </div>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-33">3.2.2 Constant <code>+INDIRECT-RESPONSE-CODE+</code></h4>
+</div>
+
+<div id="outline-container-3_2_2" class="outline-4">
+<h4 id="sec-3_2_2"><span class="section-number-4">3.2.2</span> Constant <code>+INDIRECT-RESPONSE-CODE+</code> </h4>
+<div class="outline-text-4" id="text-3_2_2">
 
 <p>HTTP code used for indirect response redirections.
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-34">3.2.3 Function <code>HANDLE-OPENID-PROVIDER-REQUEST</code> <i>op message &amp;key secure-p</i> ⇒ <i>response values</i></h4>
+</div>
+
+<div id="outline-container-3_2_3" class="outline-4">
+<h4 id="sec-3_2_3"><span class="section-number-4">3.2.3</span> Function <code>HANDLE-OPENID-PROVIDER-REQUEST</code> <i>op message &amp;key secure-p</i> ⇒ <i>response values</i> </h4>
+<div class="outline-text-4" id="text-3_2_3">
 
 <p>Handle request <i>message</i> for OpenID Provider instance <i>op</i>.
 </p>
@@ -524,22 +692,31 @@ The same rules apply to all <code>*-RESPONSE</code> functions and
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-35">3.2.4 Function <code>CANCEL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i></h4>
+</div>
+
+<div id="outline-container-3_2_4" class="outline-4">
+<h4 id="sec-3_2_4"><span class="section-number-4">3.2.4</span> Function <code>CANCEL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i> </h4>
+<div class="outline-text-4" id="text-3_2_4">
 
 <p>Send cancel (authenticaction failure) response to MESSAGE from OP.
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-36">3.2.5 Function <code>SUCCESSFUL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i></h4>
+</div>
+
+<div id="outline-container-3_2_5" class="outline-4">
+<h4 id="sec-3_2_5"><span class="section-number-4">3.2.5</span> Function <code>SUCCESSFUL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i> </h4>
+<div class="outline-text-4" id="text-3_2_5">
 
 <p>Return successful response to <i>message</i> by <i>op</i>.
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-37">3.2.6 Macro <code>WITH-INDIRECT-ERROR-HANDLER</code> <i>&amp;body body</i> ⇒ <i>response values</i></h4>
+</div>
+
+<div id="outline-container-3_2_6" class="outline-4">
+<h4 id="sec-3_2_6"><span class="section-number-4">3.2.6</span> Macro <code>WITH-INDIRECT-ERROR-HANDLER</code> <i>&amp;body body</i> ⇒ <i>response values</i> </h4>
+<div class="outline-text-4" id="text-3_2_6">
 
 <p>Handle <code>INDIRECT-ERROR</code> in <i>body</i>.
 </p>
@@ -549,8 +726,11 @@ indirect error response.
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-38">3.2.7 Function <code>SIGNAL-INDIRECT-ERROR</code> <i>message reason &amp;rest reason-args</i></h4>
+</div>
+
+<div id="outline-container-3_2_7" class="outline-4">
+<h4 id="sec-3_2_7"><span class="section-number-4">3.2.7</span> Function <code>SIGNAL-INDIRECT-ERROR</code> <i>message reason &amp;rest reason-args</i> </h4>
+<div class="outline-text-4" id="text-3_2_7">
 
 <p>Signal <code>INDIRECT-ERROR</code> condition as reply to <i>message</i>,
 effectively returning indirect error reply from
@@ -563,8 +743,11 @@ effectively returning indirect error reply from
 
 </div>
 
-<div class="outline-4">
-<h4 id="sec-39">3.2.8 Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i></h4>
+</div>
+
+<div id="outline-container-3_2_8" class="outline-4">
+<h4 id="sec-3_2_8"><span class="section-number-4">3.2.8</span> Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i> </h4>
+<div class="outline-text-4" id="text-3_2_8">
 
 <p>Handle checkid_immediate requests.
 </p>
@@ -583,8 +766,11 @@ This generic is called within scope of
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-40">3.2.9 Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i></h4>
+</div>
+
+<div id="outline-container-3_2_9" class="outline-4">
+<h4 id="sec-3_2_9"><span class="section-number-4">3.2.9</span> Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i> </h4>
+<div class="outline-text-4" id="text-3_2_9">
 
 <p>URI for user setup to return on failed immediate request.
 </p>
@@ -601,8 +787,11 @@ Default method always returns NIL.
 </p>
 </div>
 
-<div class="outline-4">
-<h4 id="sec-41">3.2.10 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i></h4>
+</div>
+
+<div id="outline-container-3_2_10" class="outline-4">
+<h4 id="sec-3_2_10"><span class="section-number-4">3.2.10</span> Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </h4>
+<div class="outline-text-4" id="text-3_2_10">
 
 <p>Handle checkid_setup requests.
 </p>
@@ -622,8 +811,11 @@ This generic is called within scope of
 
 </div>
 
-<div class="outline-4">
-<h4 id="sec-42">3.2.11 Protocol messages</h4>
+</div>
+
+<div id="outline-container-3_2_11" class="outline-4">
+<h4 id="sec-3_2_11"><span class="section-number-4">3.2.11</span> Protocol messages </h4>
+<div class="outline-text-4" id="text-3_2_11">
 
 <p>Messages passed between OpenID Provider and the Relying Party are
 composed of key-value pairs.  Natural Lisp representation of
@@ -632,8 +824,11 @@ handful of conveniense function is provided to avoid tweaking
 messages on cons level.
 </p>
 
-<div class="outline-5">
-<h5 id="sec-43">3.2.11.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i></h5>
+</div>
+
+<div id="outline-container-3_2_11_1" class="outline-5">
+<h5 id="sec-3_2_11_1"><span class="section-number-5">3.2.11.1</span> Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_11_1">
 
 <p>Make new message from arbitrary keyword parameters.
 </p>
@@ -653,8 +848,11 @@ If value is NIL, field won't be included in the message at all.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-44">3.2.11.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i></h5>
+</div>
+
+<div id="outline-container-3_2_11_2" class="outline-5">
+<h5 id="sec-3_2_11_2"><span class="section-number-5">3.2.11.2</span> Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_11_2">
 
 <p>Create a copy of MESSAGE, updating PARAMETERS provided as keyword parameters.
 </p>
@@ -665,8 +863,11 @@ message.  PARAMETERS are interpreted as by MAKE-MESSAGE function.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-45">3.2.11.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i></h5>
+</div>
+
+<div id="outline-container-3_2_11_3" class="outline-5">
+<h5 id="sec-3_2_11_3"><span class="section-number-5">3.2.11.3</span> Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_11_3">
 
 <p>Add openid.namespace <i>namespace</i> to <i>message</i>.
 </p>
@@ -675,25 +876,36 @@ Default namespace is OpenID v2.  Returns updated message alist.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-46">3.2.11.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i></h5>
+</div>
+
+<div id="outline-container-3_2_11_4" class="outline-5">
+<h5 id="sec-3_2_11_4"><span class="section-number-5">3.2.11.4</span> Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </h5>
+<div class="outline-text-5" id="text-3_2_11_4">
 
 <p>Get value of <i>field-name</i> field from <i>message</i>.
 </p>
 </div>
 
-<div class="outline-5">
-<h5 id="sec-47">3.2.11.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i></h5>
+</div>
+
+<div id="outline-container-3_2_11_5" class="outline-5">
+<h5 id="sec-3_2_11_5"><span class="section-number-5">3.2.11.5</span> Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </h5>
+<div class="outline-text-5" id="text-3_2_11_5">
 
 <p>True if <i>message</i> is an OpenID v2 message (namespace check).
 </p>
+
 </div>
 </div>
 </div>
 </div>
-<div id="postamble"><p class="author"> Author: Maciej Pasternacki
-<a href="mailto:maciej@pasternacki.net">&lt;maciej@pasternacki.net&gt;</a>
+</div>
+<div id="postamble">
+<p class="author"> Author: Maciej Pasternacki
 </p>
-<p class="date"> Date: 2008/08/18 20:05:00</p>
-</div></body>
+<p class="date"> Date: 2010-06-09 03:35:41 </p>
+<p class="creator">HTML generated by org-mode 6.36c in emacs 22</p>
+</div>
+</div>
+</body>
 </html>

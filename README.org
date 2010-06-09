@@ -102,12 +102,23 @@ Original application is published at
     Name of HTTP GET parameter, sent in return_to URI, which contains
     AUTH-PROCESS object unique handle.
 
-*** Function =INITIATE-AUTHENTICATION= /relying-party given-id &key immediate-p/ ⇒ /uri/
+*** Function =INITIATE-AUTHENTICATION= /relying-party given-id &key immediate-p extra-parameters/ ⇒ /uri/
     Initiate authentication process by /relying-party/ for identifier
     /given-id/ received from user.
 
     If /immediate-p/ is true, initiates immediate authentication
-    process.  Returns URI to redirect user to.
+    process.  
+
+    The /extra-parameters/ is an optional key-value list to be added to the authentication request message. 
+    The list format is the same as for the =MAKE-MESSAGE= function. This parameter is needed for OpenID 
+    extensions, for example OAuth or Attribute Exchange.
+
+    Returns multiple values:
+      - the URI to redirect the user's browser to;
+      - Unique handle (string) identifying the started authentication process;
+      - the AUTH-PROCESS structure identified by the handle.
+
+     The latter two values are useful if the client code needs to track the process.
 
 *** Function =HANDLE-INDIRECT-RESPONSE= /relying-party message request-uri &optional auth-process/ ⇒ /authendicated-id auth-process/
     Handle indirect response /message/ for /relying-party/, coming at /request-uri/, concerning /authproc/.
@@ -313,3 +324,4 @@ Original application is published at
 **** Function =MESSAGE-V2-P= /message/ ⇒ /boolean/
      True if /message/ is an OpenID v2 message (namespace check).
 
+     

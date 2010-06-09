@@ -110,13 +110,25 @@ OPENID-PROVIDER instance."
   "Name of HTTP GET parameter, sent in return_to URI, which contains AUTH-PROCESS object unique handle.")
 
 (defun initiate-authentication (rp given-id
-                               &key immediate-p
+                               &key immediate-p extra-parameters
                                &aux
                                (authproc (discover given-id))
                                (handle (new-authproc-handle)))
   "Initiate authentication process by relying party RP for identifier GIVEN-ID received from user.
 
-If IMMEDIATE-P is true, initiates immediate authentication process.  Returns URI to redirect user to."
+If IMMEDIATE-P is true, initiates immediate authentication process.
+
+The EXTRA-PARAMETERS is an optional key-value list to be added to the authentication request message.
+The list format is the same as for the MAKE-MESSAGE function. This parameter is needed for OpenID
+extensions, for example OAuth or Attribute Exchange.
+
+Returns multiple values:
+  - the URI to redirect the user's browser to;
+  - Unique handle (string) identifying the started authentication process;
+  - the AUTH-PROCESS structure identified by the handle.
+
+The latter two values are useful if the client code needs to track the process."
+
   (gc-authprocs rp)
   (setf (timestamp authproc) (get-universal-time)
 
@@ -129,10 +141,14 @@ If IMMEDIATE-P is true, initiates immediate authentication process.  Returns URI
   (with-lock-held ((authprocs-lock rp))
     (setf (gethash handle (authprocs rp)) authproc))
 
-  (request-authentication-uri authproc
-                              :immediate-p immediate-p
-                              :realm (realm rp)
-                              :association (ap-association rp authproc)))
+  (values
+    (request-authentication-uri authproc
+                                :immediate-p immediate-p
+                                :realm (realm rp)
+                                :association (ap-association rp authproc)
+                                :extra-parameters extra-parameters)
+    handle
+    authproc))
 
 ;; Nonces
 (defun nonce-universal-time (nonce)

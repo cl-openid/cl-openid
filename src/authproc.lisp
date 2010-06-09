@@ -309,12 +309,13 @@ user-given ID string."
 
 ;; OpenID Authentication 2.0, 9.  Requesting Authentication
 ;; http://openid.net/specs/openid-authentication-2_0.html#requesting_authentication
-(defun request-authentication-uri (authproc &key realm immediate-p association)
+(defun request-authentication-uri (authproc &key realm immediate-p association extra-parameters)
   "URI for an authentication request for AUTHPROC"
   (unless (or (return-to authproc) realm)
     (error "At least one of: (RETURN-TO AUTHPROC), REALM must be specified."))
   (indirect-message-uri (provider-endpoint-uri authproc)
-                        (in-ns (make-message :openid.mode (if immediate-p
+                        (in-ns (apply #'make-message
+                                             :openid.mode (if immediate-p
                                                               "checkid_immediate"
                                                               "checkid_setup")
                                              :openid.claimed_id (claimed-id authproc)
@@ -327,4 +328,6 @@ user-given ID string."
                                              (if (= 2 (protocol-version-major authproc))
                                                  :openid.realm ; OpenID 1.x compat: trust_root instead of realm
                                                  :openid.trust_root)
-                                             realm))))
+                                             realm
+                                             extra-parameters))))
+
