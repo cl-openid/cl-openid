@@ -247,10 +247,10 @@ WITH-INDIRECT-ERROR-HANDLER form return values."
       (handler-case
           (string-case (message-field message "openid.session_type")
             (("DH-SHA1" "DH-SHA256")
-             (let ((private (random +dh-prime+)) ; FIXME:random
+             (let ((private (secure-random:number +dh-prime+))
                    (association (make-association :association-type (or (message-field message "openid.assoc_type")
                                                                         (and v1-compat "HMAC-SHA1"))
-                                                  :mac (ensure-vector-length (ensure-vector (random #.(expt 2 256))) ; FIXME:random
+                                                  :mac (ensure-vector-length (ensure-vector (secure-random:number #.(expt 2 256)))
                                                                              (string-case (message-field message "openid.session_type")
                                                                                ("DH-SHA1" 20)
                                                                                ("DH-SHA256" 32))))))

@@ -24,7 +24,8 @@
                          (:file "provider" :depends-on ("package" "shared" "message" "association")))))
   :depends-on (#:drakma #:ironclad #:xmls #:split-sequence #:puri
                         #-allegro #:cl-html-parse
-                        #:cl-base64 #:trivial-utf-8 #:bordeaux-threads))
+                        #:cl-base64 #:trivial-utf-8 #:bordeaux-threads
+                        #:secure-random))
 
 #+allegro
 (defmethod asdf:perform :after ((op load-op)

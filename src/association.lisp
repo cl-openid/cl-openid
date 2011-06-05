@@ -69,7 +69,7 @@
                                                   ("HMAC-SHA256" . :SHA256)))
                                           (openid-association-error "Unknown association type ~A." association-type)))
                          
-                         (mac (random #.(expt 2 256)))) ; FIXME:random
+                         (mac (secure-random:number #.(expt 2 256))))
   "Make new association structure, DWIM included.
 
  - HANDLE should be the new association handle; if none is provided,
@@ -120,7 +120,7 @@
                                              :session-type supported-stype))))))))
 
         (when (string= "DH-" session-type :end2 3) ; Diffie-Hellman
-          (setf xa (random +dh-prime+))            ; FIXME:random
+          (setf xa (secure-random:number +dh-prime+))
           (push (cons "openid.dh_consumer_public"
                       (base64-btwoc (expt-mod +dh-generator+ xa +dh-prime+)))
                 request))
