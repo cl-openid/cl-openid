@@ -74,16 +74,16 @@
 (test make-auth-process
   (signals error (make-auth-process "xri://=test"))
   (signals error (make-auth-process "=test"))
-  (signals error (make-auth-process "http://example.com/nonexistent"))
+  (signals error (make-auth-process "http://common-lisp.net/project/cl-openid/unexisting"))
   (signals error (make-auth-process "http://test.invalid/"))
-  (dolist (test-case '(("example.com" . "http://example.com/")
+  (dolist (test-case '(("common-lisp.net" . "http://common-lisp.net/")
 
-                       ("http://example.com" . "http://example.com/")
-                       ("http://example.com/" . "http://example.com/")
-                       #+SSL ("https://example.com/" . "https://example.com/")
+                       ("http://common-lisp.net" . "http://common-lisp.net/")
+                       ("http://common-lisp.net/" . "http://common-lisp.net/")
+                       #+SSL ("https://openid.net/" . "https://openid.net/")
                        
-                       ("http://common-lisp.net/project/cl-openid/index.shtml" . "http://common-lisp.net/project/cl-openid/index.shtml")
-                       ("http://common-lisp.net/project/cl-openid/index.shtml/" . "http://common-lisp.net/project/cl-openid/index.shtml/")
+                       ("http://lists.common-lisp.net/mailman/listinfo/cl-openid-devel" . "http://lists.common-lisp.net/mailman/listinfo/cl-openid-devel")
+                       ("http://lists.common-lisp.net/mailman/listinfo/cl-openid-devel/" . "http://lists.common-lisp.net/mailman/listinfo/cl-openid-devel/")
 
                        ("http://Common-Lisp.NET/../t/../project/./%63l-openi%64/./index.shtml" . "http://common-lisp.net/project/cl-openid/index.shtml")))
     (is (string= (princ-to-string (claimed-id (make-auth-process (car test-case))))
