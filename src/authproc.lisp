@@ -248,6 +248,28 @@ are the same."
 
   authproc)
 
+(define-condition openid-discovery-error (simple-error)
+  ())
+
+(defun openid-discovery-error (format-control &rest format-arguments)
+  (error 'openid-discovery-error
+         :format-control format-control
+         :format-arguments format-arguments))
+
+(defun check-discovery-postcondition (authproc)
+  ;; OpenID Authentication 2.0 Final, Section 7.3.1.  Discovered Information
+
+  ;; In fact, the only thing to check is the OP Endpoint URL.
+  ;; The spec also states that the protocol version must be known
+  ;; after the discovery, but the protocol version has default values
+  ;; in the AUTHPROC structure, therefore it's value can't be absent.
+
+  (when (not (provider-endpoint-uri authproc))
+    (openid-discovery-error "Failed to perform OpenID discovery. 
+The OP Endpoint URL has not been determined by the discovery procedure."))
+
+  authproc)
+
 (defun discover (id
                  &aux
                  (authproc (etypecase id
@@ -304,7 +326,7 @@ user-given ID string."
 
         (t (error "Unsupported content-type ~S at ~A" content-type request-uri)))))
 
-    authproc)
+  (check-discovery-postcondition authproc))
 
 
 ;; OpenID Authentication 2.0, 9.  Requesting Authentication

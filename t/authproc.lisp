@@ -292,3 +292,9 @@
                   (t (equal rv (cdr check))))
                 "~A of ~A (~S) is ~A, expected ~A"
                 (car check) authproc (car test-case) rv (cdr check))))))))
+
+(test check-discovery-postcondition
+  (let ((authproc (%make-auth-process :claimed-id (uri  "http://doesnt.matter.what.com/"))))
+    (signals openid-discovery-error (check-discovery-postcondition authproc))
+    (setf (provider-endpoint-uri authproc) (uri "http://some-value.com/"))
+    (is (eq authproc (check-discovery-postcondition authproc)))))

@@ -31,10 +31,10 @@
 (define-condition openid-association-error (simple-error)
   ())
 
-(defun openid-association-error (format-control &rest format-parameters)
+(defun openid-association-error (format-control &rest format-arguments)
   (error 'openid-association-error
          :format-control format-control
-         :format-parameters format-parameters))
+         :format-arguments format-arguments))
 
 (defun session-digest-type (session-type)
   (or (aget session-type  '(("DH-SHA1" . :SHA1)
