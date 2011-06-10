@@ -52,6 +52,7 @@ Original application is published at
    - [[http://common-lisp.net/project/trivial-utf-8/darcs/trivial-utf-8][trivial-utf-8]],
    - [[http://common-lisp.net/project/bordeaux-threads/][bordeaux-threads]]
    - [[http://puri.b9.com/][puri]],
+   - [[https://github.com/avodonosov/secure-random/][secure-random]]
    - [[http://www.cliki.net/CL-HTML-Parse][cl-html-parse]] (on implementations other than Allegro CL).
 
    Example code depends also on [[http://weitz.de/hunchentoot/][Hunchentoot]].  Unit tests depend on

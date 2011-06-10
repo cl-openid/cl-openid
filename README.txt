@@ -1,8 +1,8 @@
-                              CL-OpenID
+﻿                              CL-OpenID
                               =========
 
 Author: Maciej Pasternacki
-Date: 2010-06-09 03:35:39 
+Date: 2011-06-11 01:01:49 
 
 
 Cl-OpenID is an implementation of [OpenID] protocol in Common Lisp.  It
@@ -123,6 +123,7 @@ Table of Contents
    - [trivial-utf-8],
    - [bordeaux-threads]
    - [puri],
+   - [secure-random]
    - [cl-html-parse] (on implementations other than Allegro CL).
 
    Example code depends also on [Hunchentoot].  Unit tests depend on
@@ -141,6 +142,7 @@ Table of Contents
    [trivial-utf-8]: http://common-lisp.net/project/trivial-utf-8/darcs/trivial-utf-8
    [bordeaux-threads]: http://common-lisp.net/project/bordeaux-threads/
    [puri]: http://puri.b9.com/
+   [secure-random]: https://github.com/avodonosov/secure-random/
    [cl-html-parse]: http://www.cliki.net/CL-HTML-Parse
    [Hunchentoot]: http://weitz.de/hunchentoot/
    [FiveAM]: http://common-lisp.net/project/bese/FiveAM.html
@@ -458,5 +460,3 @@ Table of Contents
 3.2.11.5 Function =MESSAGE-V2-P= /message/ ⇒ /boolean/ 
 =======================================================
      True if /message/ is an OpenID v2 message (namespace check).
-
-     
