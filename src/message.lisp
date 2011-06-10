@@ -111,11 +111,22 @@ PARAMETERS are interpreted as by MAKE-MESSAGE function."
                       :method :post
                       :parameters (in-ns message))
       (let ((response (parse-kv body)))
-        (if (= 200 status-code)
-            response
+        (if (or (/= 200 status-code)
+                ;; Accorting to the spec error responses
+                ;; should always have HTTP status code 400,
+                ;; so the above status code check should
+                ;; be sufficient to distinguish successfull
+                ;; responses from errors. 
+                ;; But LiveJournal violates the spec and returns
+                ;; error response with status 200. Therefore
+                ;; we perform additional check for the "error"
+                ;; field. 
+                ;; See the ticket #14 for details.
+                (message-field response "error"))
             (error 'openid-request-error
                    :reason (message-field response "error")
-                   :message response))))))
+                   :message response)
+            response)))))
 
 ;; OpenID Authentication 2.0, 5.1.2.2.  Error Responses
 ;; http://openid.net/specs/openid-authentication-2_0.html#direct_comm
