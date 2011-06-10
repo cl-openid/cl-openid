@@ -283,7 +283,13 @@ The OP Endpoint URL has not been determined by the discovery procedure."))
   "Perform discovery on ID.
 
 ID may be either an already initialized AUTH-PROCESS structure, or
-user-given ID string."
+user-given ID string.
+
+Signals an OPENID-DISCOVERY-ERROR if the discovery was unceccessfy, i.e.
+when the discovery URI specified by ID does not contain the needed
+OpenID discovery information. May also signal other errors, in case
+of network problems, or if the URI is not available, etc.
+"
 
   ;; OpenID Authentication 2.0 Final, Section 7.3.  Discovery
   (multiple-value-bind
