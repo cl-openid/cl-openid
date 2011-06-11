@@ -16,6 +16,6 @@
            #:openid-assertion-error #:code #:reason #:authproc #:message ; assertion error condition
            #:openid-provider #:endpoint-uri  ; OP class
            #:handle-checkid-immediate #:handle-checkid-setup #:user-setup-url #:handle-openid-provider-request ; OP API
-           #:successful-response #:cancel-response #:+indirect-response-code+ ; responses
+           #:successful-response-uri #:cancel-response-uri #:+indirect-response-code+ ; responses
            #:with-indirect-error-handler #:signal-indirect-error #:handle-openid-provider-request ; indirect error responses
            ))

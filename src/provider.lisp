@@ -122,10 +122,15 @@ arguments."
                            )))
     (in-ns (signed assoc rv))))
 
-(defun successful-response (op message)
-  "Return successful response to MESSAGE by OP."
-  (indirect-response (message-field message "openid.return_to")
-                     (successful-response-message op message)))
+(defun successful-response-uri (op auth-request-message)
+  "Returns the URI of the Relying Party to redirect the user's browser
+to. The URI parameters tell the Relying Party that the authentication 
+was successful. AUTH-REQUEST-MESSAGE should be the oritinal OpenID 
+authentication request message that was received from the Relying Party 
+previously and passed to the HANDLE-CHECKID-SETUP."
+  (princ-to-string
+   (indirect-response (message-field auth-request-message "openid.return_to")
+                      (successful-response-message op auth-request-message))))
 
 ;;; Setup needed message generation
 (defgeneric user-setup-url (op message)
@@ -153,30 +158,44 @@ provide entry point to user authentication dialogue.")
 (define-constant +cancel-response-message+
     (in-ns (make-message :openid.mode "cancel")))
 
-(defun cancel-response (op message)
-  "Send cancel (authenticaction failure) response to MESSAGE from OP."
+(defun cancel-response-uri (op auth-request-message)
+  "Returns the URI of the Relying Party to redirect the user's browser
+   to. The URI parameters tell the Relying Party that the authentication 
+   failed. AUTH-REQUEST-MESSAGE should be the oritinal OpenID 
+   authentication request message that was received from the Relying Party 
+   previously and passed to the HANDLE-CHECKID-SETUP."
   (declare (ignore op))
-  (indirect-response (message-field message "openid.return_to")
-                     +cancel-response-message+))
+  (princ-to-string
+   (indirect-response (message-field message "openid.return_to")
+                      +cancel-response-message+)))
 
 
 (defgeneric handle-checkid-setup (op message)
-  (:documentation "Handle checkid_setup requests.
+  (:documentation "Handles checkid_setup requests.
 
 This generic should be specialized on concrete Provider classes to
-perform login checks with user dialogue, that would (possibly after
-some HTTP request-response cycles) end in either SUCCESSFUL-RESPONSE,
-or in CANCEL-RESPONSE.")
+perform login checks with user dialogue, that would (possibly
+after some HTTP request-response cycles) end by redirecting the 
+user's browser either to =SUCCESSFUL-RESPONSE-URI=, or to 
+=CANCEL-RESPONSE-URI=.
+
+This generic is called by =HANDLE-OPENID-PROVIDER-REQUEST= from
+within the scope of =WITH-INDIRECT-ERROR-HANDLER=.
+
+The value(s) returned by this function are then returned by
+=HANDLE-OPENID-PROVIDER-REQUEST=.
+
+Default method just returns (VALUES =CANSEL-RESPONSE-URI= =+INDIRECT-RESPONSE-CODE+=).")
   (:method (op message)
     (if (message-field message "openid.return_to")
-        (cancel-response op message)
+        (values (cancel-response-uri op message) +indirect-response-code+)
         (values "CANCEL" 400))))
 
 (defgeneric handle-checkid-immediate (op message)
-  (:documentation "Handle checkid_immediate requests.
+  (:documentation "Handles checkid_immediate requests.
 
 This generic should be specialized on concrete Provider classes to
-perform immediate login checks on MESSAGE.  It should return at once,
+perform immediate login checks on MESSAGE. It should return at once,
 either true value (to indicate successful login), or NIL (to indicate
 immediate login failure).")
   (:method (op message)

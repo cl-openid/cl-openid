@@ -226,11 +226,19 @@ Original application is published at
     The same rules apply to all =*-RESPONSE= functions and
     =WITH-INDIRECT-ERROR-HANDLER= form return values.
 
-*** Function =CANCEL-RESPONSE= /op/ /message/ ⇒ /response values/
-    Send cancel (authenticaction failure) response to MESSAGE from OP.
+*** Function =CANCEL-RESPONSE-URI= /op/ /message/ ⇒ /uri/
+    Returns the URI of the Relying Party to redirect the user's browser
+    to. The URI parameters tell the Relying Party that the authentication 
+    failed. /auth-request-message/ should be the oritinal OpenID 
+    authentication request message that was received from the Relying Party 
+    previously and passed to the HANDLE-CHECKID-SETUP.
 
-*** Function =SUCCESSFUL-RESPONSE= /op/ /message/ ⇒ /response values/
-    Return successful response to /message/ by /op/.
+*** Function =SUCCESSFUL-RESPONSE-URI= /op/ /auth-request-message/ ⇒ /uri/
+    Returns the URI of the Relying Party to redirect the user's browser
+    to. The URI parameters tell the Relying Party that the authentication 
+    was successful. /auth-request-message/ should be the oritinal OpenID 
+    authentication request message that was received from the Relying Party 
+    previously and passed to the =HANDLE-CHECKID-SETUP=.
 
 *** Macro =WITH-INDIRECT-ERROR-HANDLER= /&body body/ ⇒ /response values/
     Handle =INDIRECT-ERROR= in /body/.
@@ -245,7 +253,6 @@ Original application is published at
 
     /Reason/ is textual error message format string, with
     /reason-args/ being its arguments.
-
 
 *** Generic =HANDLE-CHECKID-IMMEDIATE= /op message/ ⇒ /generalized-boolean/
     Handle checkid_immediate requests.
@@ -272,18 +279,21 @@ Original application is published at
     Default method always returns NIL.
 
 *** Generic =HANDLE-CHECKID-SETUP= /op message/ ⇒ /response values/
-    Handle checkid_setup requests.
+    Handles checkid_setup requests.
 
     This generic should be specialized on concrete Provider classes to
     perform login checks with user dialogue, that would (possibly
-    after some HTTP request-response cycles) end in either
-    =SUCCESSFUL-RESPONSE=, or in =CANCEL-RESPONSE=.
+    after some HTTP request-response cycles) end by redirecting the 
+    user's browser either to =SUCCESSFUL-RESPONSE-URI=, or to 
+    =CANCEL-RESPONSE-URI=.
 
-    Default method always fails.
+    This generic is called by =HANDLE-OPENID-PROVIDER-REQUEST= from
+    within the scope of =WITH-INDIRECT-ERROR-HANDLER=.
 
-    This generic is called within scope of
-    =WITH-INDIRECT-ERROR-HANDLER=.
+    The value(s) returned by this function are then returned by
+    =HANDLE-OPENID-PROVIDER-REQUEST=.
 
+    Default method just returns (VALUES =CANSEL-RESPONSE-URI= =+INDIRECT-RESPONSE-CODE+=).
 
 *** Protocol messages
     Messages passed between OpenID Provider and the Relying Party are

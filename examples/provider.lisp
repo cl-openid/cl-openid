@@ -75,48 +75,48 @@ to FINISH-URI with different parameters."
 
 ;; FINISH-CHECKID-SETUP function is called on request to FINISH-URI,
 ;; by user clicking one of links presented in response from
-;; HANDLE-CHECKID-SETUP.  Analyzes request parameters, and sends
-;; actual indirect response.  Response functions used here return body
-;; and code values, as described previously.
+;; HANDLE-CHECKID-SETUP.  Analyzes request parameters, and returns
+;; an relying party URI to redirect the user's browser to 
+;; (indirect response). The URI parameters tell the relying party
+;; if the authentication was successful or not.
 (defun finish-checkid-setup (op &aux
                              (handle (get-parameter "handle"))
                              (message (gethash handle *requests*))) ; Recover stored message
   "Finish checkid setup."
   (remhash handle *requests*)		; Message no longer needed
-  (if (message-field message "openid.return_to" )
-      (if (get-parameter "allow") ; Check which of the links was clicked:
-          (successful-response op message) ; - Allow
-          (cancel-response op message))    ; - Deny
-      (html "What exactly do you want?"
-            "<h2>~:[ACCESS GRANTED~;ACCESS DENIED~]</h2>
-<p>But there is no <code>return_to</code> address, so I can only display this screen to you.</p>"
-            (get-parameter "allow"))))
+  (assert (message-field message "openid.return_to"))
+  (if (get-parameter "allow") ; Check which of the links was clicked:
+      (successful-response-uri op message) ; - Allow
+      (cancel-response-uri op message))    ; - Deny
+  )
 
 
 ;;; Provider object and Hunchentoot handlers
 (defvar *openid-provider* nil
   "OpenID Provider object.")
 
-;; General response handler, called by Hunchentoot handlers.
-(defun hunchentoot-openid-response (body &optional code)
-  (cond
-    ((<= 300 code 399) 			; Redirect, body is actually an URI
-     (redirect (princ-to-string body) :code code))
-
-    (t (setf (return-code) code)	; Set return code
-       body)))
-
 ;; Hunchentoot handles
 (defun finish-checkid-handle ()
-  (multiple-value-call 'hunchentoot-openid-response
-    (finish-checkid-setup *openid-provider*)))
+  (if (not (gethash (get-parameter "handle") *requests*))
+      (html "What exactly do you want?"
+            "<h2>~:[ACCESS GRANTED~;ACCESS DENIED~]</h2>
+<p>But there is no <code>return_to</code> address, so I can only display this screen to you.</p>"
+            (get-parameter "allow"))
+      (redirect (finish-checkid-setup *openid-provider*))))
 
 (defun provider-ht-handle ()
-  (multiple-value-call 'hunchentoot-openid-response
-    (handle-openid-provider-request *openid-provider*
-                                    (append (post-parameters)
-                                            (get-parameters))
-                                    :secure-p (ssl-p))))
+  (multiple-value-bind (body code)
+      (handle-openid-provider-request *openid-provider*
+                                      (append (post-parameters)
+                                              (get-parameters))
+                                      :secure-p (ssl-p))
+
+    (cond
+      ((<= 300 code 399) 			; Redirect, body is actually an URI
+       (redirect body :code code))
+
+      (t (setf (return-code) code)	; Set return code
+         body))))
 
 ;; Initialization
 (defun init-provider (base-uri prefix
