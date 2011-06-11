@@ -231,8 +231,7 @@ immediate login failure).")
 SECURE-P should be passed by caller to indicate whether it is secure
 to use unencrypted association method.
 
-Returns two values: first is body, and second is HTTP code.  If second
-value is not returned, 200 OK HTTP code should be assumed.
+Returns two values: first is body, and second is HTTP code.
 
 On HTTP redirections (second value between 300 and 399 inclusive,
 actually it will be +INDIRECT-RESPONSE-CODE+), primary returned value
@@ -244,49 +243,51 @@ WITH-INDIRECT-ERROR-HANDLER form return values."
     ("associate"
      (gc-associations op)
      (handler-case
-         (encode-kv                         ; Direct response
-          (string-case (message-field message "openid.session_type")
-            (("DH-SHA1" "DH-SHA256")
-             (let ((private (secure-random:number +dh-prime+))
-                   (association (make-association :association-type (or (message-field message "openid.assoc_type")
-                                                                        (and v1-compat "HMAC-SHA1"))
-                                                  :mac (ensure-vector-length (ensure-vector (secure-random:number #.(expt 2 256)))
-                                                                             (string-case (message-field message "openid.session_type")
-                                                                               ("DH-SHA1" 20)
-                                                                               ("DH-SHA256" 32))))))
-               (multiple-value-bind (emac public)
-                   (dh-encrypt/decrypt-key
-                    (session-digest-type (message-field message "openid.session_type"))
-                    (ensure-integer (or (message-field message "openid.dh_gen") +dh-generator+))
-                    (ensure-integer (or (message-field message "openid.dh_modulus") +dh-prime+))
-                    (ensure-integer (message-field message "openid.dh_consumer_public"))
-                    private
-                    (association-mac association))
-                 (with-lock-held ((associations-lock op))
-                   (setf (gethash (association-handle association) (associations op))
-                         association))
-                 (in-ns (make-message :assoc_handle (association-handle association)
-                                      :session_type (message-field message "openid.session_type")
-                                      :assoc_type (message-field message "openid.assoc_type")
-                                      :expires_in (- (association-expires association)
-                                                     (get-universal-time))
-                                      :dh_server_public (btwoc public)
-                                      :enc_mac_key emac)))))
-            (("" "no-encryption")
-             (if secure-p
-                 (let ((association (make-association :association-type (message-field message "openid.assoc_type"))))
-                   (with-lock-held ((associations-lock op))
-                     (setf (gethash (association-handle association) (associations op))
-                           association))
-                   (in-ns (make-message :assoc_handle (association-handle association)
-                                        :session_type (message-field message "openid.session_type")
-                                        :assoc_type (message-field message "openid.assoc_type")
-                                        :expires_in (- (association-expires association)
-                                                       (get-universal-time))
-                                        :mac_key (association-mac association))))
-                 (openid-association-error "Unencrypted session is supported only with an encrypted connection.")))
-            (t (openid-association-error "Unsupported association type"))))
-
+         (values
+          (encode-kv                         ; Direct response
+           (string-case (message-field message "openid.session_type")
+             (("DH-SHA1" "DH-SHA256")
+              (let ((private (secure-random:number +dh-prime+))
+                    (association (make-association :association-type (or (message-field message "openid.assoc_type")
+                                                                         (and v1-compat "HMAC-SHA1"))
+                                                   :mac (ensure-vector-length (ensure-vector (secure-random:number #.(expt 2 256)))
+                                                                              (string-case (message-field message "openid.session_type")
+                                                                                ("DH-SHA1" 20)
+                                                                                ("DH-SHA256" 32))))))
+                (multiple-value-bind (emac public)
+                    (dh-encrypt/decrypt-key
+                     (session-digest-type (message-field message "openid.session_type"))
+                     (ensure-integer (or (message-field message "openid.dh_gen") +dh-generator+))
+                     (ensure-integer (or (message-field message "openid.dh_modulus") +dh-prime+))
+                     (ensure-integer (message-field message "openid.dh_consumer_public"))
+                     private
+                     (association-mac association))
+                  (with-lock-held ((associations-lock op))
+                    (setf (gethash (association-handle association) (associations op))
+                          association))
+                  (in-ns (make-message :assoc_handle (association-handle association)
+                                       :session_type (message-field message "openid.session_type")
+                                       :assoc_type (message-field message "openid.assoc_type")
+                                       :expires_in (- (association-expires association)
+                                                      (get-universal-time))
+                                       :dh_server_public (btwoc public)
+                                       :enc_mac_key emac)))))
+             (("" "no-encryption")
+              (if secure-p
+                  (let ((association (make-association :association-type (message-field message "openid.assoc_type"))))
+                    (with-lock-held ((associations-lock op))
+                      (setf (gethash (association-handle association) (associations op))
+                            association))
+                    (in-ns (make-message :assoc_handle (association-handle association)
+                                         :session_type (message-field message "openid.session_type")
+                                         :assoc_type (message-field message "openid.assoc_type")
+                                         :expires_in (- (association-expires association)
+                                                        (get-universal-time))
+                                         :mac_key (association-mac association))))
+                  (openid-association-error "Unencrypted session is supported only with an encrypted connection.")))
+             (t (openid-association-error "Unsupported association type"))))
+          200)
+          
        (openid-association-error (e)
          (direct-error-response (princ-to-string e)
                                 :message (make-message :error_code "unsupported-type"
@@ -319,13 +320,15 @@ WITH-INDIRECT-ERROR-HANDLER form return values."
        (handle-checkid-setup op message)))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
-     (encode-kv (in-ns (make-message
-                        :is_valid (if (check-signature (with-lock-held ((associations-lock op))
-                                                         (gethash (message-field message "openid.assoc_handle")
-                                                                  (associations op)))
-                                                       message)
-                                      "true"
-                                      "false")))))
+     (values
+      (encode-kv (in-ns (make-message
+                         :is_valid (if (check-signature (with-lock-held ((associations-lock op))
+                                                          (gethash (message-field message "openid.assoc_handle")
+                                                                   (associations op)))
+                                                        message)
+                                       "true"
+                                       "false"))))
+      200))
 
     (t (direct-error-response (format nil "Unknown openid.mode ~S"
                                       (message-field message "openid.mode"))))))

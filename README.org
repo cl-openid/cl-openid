@@ -217,8 +217,7 @@ Original application is published at
     /secure-p/ should be passed by caller to indicate whether it is
     secure to use unencrypted association method.
 
-    Returns two values: first is body, and second is HTTP code.  If
-    second value is not returned, 200 OK HTTP code should be assumed.
+    Returns two values: first is body, and second is HTTP code.
 
     On HTTP redirections (second value between 300 and 399 inclusive,
     actually it will be =+INDIRECT-RESPONSE-CODE+=), primary returned

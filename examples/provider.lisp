@@ -49,8 +49,7 @@ user, between initial checkid_setup request and final decision.")
 
 ;; Methods below do reply to OpenID endpoint requests.  They should
 ;; return the same values as HANDLE-OPENID-PROVIDER-REQUEST: reply
-;; body and optional HTTP code.  If code (second value) is not
-;; present, 200 OK is assumed.  If code is a redirect (3xx), body
+;; body and optional HTTP code. If code is a redirect (3xx), body
 ;; (first returned value) is actually a redirect URI (URI object or
 ;; string).
 
@@ -101,11 +100,8 @@ to FINISH-URI with different parameters."
 ;; General response handler, called by Hunchentoot handlers.
 (defun hunchentoot-openid-response (body &optional code)
   (cond
-    ((not code) body)			; Simple 200 OK and body
-
     ((<= 300 code 399) 			; Redirect, body is actually an URI
-     (redirect (princ-to-string body) :code code)
-     nil)
+     (redirect (princ-to-string body) :code code))
 
     (t (setf (return-code) code)	; Set return code
        body)))
