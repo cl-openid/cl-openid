@@ -219,9 +219,8 @@ Original application is published at
 
     Returns two values: first is body, and second is HTTP code.
 
-    On HTTP redirections (the second value between 300 and 399 inclusive,
-    actually it will be =+INDIRECT-RESPONSE-CODE+=), the primary returned
-    value will be an URI to redirect the user to.
+    On HTTP redirections (the second value between 300 and 399 inclusive), 
+    the primary returned value will be an URI to redirect the user to.
 
 *** Function =CANCEL-RESPONSE-URI= /op/ /message/ ⇒ /uri/
     Returns the URI of the Relying Party to redirect the user's browser

@@ -251,9 +251,8 @@ to use unencrypted association method.
 Returns two values: the first is body, and the second is an HTTP 
 status code.
 
-On HTTP redirections (the second value between 300 and 399 inclusive,
-actually it will be +INDIRECT-RESPONSE-CODE+), the primary returned 
-value will be an URI to redirect the user to."
+On HTTP redirections (the second value between 300 and 399 inclusive), 
+the primary returned value will be an URI to redirect the user to."
   (string-case (message-field message "openid.mode")
     ("associate"
      (gc-associations op)
