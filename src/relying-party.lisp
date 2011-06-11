@@ -300,6 +300,7 @@ As second value, always returns AUTH-PROCESS object."
                        (check-signature association message)
                        ;; 11.4.2.  Verifying Directly with the OpenID Provider
                        (let ((response (direct-request (provider-endpoint-uri authproc)
+                                                       ;todo: don't use acons, but use the more abstract MESSAGE- functions
                                                        (acons "openid.mode" "check_authentication"
                                                               (remove "openid.mode" message
                                                                       :key #'car
