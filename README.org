@@ -209,7 +209,7 @@ Original application is published at
      OpenID Provider instance's endpoint URI
 
 *** Constant =+INDIRECT-RESPONSE-CODE+=
-    HTTP code used for indirect response redirections.
+    HTTP code recommented to use for indirect responses sent via HTTP redirect.
 
 *** Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key secure-p/ ⇒ /response values/
     Handle request /message/ for OpenID Provider instance /op/.

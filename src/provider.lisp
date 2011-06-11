@@ -40,7 +40,7 @@ HANDLE-CHECKID-IMMEDIATE)."))
             (integer-to-base64-string (incf *nonce-counter*)))))
 
 (defconstant +indirect-response-code+ 303
-  "HTTP code used for indirect response redirections.")
+  "HTTP code recommented to use for indirect responses sent via HTTP redirect.")
 
 (defun indirect-response (return-to message)
   "Return indirect response (URI as body +INDIRECT-RESPONSE-CODE+ as the second value)."
