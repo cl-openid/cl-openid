@@ -43,7 +43,7 @@ HANDLE-CHECKID-IMMEDIATE)."))
   "HTTP code used for indirect response redirections.")
 
 (defun indirect-response (return-to message)
-  "Return indirect response (URI as body +INDIRECT-RESPONSE-CODE+ as second value)."
+  "Return indirect response (URI as body +INDIRECT-RESPONSE-CODE+ as the second value)."
   (values (indirect-message-uri return-to message)
           +indirect-response-code+))
 
