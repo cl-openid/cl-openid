@@ -160,10 +160,10 @@ provide entry point to user authentication dialogue.")
 
 (defun cancel-response-uri (op auth-request-message)
   "Returns the URI of the Relying Party to redirect the user's browser
-   to. The URI parameters tell the Relying Party that the authentication 
-   failed. AUTH-REQUEST-MESSAGE should be the oritinal OpenID 
-   authentication request message that was received from the Relying Party 
-   previously and passed to the HANDLE-CHECKID-SETUP."
+to. The URI parameters tell the Relying Party that the authentication 
+failed. AUTH-REQUEST-MESSAGE should be the oritinal OpenID 
+authentication request message that was received from the Relying Party 
+previously and passed to the HANDLE-CHECKID-SETUP."
   (declare (ignore op))
   (princ-to-string
    (indirect-response (message-field message "openid.return_to")
@@ -176,16 +176,14 @@ provide entry point to user authentication dialogue.")
 This generic should be specialized on concrete Provider classes to
 perform login checks with user dialogue, that would (possibly
 after some HTTP request-response cycles) end by redirecting the 
-user's browser either to =SUCCESSFUL-RESPONSE-URI=, or to 
-=CANCEL-RESPONSE-URI=.
+user's browser either to SUCCESSFUL-RESPONSE-URI, or to 
+CANCEL-RESPONSE-URI.
 
-This generic is called by =HANDLE-OPENID-PROVIDER-REQUEST= from
-within the scope of =WITH-INDIRECT-ERROR-HANDLER=.
-
+This generic is called by HANDLE-OPENID-PROVIDER-REQUEST.
 The value(s) returned by this function are then returned by
-=HANDLE-OPENID-PROVIDER-REQUEST=.
+HANDLE-OPENID-PROVIDER-REQUEST.
 
-Default method just returns (VALUES =CANSEL-RESPONSE-URI= =+INDIRECT-RESPONSE-CODE+=).")
+Default method just returns (VALUES CANSEL-RESPONSE-URI +INDIRECT-RESPONSE-CODE+).")
   (:method (op message)
     (if (message-field message "openid.return_to")
         (values (cancel-response-uri op message) +indirect-response-code+)
@@ -250,14 +248,12 @@ immediate login failure).")
 SECURE-P should be passed by caller to indicate whether it is secure
 to use unencrypted association method.
 
-Returns two values: first is body, and second is HTTP code.
+Returns two values: the first is body, and the second is an HTTP 
+status code.
 
-On HTTP redirections (second value between 300 and 399 inclusive,
-actually it will be +INDIRECT-RESPONSE-CODE+), primary returned value
-will be an URI to redirect user to.
-
-The same rules apply to all *-RESPONSE functions and
-WITH-INDIRECT-ERROR-HANDLER form return values."
+On HTTP redirections (the second value between 300 and 399 inclusive,
+actually it will be +INDIRECT-RESPONSE-CODE+), the primary returned 
+value will be an URI to redirect the user to."
   (string-case (message-field message "openid.mode")
     ("associate"
      (gc-associations op)

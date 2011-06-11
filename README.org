@@ -219,19 +219,16 @@ Original application is published at
 
     Returns two values: first is body, and second is HTTP code.
 
-    On HTTP redirections (second value between 300 and 399 inclusive,
-    actually it will be =+INDIRECT-RESPONSE-CODE+=), primary returned
-    value will be an URI to redirect user to.
-
-    The same rules apply to all =*-RESPONSE= functions and
-    =WITH-INDIRECT-ERROR-HANDLER= form return values.
+    On HTTP redirections (the second value between 300 and 399 inclusive,
+    actually it will be =+INDIRECT-RESPONSE-CODE+=), the primary returned
+    value will be an URI to redirect the user to.
 
 *** Function =CANCEL-RESPONSE-URI= /op/ /message/ ⇒ /uri/
     Returns the URI of the Relying Party to redirect the user's browser
     to. The URI parameters tell the Relying Party that the authentication 
     failed. /auth-request-message/ should be the oritinal OpenID 
     authentication request message that was received from the Relying Party 
-    previously and passed to the HANDLE-CHECKID-SETUP.
+    previously and passed to the =HANDLE-CHECKID-SETUP=.
 
 *** Function =SUCCESSFUL-RESPONSE-URI= /op/ /auth-request-message/ ⇒ /uri/
     Returns the URI of the Relying Party to redirect the user's browser
@@ -239,20 +236,6 @@ Original application is published at
     was successful. /auth-request-message/ should be the oritinal OpenID 
     authentication request message that was received from the Relying Party 
     previously and passed to the =HANDLE-CHECKID-SETUP=.
-
-*** Macro =WITH-INDIRECT-ERROR-HANDLER= /&body body/ ⇒ /response values/
-    Handle =INDIRECT-ERROR= in /body/.
-
-    When =INDIRECT-ERROR= condition is signaled, immediately return
-    indirect error response.
-
-*** Function =SIGNAL-INDIRECT-ERROR= /message reason &rest reason-args/
-    Signal =INDIRECT-ERROR= condition as reply to /message/,
-    effectively returning indirect error reply from
-    =WITH-INDIRECT-ERROR-HANDLER= block.
-
-    /Reason/ is textual error message format string, with
-    /reason-args/ being its arguments.
 
 *** Generic =HANDLE-CHECKID-IMMEDIATE= /op message/ ⇒ /generalized-boolean/
     Handle checkid_immediate requests.
@@ -263,9 +246,6 @@ Original application is published at
     indicate immediate login failure).
 
     Default method always fails.
-
-    This generic is called within scope of
-    =WITH-INDIRECT-ERROR-HANDLER=.
 
 *** Generic =USER-SETUP-URL= /op message/ ⇒ /uri/
     URI for user setup to return on failed immediate request.
@@ -287,9 +267,7 @@ Original application is published at
     user's browser either to =SUCCESSFUL-RESPONSE-URI=, or to 
     =CANCEL-RESPONSE-URI=.
 
-    This generic is called by =HANDLE-OPENID-PROVIDER-REQUEST= from
-    within the scope of =WITH-INDIRECT-ERROR-HANDLER=.
-
+    This generic is called by =HANDLE-OPENID-PROVIDER-REQUEST=.
     The value(s) returned by this function are then returned by
     =HANDLE-OPENID-PROVIDER-REQUEST=.
 

@@ -8,14 +8,24 @@
         #:trivial-utf-8
         #:ironclad
         #:bordeaux-threads)
-  (:shadowing-import-from :cl #:null) ; Ironclad shadows NULL, we don't want to
-  (:export #:in-ns #:message-field #:message-v2-p #:make-message #:copy-message  ; Message API
-           #:relying-party #:realm #:root-uri   ; RP class
-	   #:auth-process #:auth-process-p #:protocol-version-major #:protocol-version-minor #:protocol-version #:claimed-id #:op-local-id #:return-to #:xrds-location #:provider-endpoint-uri #:timestamp ; AUTH-PROCESS structure
-           #:initiate-authentication #:+authproc-handle-parameter+ #:handle-indirect-response ; RP API
-           #:openid-assertion-error #:code #:reason #:authproc #:message ; assertion error condition
-           #:openid-provider #:endpoint-uri  ; OP class
-           #:handle-checkid-immediate #:handle-checkid-setup #:user-setup-url #:handle-openid-provider-request ; OP API
-           #:successful-response-uri #:cancel-response-uri #:+indirect-response-code+ ; responses
-           #:with-indirect-error-handler #:signal-indirect-error #:handle-openid-provider-request ; indirect error responses
-           ))
+  (:shadowing-import-from :cl #:null) ; Ironclad shadows NULL, we don't want to  
+  (:export 
+   ;; Message API
+   #:in-ns #:message-field #:message-v2-p #:make-message #:copy-message            
+   ;; AUTH-PROCESS structure	   
+   #:auth-process #:auth-process-p #:protocol-version-major #:protocol-version-minor 
+   #:protocol-version #:claimed-id #:op-local-id #:return-to #:xrds-location 
+   #:provider-endpoint-uri #:timestamp   
+   ;; RP class
+   #:relying-party #:realm #:root-uri   
+   ;; RP API
+   #:initiate-authentication #:+authproc-handle-parameter+ #:handle-indirect-response 
+   ;; assertion error condition
+   #:openid-assertion-error #:code #:reason #:authproc #:message
+   ;; OP class
+   #:openid-provider #:endpoint-uri  
+   ;; OP API
+   #:handle-openid-provider-request #:handle-checkid-setup #:handle-checkid-immediate #:user-setup-url 
+   ;; OP responses
+   #:successful-response-uri #:cancel-response-uri #:+indirect-response-code+
+   ))
