@@ -312,7 +312,7 @@ value will be an URI to redirect the user to."
     ("checkid_immediate"
      (with-indirect-error-handler
        (when (message-field message "openid.realm")
-         (unless (check-realm (message-field message "openid.realm")
+         (unless (check-realm (auth-request-realm message)
                               (message-field message "openid.return_to"))
            (signal-indirect-error message "Realm does not match return_to URI.")))
        (indirect-response (message-field message "openid.return_to")

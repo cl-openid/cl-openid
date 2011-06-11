@@ -84,7 +84,7 @@ Original application is published at
    ASDF system:
    : (asdf:oos 'asdf:load-op :cl-openid.examples)
 
-* Provided API
+* API
 
 ** Relying Party
 
@@ -312,4 +312,9 @@ Original application is published at
 **** Function =MESSAGE-V2-P= /message/ ⇒ /boolean/
      True if /message/ is an OpenID v2 message (namespace check).
 
+**** Function =AUTH-REQUEST-REALM= /auth-request-message/ ⇒ /string/
+     Returns the realm of the OpenID authentication
+     request /auth-request-message/.
+
+     
      

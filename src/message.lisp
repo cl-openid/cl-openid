@@ -151,3 +151,15 @@ Usable for both indirect requests and responses."
                        "&")
                      (drakma::alist-to-url-encoded-string message :utf-8))) ; FIXME:unexported
   uri)
+
+(defun auth-request-realm (auth-request-message)
+  "Returns the realm of the OpenID authentication
+request AUTH-REQUEST-MESSAGE."
+  (or (if (not (message-v2-p auth-request-message))
+          ;; OpenID Authentication 2.0 Final, Section 14.2.1.  Changes from OpenID Authentication 1.1
+          ;; prior to 2.0 "openid.realm" was called "openid.trust_root"
+          (message-field auth-request-message "openid.trust_root")
+          (message-field auth-request-message "openid.realm"))
+      ;; OpenID Authentication 2.0 Final, Section 9.1.  Request Parameters
+      ;; if "openid.realm" is not specifed, it defaults to "openid.return_to"
+      (message-field auth-request-message "openid.return_to")))
