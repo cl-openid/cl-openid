@@ -243,8 +243,8 @@ WITH-INDIRECT-ERROR-HANDLER form return values."
   (string-case (message-field message "openid.mode")
     ("associate"
      (gc-associations op)
-     (encode-kv                         ; Direct response
-      (handler-case
+     (handler-case
+         (encode-kv                         ; Direct response
           (string-case (message-field message "openid.session_type")
             (("DH-SHA1" "DH-SHA256")
              (let ((private (secure-random:number +dh-prime+))
@@ -285,13 +285,13 @@ WITH-INDIRECT-ERROR-HANDLER form return values."
                                                        (get-universal-time))
                                         :mac_key (association-mac association))))
                  (openid-association-error "Unencrypted session is supported only with an encrypted connection.")))
-            (t (openid-association-error "Unsupported association type")))
+            (t (openid-association-error "Unsupported association type"))))
 
-        (openid-association-error (e)
-          (direct-error-response (princ-to-string e)
-                                 :message (make-message :error_code "unsupported-type"
-                                                        :session_type (if v1-compat "DH-SHA1" "DH-SHA256") ; We do not prefer cleartext session, regardless of SSL
-                                                        :assoc_type (if v1-compat "HMAC-SHA1" "HMAC-SHA256")))))))
+       (openid-association-error (e)
+         (direct-error-response (princ-to-string e)
+                                :message (make-message :error_code "unsupported-type"
+                                                       :session_type (if v1-compat "DH-SHA1" "DH-SHA256") ; We do not prefer cleartext session, regardless of SSL
+                                                       :assoc_type (if v1-compat "HMAC-SHA1" "HMAC-SHA256"))))))
 
     ("checkid_immediate"
      (with-indirect-error-handler
