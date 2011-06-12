@@ -2,7 +2,7 @@
                               =========
 
 Author: Maciej Pasternacki
-Date: 2011-06-11 01:01:49 
+Date: 2011-06-12 03:42:02 
 
 
 Cl-OpenID is an implementation of [OpenID] protocol in Common Lisp.  It
@@ -33,7 +33,7 @@ Table of Contents
     2.1 Dependencies 
         2.1.1 CL-Librarian shelf 
     2.2 Example code 
-3 Provided API 
+3 API 
     3.1 Relying Party 
         3.1.1 Class =RELYING-PARTY= 
             3.1.1.1 Accessor =ROOT-URI= /relying-party/ ⇒ /uri/ 
@@ -62,19 +62,18 @@ Table of Contents
             3.2.1.1 Accessor =ENDPOINT-URI= /op/ ⇒ /uri/ 
         3.2.2 Constant =+INDIRECT-RESPONSE-CODE+= 
         3.2.3 Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key secure-p/ ⇒ /response values/ 
-        3.2.4 Function =CANCEL-RESPONSE= /op/ /message/ ⇒ /response values/ 
-        3.2.5 Function =SUCCESSFUL-RESPONSE= /op/ /message/ ⇒ /response values/ 
-        3.2.6 Macro =WITH-INDIRECT-ERROR-HANDLER= /&body body/ ⇒ /response values/ 
-        3.2.7 Function =SIGNAL-INDIRECT-ERROR= /message reason &rest reason-args/ 
-        3.2.8 Generic =HANDLE-CHECKID-IMMEDIATE= /op message/ ⇒ /generalized-boolean/ 
-        3.2.9 Generic =USER-SETUP-URL= /op message/ ⇒ /uri/ 
-        3.2.10 Generic =HANDLE-CHECKID-SETUP= /op message/ ⇒ /response values/ 
-        3.2.11 Protocol messages 
-            3.2.11.1 Function =MAKE-MESSAGE= /&rest parameters/ ⇒ /message/ 
-            3.2.11.2 Function =COPY-MESSAGE= /message &rest parameters/ ⇒ /message/ 
-            3.2.11.3 Function =IN-NS= /message &optional namespace/ ⇒ /message/ 
-            3.2.11.4 Function =MESSAGE-FIELD= /message field-name/ ⇒ /value/ 
-            3.2.11.5 Function =MESSAGE-V2-P= /message/ ⇒ /boolean/ 
+        3.2.4 Function =CANCEL-RESPONSE-URI= /op/ /message/ ⇒ /uri/ 
+        3.2.5 Function =SUCCESSFUL-RESPONSE-URI= /op/ /auth-request-message/ ⇒ /uri/ 
+        3.2.6 Generic =HANDLE-CHECKID-IMMEDIATE= /op message/ ⇒ /generalized-boolean/ 
+        3.2.7 Generic =USER-SETUP-URL= /op message/ ⇒ /uri/ 
+        3.2.8 Generic =HANDLE-CHECKID-SETUP= /op message/ ⇒ /response values/ 
+        3.2.9 Protocol messages 
+            3.2.9.1 Function =MAKE-MESSAGE= /&rest parameters/ ⇒ /message/ 
+            3.2.9.2 Function =COPY-MESSAGE= /message &rest parameters/ ⇒ /message/ 
+            3.2.9.3 Function =IN-NS= /message &optional namespace/ ⇒ /message/ 
+            3.2.9.4 Function =MESSAGE-FIELD= /message field-name/ ⇒ /value/ 
+            3.2.9.5 Function =MESSAGE-V2-P= /message/ ⇒ /boolean/ 
+            3.2.9.6 Function =AUTH-REQUEST-REALM= /auth-request-message/ ⇒ /string/ 
 
 
 1 Contact 
@@ -177,8 +176,8 @@ Table of Contents
 
    [Hunchentoot]: http://weitz.de/hunchentoot/
 
-3 Provided API 
-###############
+3 API 
+######
 
 3.1 Relying Party 
 ^^^^^^^^^^^^^^^^^^
@@ -331,7 +330,7 @@ Table of Contents
 
 3.2.2 Constant =+INDIRECT-RESPONSE-CODE+= 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    HTTP code used for indirect response redirections.
+    HTTP code recommented to use for indirect responses sent via HTTP redirect.
 
 3.2.3 Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key secure-p/ ⇒ /response values/ 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -340,42 +339,28 @@ Table of Contents
     /secure-p/ should be passed by caller to indicate whether it is
     secure to use unencrypted association method.
 
-    Returns two values: first is body, and second is HTTP code.  If
-    second value is not returned, 200 OK HTTP code should be assumed.
+    Returns two values: first is body, and second is HTTP code.
 
-    On HTTP redirections (second value between 300 and 399 inclusive,
-    actually it will be =+INDIRECT-RESPONSE-CODE+=), primary returned
-    value will be an URI to redirect user to.
+    On HTTP redirections (the second value between 300 and 399 inclusive), 
+    the primary returned value will be an URI to redirect the user to.
 
-    The same rules apply to all =*-RESPONSE= functions and
-    =WITH-INDIRECT-ERROR-HANDLER= form return values.
+3.2.4 Function =CANCEL-RESPONSE-URI= /op/ /message/ ⇒ /uri/ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Returns the URI of the Relying Party to redirect the user's browser
+    to. The URI parameters tell the Relying Party that the authentication 
+    failed. /auth-request-message/ should be the oritinal OpenID 
+    authentication request message that was received from the Relying Party 
+    previously and passed to the =HANDLE-CHECKID-SETUP=.
 
-3.2.4 Function =CANCEL-RESPONSE= /op/ /message/ ⇒ /response values/ 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Send cancel (authenticaction failure) response to MESSAGE from OP.
+3.2.5 Function =SUCCESSFUL-RESPONSE-URI= /op/ /auth-request-message/ ⇒ /uri/ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Returns the URI of the Relying Party to redirect the user's browser
+    to. The URI parameters tell the Relying Party that the authentication 
+    was successful. /auth-request-message/ should be the oritinal OpenID 
+    authentication request message that was received from the Relying Party 
+    previously and passed to the =HANDLE-CHECKID-SETUP=.
 
-3.2.5 Function =SUCCESSFUL-RESPONSE= /op/ /message/ ⇒ /response values/ 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Return successful response to /message/ by /op/.
-
-3.2.6 Macro =WITH-INDIRECT-ERROR-HANDLER= /&body body/ ⇒ /response values/ 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Handle =INDIRECT-ERROR= in /body/.
-
-    When =INDIRECT-ERROR= condition is signaled, immediately return
-    indirect error response.
-
-3.2.7 Function =SIGNAL-INDIRECT-ERROR= /message reason &rest reason-args/ 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Signal =INDIRECT-ERROR= condition as reply to /message/,
-    effectively returning indirect error reply from
-    =WITH-INDIRECT-ERROR-HANDLER= block.
-
-    /Reason/ is textual error message format string, with
-    /reason-args/ being its arguments.
-
-
-3.2.8 Generic =HANDLE-CHECKID-IMMEDIATE= /op message/ ⇒ /generalized-boolean/ 
+3.2.6 Generic =HANDLE-CHECKID-IMMEDIATE= /op message/ ⇒ /generalized-boolean/ 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Handle checkid_immediate requests.
 
@@ -386,10 +371,7 @@ Table of Contents
 
     Default method always fails.
 
-    This generic is called within scope of
-    =WITH-INDIRECT-ERROR-HANDLER=.
-
-3.2.9 Generic =USER-SETUP-URL= /op message/ ⇒ /uri/ 
+3.2.7 Generic =USER-SETUP-URL= /op message/ ⇒ /uri/ 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     URI for user setup to return on failed immediate request.
 
@@ -401,31 +383,32 @@ Table of Contents
 
     Default method always returns NIL.
 
-3.2.10 Generic =HANDLE-CHECKID-SETUP= /op message/ ⇒ /response values/ 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Handle checkid_setup requests.
+3.2.8 Generic =HANDLE-CHECKID-SETUP= /op message/ ⇒ /response values/ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Handles checkid_setup requests.
 
     This generic should be specialized on concrete Provider classes to
     perform login checks with user dialogue, that would (possibly
-    after some HTTP request-response cycles) end in either
-    =SUCCESSFUL-RESPONSE=, or in =CANCEL-RESPONSE=.
+    after some HTTP request-response cycles) end by redirecting the 
+    user's browser either to =SUCCESSFUL-RESPONSE-URI=, or to 
+    =CANCEL-RESPONSE-URI=.
 
-    Default method always fails.
+    This generic is called by =HANDLE-OPENID-PROVIDER-REQUEST=.
+    The value(s) returned by this function are then returned by
+    =HANDLE-OPENID-PROVIDER-REQUEST=.
 
-    This generic is called within scope of
-    =WITH-INDIRECT-ERROR-HANDLER=.
+    Default method just returns (VALUES =CANSEL-RESPONSE-URI= =+INDIRECT-RESPONSE-CODE+=).
 
-
-3.2.11 Protocol messages 
-~~~~~~~~~~~~~~~~~~~~~~~~~
+3.2.9 Protocol messages 
+~~~~~~~~~~~~~~~~~~~~~~~~
     Messages passed between OpenID Provider and the Relying Party are
     composed of key-value pairs.  Natural Lisp representation of
     those, and the one used in CL-OpenID, is an association list.  A
     handful of conveniense function is provided to avoid tweaking
     messages on cons level.
 
-3.2.11.1 Function =MAKE-MESSAGE= /&rest parameters/ ⇒ /message/ 
-================================================================
+3.2.9.1 Function =MAKE-MESSAGE= /&rest parameters/ ⇒ /message/ 
+===============================================================
      Make new message from arbitrary keyword parameters.
 
      Keyword specifies a message field key (actual key is lowercased
@@ -439,24 +422,32 @@ Table of Contents
 
      If value is NIL, field won't be included in the message at all.
 
-3.2.11.2 Function =COPY-MESSAGE= /message &rest parameters/ ⇒ /message/ 
-========================================================================
+3.2.9.2 Function =COPY-MESSAGE= /message &rest parameters/ ⇒ /message/ 
+=======================================================================
      Create a copy of MESSAGE, updating PARAMETERS provided as keyword parameters.
 
      If MESSAGE already includes provided key, new value is used in
      the result; if a key is new, the field will be appended to result
      message.  PARAMETERS are interpreted as by MAKE-MESSAGE function.
 
-3.2.11.3 Function =IN-NS= /message &optional namespace/ ⇒ /message/ 
-====================================================================
+3.2.9.3 Function =IN-NS= /message &optional namespace/ ⇒ /message/ 
+===================================================================
      Add openid.namespace /namespace/ to /message/.
 
      Default namespace is OpenID v2.  Returns updated message alist.
 
-3.2.11.4 Function =MESSAGE-FIELD= /message field-name/ ⇒ /value/ 
-=================================================================
+3.2.9.4 Function =MESSAGE-FIELD= /message field-name/ ⇒ /value/ 
+================================================================
      Get value of /field-name/ field from /message/.
 
-3.2.11.5 Function =MESSAGE-V2-P= /message/ ⇒ /boolean/ 
-=======================================================
+3.2.9.5 Function =MESSAGE-V2-P= /message/ ⇒ /boolean/ 
+======================================================
      True if /message/ is an OpenID v2 message (namespace check).
+
+3.2.9.6 Function =AUTH-REQUEST-REALM= /auth-request-message/ ⇒ /string/ 
+========================================================================
+     Returns the realm of the OpenID authentication
+     request /auth-request-message/.
+
+     
+     

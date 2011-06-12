@@ -7,7 +7,7 @@ lang="en" xml:lang="en">
 <title>CL-OpenID</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2011-06-11 01:03:41 "/>
+<meta name="generated" content="2011-06-12 03:42:49 "/>
 <meta name="author" content="Maciej Pasternacki"/>
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
@@ -104,7 +104,7 @@ Original application is published at
 <li><a href="#sec-2_2">2.2 Example code </a></li>
 </ul>
 </li>
-<li><a href="#sec-3">3 Provided API </a>
+<li><a href="#sec-3">3 API </a>
 <ul>
 <li><a href="#sec-3_1">3.1 Relying Party </a>
 <ul>
@@ -149,20 +149,19 @@ Original application is published at
 </li>
 <li><a href="#sec-3_2_2">3.2.2 Constant <code>+INDIRECT-RESPONSE-CODE+</code> </a></li>
 <li><a href="#sec-3_2_3">3.2.3 Function <code>HANDLE-OPENID-PROVIDER-REQUEST</code> <i>op message &amp;key secure-p</i> ⇒ <i>response values</i> </a></li>
-<li><a href="#sec-3_2_4">3.2.4 Function <code>CANCEL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i> </a></li>
-<li><a href="#sec-3_2_5">3.2.5 Function <code>SUCCESSFUL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i> </a></li>
-<li><a href="#sec-3_2_6">3.2.6 Macro <code>WITH-INDIRECT-ERROR-HANDLER</code> <i>&amp;body body</i> ⇒ <i>response values</i> </a></li>
-<li><a href="#sec-3_2_7">3.2.7 Function <code>SIGNAL-INDIRECT-ERROR</code> <i>message reason &amp;rest reason-args</i> </a></li>
-<li><a href="#sec-3_2_8">3.2.8 Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i> </a></li>
-<li><a href="#sec-3_2_9">3.2.9 Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i> </a></li>
-<li><a href="#sec-3_2_10">3.2.10 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </a></li>
-<li><a href="#sec-3_2_11">3.2.11 Protocol messages </a>
+<li><a href="#sec-3_2_4">3.2.4 Function <code>CANCEL-RESPONSE-URI</code> <i>op</i> <i>message</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_2_5">3.2.5 Function <code>SUCCESSFUL-RESPONSE-URI</code> <i>op</i> <i>auth-request-message</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_2_6">3.2.6 Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i> </a></li>
+<li><a href="#sec-3_2_7">3.2.7 Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i> </a></li>
+<li><a href="#sec-3_2_8">3.2.8 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </a></li>
+<li><a href="#sec-3_2_9">3.2.9 Protocol messages </a>
 <ul>
-<li><a href="#sec-3_2_11_1">3.2.11.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </a></li>
-<li><a href="#sec-3_2_11_2">3.2.11.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </a></li>
-<li><a href="#sec-3_2_11_3">3.2.11.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </a></li>
-<li><a href="#sec-3_2_11_4">3.2.11.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </a></li>
-<li><a href="#sec-3_2_11_5">3.2.11.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </a></li>
+<li><a href="#sec-3_2_9_1">3.2.9.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_9_2">3.2.9.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_9_3">3.2.9.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_9_4">3.2.9.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </a></li>
+<li><a href="#sec-3_2_9_5">3.2.9.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </a></li>
+<li><a href="#sec-3_2_9_6">3.2.9.6 Function <code>AUTH-REQUEST-REALM</code> <i>auth-request-message</i> ⇒ <i>string</i> </a></li>
 </ul>
 </li>
 </ul>
@@ -312,7 +311,7 @@ ASDF system:
 </div>
 
 <div id="outline-container-3" class="outline-2">
-<h2 id="sec-3"><span class="section-number-2">3</span> Provided API </h2>
+<h2 id="sec-3"><span class="section-number-2">3</span> API </h2>
 <div class="outline-text-2" id="text-3">
 
 
@@ -664,7 +663,7 @@ provided at least for <code>HANDLE-CHECKID-SETUP</code> (preferably also for
 <h4 id="sec-3_2_2"><span class="section-number-4">3.2.2</span> Constant <code>+INDIRECT-RESPONSE-CODE+</code> </h4>
 <div class="outline-text-4" id="text-3_2_2">
 
-<p>HTTP code used for indirect response redirections.
+<p>HTTP code recommented to use for indirect responses sent via HTTP redirect.
 </p>
 </div>
 
@@ -681,76 +680,47 @@ provided at least for <code>HANDLE-CHECKID-SETUP</code> (preferably also for
 secure to use unencrypted association method.
 </p>
 <p>
-Returns two values: first is body, and second is HTTP code.  If
-second value is not returned, 200 OK HTTP code should be assumed.
+Returns two values: first is body, and second is HTTP code.
 </p>
 <p>
-On HTTP redirections (second value between 300 and 399 inclusive,
-actually it will be <code>+INDIRECT-RESPONSE-CODE+</code>), primary returned
-value will be an URI to redirect user to.
-</p>
-<p>
-The same rules apply to all <code>*-RESPONSE</code> functions and
-<code>WITH-INDIRECT-ERROR-HANDLER</code> form return values.
+On HTTP redirections (the second value between 300 and 399 inclusive), 
+the primary returned value will be an URI to redirect the user to.
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-3_2_4" class="outline-4">
-<h4 id="sec-3_2_4"><span class="section-number-4">3.2.4</span> Function <code>CANCEL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i> </h4>
+<h4 id="sec-3_2_4"><span class="section-number-4">3.2.4</span> Function <code>CANCEL-RESPONSE-URI</code> <i>op</i> <i>message</i> ⇒ <i>uri</i> </h4>
 <div class="outline-text-4" id="text-3_2_4">
 
-<p>Send cancel (authenticaction failure) response to MESSAGE from OP.
+<p>Returns the URI of the Relying Party to redirect the user's browser
+to. The URI parameters tell the Relying Party that the authentication 
+failed. <i>auth-request-message</i> should be the oritinal OpenID 
+authentication request message that was received from the Relying Party 
+previously and passed to the <code>HANDLE-CHECKID-SETUP</code>.
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-3_2_5" class="outline-4">
-<h4 id="sec-3_2_5"><span class="section-number-4">3.2.5</span> Function <code>SUCCESSFUL-RESPONSE</code> <i>op</i> <i>message</i> ⇒ <i>response values</i> </h4>
+<h4 id="sec-3_2_5"><span class="section-number-4">3.2.5</span> Function <code>SUCCESSFUL-RESPONSE-URI</code> <i>op</i> <i>auth-request-message</i> ⇒ <i>uri</i> </h4>
 <div class="outline-text-4" id="text-3_2_5">
 
-<p>Return successful response to <i>message</i> by <i>op</i>.
+<p>Returns the URI of the Relying Party to redirect the user's browser
+to. The URI parameters tell the Relying Party that the authentication 
+was successful. <i>auth-request-message</i> should be the oritinal OpenID 
+authentication request message that was received from the Relying Party 
+previously and passed to the <code>HANDLE-CHECKID-SETUP</code>.
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-3_2_6" class="outline-4">
-<h4 id="sec-3_2_6"><span class="section-number-4">3.2.6</span> Macro <code>WITH-INDIRECT-ERROR-HANDLER</code> <i>&amp;body body</i> ⇒ <i>response values</i> </h4>
+<h4 id="sec-3_2_6"><span class="section-number-4">3.2.6</span> Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i> </h4>
 <div class="outline-text-4" id="text-3_2_6">
-
-<p>Handle <code>INDIRECT-ERROR</code> in <i>body</i>.
-</p>
-<p>
-When <code>INDIRECT-ERROR</code> condition is signaled, immediately return
-indirect error response.
-</p>
-</div>
-
-</div>
-
-<div id="outline-container-3_2_7" class="outline-4">
-<h4 id="sec-3_2_7"><span class="section-number-4">3.2.7</span> Function <code>SIGNAL-INDIRECT-ERROR</code> <i>message reason &amp;rest reason-args</i> </h4>
-<div class="outline-text-4" id="text-3_2_7">
-
-<p>Signal <code>INDIRECT-ERROR</code> condition as reply to <i>message</i>,
-effectively returning indirect error reply from
-<code>WITH-INDIRECT-ERROR-HANDLER</code> block.
-</p>
-<p>
-<i>Reason</i> is textual error message format string, with
-<i>reason-args</i> being its arguments.
-</p>
-
-</div>
-
-</div>
-
-<div id="outline-container-3_2_8" class="outline-4">
-<h4 id="sec-3_2_8"><span class="section-number-4">3.2.8</span> Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i> </h4>
-<div class="outline-text-4" id="text-3_2_8">
 
 <p>Handle checkid_immediate requests.
 </p>
@@ -763,17 +733,13 @@ indicate immediate login failure).
 <p>
 Default method always fails.
 </p>
-<p>
-This generic is called within scope of
-<code>WITH-INDIRECT-ERROR-HANDLER</code>.
-</p>
 </div>
 
 </div>
 
-<div id="outline-container-3_2_9" class="outline-4">
-<h4 id="sec-3_2_9"><span class="section-number-4">3.2.9</span> Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i> </h4>
-<div class="outline-text-4" id="text-3_2_9">
+<div id="outline-container-3_2_7" class="outline-4">
+<h4 id="sec-3_2_7"><span class="section-number-4">3.2.7</span> Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i> </h4>
+<div class="outline-text-4" id="text-3_2_7">
 
 <p>URI for user setup to return on failed immediate request.
 </p>
@@ -792,33 +758,34 @@ Default method always returns NIL.
 
 </div>
 
-<div id="outline-container-3_2_10" class="outline-4">
-<h4 id="sec-3_2_10"><span class="section-number-4">3.2.10</span> Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </h4>
-<div class="outline-text-4" id="text-3_2_10">
+<div id="outline-container-3_2_8" class="outline-4">
+<h4 id="sec-3_2_8"><span class="section-number-4">3.2.8</span> Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </h4>
+<div class="outline-text-4" id="text-3_2_8">
 
-<p>Handle checkid_setup requests.
+<p>Handles checkid_setup requests.
 </p>
 <p>
 This generic should be specialized on concrete Provider classes to
 perform login checks with user dialogue, that would (possibly
-after some HTTP request-response cycles) end in either
-<code>SUCCESSFUL-RESPONSE</code>, or in <code>CANCEL-RESPONSE</code>.
+after some HTTP request-response cycles) end by redirecting the 
+user's browser either to <code>SUCCESSFUL-RESPONSE-URI</code>, or to 
+<code>CANCEL-RESPONSE-URI</code>.
 </p>
 <p>
-Default method always fails.
+This generic is called by <code>HANDLE-OPENID-PROVIDER-REQUEST</code>.
+The value(s) returned by this function are then returned by
+<code>HANDLE-OPENID-PROVIDER-REQUEST</code>.
 </p>
 <p>
-This generic is called within scope of
-<code>WITH-INDIRECT-ERROR-HANDLER</code>.
+Default method just returns (VALUES <code>CANSEL-RESPONSE-URI</code> <code>+INDIRECT-RESPONSE-CODE+</code>).
 </p>
-
 </div>
 
 </div>
 
-<div id="outline-container-3_2_11" class="outline-4">
-<h4 id="sec-3_2_11"><span class="section-number-4">3.2.11</span> Protocol messages </h4>
-<div class="outline-text-4" id="text-3_2_11">
+<div id="outline-container-3_2_9" class="outline-4">
+<h4 id="sec-3_2_9"><span class="section-number-4">3.2.9</span> Protocol messages </h4>
+<div class="outline-text-4" id="text-3_2_9">
 
 <p>Messages passed between OpenID Provider and the Relying Party are
 composed of key-value pairs.  Natural Lisp representation of
@@ -829,9 +796,9 @@ messages on cons level.
 
 </div>
 
-<div id="outline-container-3_2_11_1" class="outline-5">
-<h5 id="sec-3_2_11_1"><span class="section-number-5">3.2.11.1</span> Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </h5>
-<div class="outline-text-5" id="text-3_2_11_1">
+<div id="outline-container-3_2_9_1" class="outline-5">
+<h5 id="sec-3_2_9_1"><span class="section-number-5">3.2.9.1</span> Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_9_1">
 
 <p>Make new message from arbitrary keyword parameters.
 </p>
@@ -853,9 +820,9 @@ If value is NIL, field won't be included in the message at all.
 
 </div>
 
-<div id="outline-container-3_2_11_2" class="outline-5">
-<h5 id="sec-3_2_11_2"><span class="section-number-5">3.2.11.2</span> Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </h5>
-<div class="outline-text-5" id="text-3_2_11_2">
+<div id="outline-container-3_2_9_2" class="outline-5">
+<h5 id="sec-3_2_9_2"><span class="section-number-5">3.2.9.2</span> Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_9_2">
 
 <p>Create a copy of MESSAGE, updating PARAMETERS provided as keyword parameters.
 </p>
@@ -868,9 +835,9 @@ message.  PARAMETERS are interpreted as by MAKE-MESSAGE function.
 
 </div>
 
-<div id="outline-container-3_2_11_3" class="outline-5">
-<h5 id="sec-3_2_11_3"><span class="section-number-5">3.2.11.3</span> Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </h5>
-<div class="outline-text-5" id="text-3_2_11_3">
+<div id="outline-container-3_2_9_3" class="outline-5">
+<h5 id="sec-3_2_9_3"><span class="section-number-5">3.2.9.3</span> Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_9_3">
 
 <p>Add openid.namespace <i>namespace</i> to <i>message</i>.
 </p>
@@ -881,9 +848,9 @@ Default namespace is OpenID v2.  Returns updated message alist.
 
 </div>
 
-<div id="outline-container-3_2_11_4" class="outline-5">
-<h5 id="sec-3_2_11_4"><span class="section-number-5">3.2.11.4</span> Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </h5>
-<div class="outline-text-5" id="text-3_2_11_4">
+<div id="outline-container-3_2_9_4" class="outline-5">
+<h5 id="sec-3_2_9_4"><span class="section-number-5">3.2.9.4</span> Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </h5>
+<div class="outline-text-5" id="text-3_2_9_4">
 
 <p>Get value of <i>field-name</i> field from <i>message</i>.
 </p>
@@ -891,12 +858,24 @@ Default namespace is OpenID v2.  Returns updated message alist.
 
 </div>
 
-<div id="outline-container-3_2_11_5" class="outline-5">
-<h5 id="sec-3_2_11_5"><span class="section-number-5">3.2.11.5</span> Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </h5>
-<div class="outline-text-5" id="text-3_2_11_5">
+<div id="outline-container-3_2_9_5" class="outline-5">
+<h5 id="sec-3_2_9_5"><span class="section-number-5">3.2.9.5</span> Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </h5>
+<div class="outline-text-5" id="text-3_2_9_5">
 
 <p>True if <i>message</i> is an OpenID v2 message (namespace check).
 </p>
+</div>
+
+</div>
+
+<div id="outline-container-3_2_9_6" class="outline-5">
+<h5 id="sec-3_2_9_6"><span class="section-number-5">3.2.9.6</span> Function <code>AUTH-REQUEST-REALM</code> <i>auth-request-message</i> ⇒ <i>string</i> </h5>
+<div class="outline-text-5" id="text-3_2_9_6">
+
+<p>Returns the realm of the OpenID authentication
+request <i>auth-request-message</i>.
+</p>
+
 
 </div>
 </div>
@@ -906,7 +885,7 @@ Default namespace is OpenID v2.  Returns updated message alist.
 <div id="postamble">
 <p class="author"> Author: Maciej Pasternacki
 </p>
-<p class="date"> Date: 2011-06-11 01:03:41 </p>
+<p class="date"> Date: 2011-06-12 03:42:49 </p>
 <p class="creator">HTML generated by org-mode 6.36c in emacs 23</p>
 </div>
 </div>
