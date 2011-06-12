@@ -211,11 +211,17 @@ Original application is published at
 *** Constant =+INDIRECT-RESPONSE-CODE+=
     HTTP code recommented to use for indirect responses sent via HTTP redirect.
 
-*** Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key secure-p/ ⇒ /response values/
+*** Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key allow-unencrypted-association-p/ ⇒ /response values/
     Handle request /message/ for OpenID Provider instance /op/.
 
     /secure-p/ should be passed by caller to indicate whether it is
     secure to use unencrypted association method.
+
+    /allow-unencrypted-association-p/ specifies whether it is allowable
+    to use unencrypted association method. Set it to NIL unless your
+    OP endopoint uses HTTPS. See OpenID Authentication 2.0 - Final, section 
+    8.4.1. No-Encryption Association Sessions
+    (http://openid.net/specs/openid-authentication-2_0.html#assoc_sess_types).
 
     Returns two values: first is body, and second is HTTP code.
 

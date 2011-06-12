@@ -2,7 +2,7 @@
                               =========
 
 Author: Maciej Pasternacki
-Date: 2011-06-12 03:42:02 
+Date: 2011-06-12 03:59:34 
 
 
 Cl-OpenID is an implementation of [OpenID] protocol in Common Lisp.  It
@@ -61,7 +61,7 @@ Table of Contents
         3.2.1 Class =OPENID-PROVIDER= 
             3.2.1.1 Accessor =ENDPOINT-URI= /op/ ⇒ /uri/ 
         3.2.2 Constant =+INDIRECT-RESPONSE-CODE+= 
-        3.2.3 Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key secure-p/ ⇒ /response values/ 
+        3.2.3 Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key allow-unencrypted-association-p/ ⇒ /response values/ 
         3.2.4 Function =CANCEL-RESPONSE-URI= /op/ /message/ ⇒ /uri/ 
         3.2.5 Function =SUCCESSFUL-RESPONSE-URI= /op/ /auth-request-message/ ⇒ /uri/ 
         3.2.6 Generic =HANDLE-CHECKID-IMMEDIATE= /op message/ ⇒ /generalized-boolean/ 
@@ -332,17 +332,26 @@ Table of Contents
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     HTTP code recommented to use for indirect responses sent via HTTP redirect.
 
-3.2.3 Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key secure-p/ ⇒ /response values/ 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.2.3 Function =HANDLE-OPENID-PROVIDER-REQUEST= /op message &key allow-unencrypted-association-p/ ⇒ /response values/ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Handle request /message/ for OpenID Provider instance /op/.
 
     /secure-p/ should be passed by caller to indicate whether it is
     secure to use unencrypted association method.
 
+    /allow-unencrypted-association-p/ specifies whether it is allowable
+    to use unencrypted association method. Set it to NIL unless your
+    OP endopoint uses HTTPS. See OpenID Authentication 2.0 - Final, section 
+    8.4.1. No-Encryption Association Sessions
+    ([http://openid.net/specs/openid-authentication-2\_0.html#assoc\_sess\_types]).
+
     Returns two values: first is body, and second is HTTP code.
 
     On HTTP redirections (the second value between 300 and 399 inclusive), 
     the primary returned value will be an URI to redirect the user to.
+
+
+    [http://openid.net/specs/openid-authentication-2\_0.html#assoc\_sess\_types]: http://openid.net/specs/openid-authentication-2_0.html#assoc_sess_types
 
 3.2.4 Function =CANCEL-RESPONSE-URI= /op/ /message/ ⇒ /uri/ 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
