@@ -48,50 +48,50 @@
 (test unsupported-association-request-handling
   ;; Test how the handle-openid-provider-request function
   ;; handles unsupporeted association requests.
-  (flet ((is-assoc-error (&key session-type assoc-type secure-p)
+  (flet ((is-assoc-error (&key session-type assoc-type allow-unencrypted-association-p)
            (multiple-value-bind (body status)
                (handle-openid-provider-request (make-instance 'openid-provider)
                                                (make-message :openid.mode "associate"
                                                              :openid.assoc_type assoc-type
                                                              :openid.session_type session-type)
-                                               :secure-p secure-p)
+                                               :allow-unencrypted-association-p allow-unencrypted-association-p)
              (declare (ignore body))             
              (is (= 400 status)))))
 
     ;; correct session types, but bad association type,
-    ;; with any value of secure-p
-    (dolist (secure-p '(t nil))
+    ;; with any value of allow-unencrypted-association-p
+    (dolist (allow-unencrypted-association-p '(t nil))
       (is-assoc-error :session-type "DH-SHA1"
                       :assoc-type "bad-assoc-type" 
-                      :secure-p secure-p)
+                      :allow-unencrypted-association-p allow-unencrypted-association-p)
       (is-assoc-error :session-type "DH-SHA256"
                       :assoc-type "bad-assoc-type" 
-                      :secure-p secure-p)      
+                      :allow-unencrypted-association-p allow-unencrypted-association-p)      
       (is-assoc-error :session-type ""
                       :assoc-type "bad-assoc-type" 
-                      :secure-p secure-p)
+                      :allow-unencrypted-association-p allow-unencrypted-association-p)
       (is-assoc-error :session-type "no-encription"
                       :assoc-type "bad-assoc-type" 
-                      :secure-p secure-p))
+                      :allow-unencrypted-association-p allow-unencrypted-association-p))
 
     ;; correct association type, but with bad
-    ;; session type, with any value of secure-p
-    (dolist (secure-p '(t nil))
+    ;; session type, with any value of allow-unencrypted-association-p
+    (dolist (allow-unencrypted-association-p '(t nil))
       (is-assoc-error :session-type "bad-session-type"
                       :assoc-type "HMAC-SHA1" 
-                      :secure-p secure-p)
+                      :allow-unencrypted-association-p allow-unencrypted-association-p)
       (is-assoc-error :session-type "bad-session-type"
                       :assoc-type "HMAC-SHA256" 
-                      :secure-p secure-p))
+                      :allow-unencrypted-association-p allow-unencrypted-association-p))
 
     ;; and finally, when session type is "" or "no-encription",
-    ;; with any correct association type, if secure-p is nil,
-    ;; the requiest should also report an error
+    ;; with any correct association type, if allow-unencrypted-association-p
+    ;; is nil, the requiest should also report an error
     (dolist (assoc-type '("HMAC-SHA1" "HMAC-SHA256"))
       (is-assoc-error :session-type ""
                       :assoc-type assoc-type
-                      :secure-p nil)
+                      :allow-unencrypted-association-p nil)
       (is-assoc-error :session-type "no-encription"
                       :assoc-type assoc-type
-                      :secure-p nil))))
+                      :allow-unencrypted-association-p nil))))
 

@@ -109,7 +109,7 @@ to FINISH-URI with different parameters."
       (handle-openid-provider-request *openid-provider*
                                       (append (post-parameters)
                                               (get-parameters))
-                                      :secure-p (ssl-p))
+                                      :allow-unencrypted-association-p (ssl-p))
 
     (cond
       ((<= 300 code 399) 			; Redirect, body is actually an URI

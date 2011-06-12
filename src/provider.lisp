@@ -241,12 +241,15 @@ immediate login failure).")
        ;; or 2. The URL's domain is identical to the realm's domain
        (string-equal (uri-host realm) (uri-host uri)))))
 
-(defun handle-openid-provider-request (op message &key secure-p
+(defun handle-openid-provider-request (op message &key allow-unencrypted-association-p
                                        &aux (v1-compat (not (message-v2-p message))))
   "Handle request MESSAGE for OpenID Provider instance OP.
 
-SECURE-P should be passed by caller to indicate whether it is secure
-to use unencrypted association method.
+ALLOW-UNENCRYPTED-ASSOCIATION-P specifies whether it is allowable
+to use unencrypted association method. Set it to NIL unless your
+OP endopoint uses HTTPS. See OpenID Authentication 2.0 - Final, section 
+8.4.1. No-Encryption Association Sessions
+(http://openid.net/specs/openid-authentication-2_0.html#assoc_sess_types).
 
 Returns two values: the first is body, and the second is an HTTP 
 status code.
@@ -287,7 +290,7 @@ the primary returned value will be an URI to redirect the user to."
                                        :dh_server_public (btwoc public)
                                        :enc_mac_key emac)))))
              (("" "no-encryption")
-              (if secure-p
+              (if allow-unencrypted-association-p
                   (let ((association (make-association :association-type (message-field message "openid.assoc_type"))))
                     (with-lock-held ((associations-lock op))
                       (setf (gethash (association-handle association) (associations op))
