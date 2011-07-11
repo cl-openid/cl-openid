@@ -252,17 +252,6 @@ Original application is published at
 
     Default method always fails.
 
-*** Generic =USER-SETUP-URL= /op message/ ⇒ /uri/
-    URI for user setup to return on failed immediate request.
-
-    When NIL is returned, no user_setup_url is sent in setup_needed
-    responses.
-
-    This generic should be specialized on concrete Provider classes to
-    provide entry point to user authentication dialogue.
-
-    Default method always returns NIL.
-
 *** Generic =HANDLE-CHECKID-SETUP= /op message/ ⇒ /response values/
     Handles checkid_setup requests.
 

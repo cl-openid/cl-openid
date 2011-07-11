@@ -25,7 +25,7 @@
    ;; OP class
    #:openid-provider #:endpoint-uri  
    ;; OP API
-   #:handle-openid-provider-request #:handle-checkid-setup #:handle-checkid-immediate #:user-setup-url 
+   #:handle-openid-provider-request #:handle-checkid-setup #:handle-checkid-immediate
    ;; OP responses
    #:successful-response-uri #:cancel-response-uri #:+indirect-response-code+
    ;; Message API

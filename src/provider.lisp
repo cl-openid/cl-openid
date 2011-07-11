@@ -132,15 +132,33 @@ previously and passed to the HANDLE-CHECKID-SETUP."
    (indirect-response (message-field auth-request-message "openid.return_to")
                       (successful-response-message op auth-request-message))))
 
-;;; Setup needed message generation
-(defgeneric user-setup-url (op message)
-  (:documentation "URI for user setup to return on failed immediate request.
+;;; Setup needed message generation.
 
-This generic should be specialized on concrete Provider classes to
-provide entry point to user authentication dialogue.")
-  (:method (op message)
-    (declare (ignore op message))
-    nil))
+;; For backward compatibility with OpenID 1.1
+;; we need to provide the openid.user_setup_url response
+;; parameter when replying to a failed immediate
+;; authentication requests.
+;;
+;; See OpenID Authentication 1.1, Sections 
+;; 4.2.2.2. Sent on Failed Assertion and 4.2.3. Extra Notes 
+;; for the description of this response parameter. 
+;; And OpenID Authentication 2.0 - Final, 
+;; Section 14.2. Implementing OpenID Authentication 1.1 Compatibility 
+;; requiring us to implement it.
+;;
+;; In our implementation the openid.user_setup_url is just an URI
+;; representing checkid_setup authentication request to the
+;; same provider.
+(defun user-setup-url (op message)
+  "Returns the value to be passed in the openid.user_setup_url 
+parameter of a response to a failed immediate authentication request. 
+OP is the OpenID Provider. MESSAGE is the original authentication 
+request. In case the MESSAGE is a request of OpenID version 2, 
+returns NIL."
+  (declare (ignore op))
+  (when (not (message-v2-p message))
+    (indirect-message-uri (endpoint-uri op)
+                          (copy-message message :openid.mode "checkid_setup"))))
 
 (define-constant +setup-needed-response-message+
     (in-ns (make-message :openid.mode "setup_needed")))

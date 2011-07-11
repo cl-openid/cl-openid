@@ -7,7 +7,7 @@ lang="en" xml:lang="en">
 <title>CL-OpenID</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2011-06-12 03:59:37 "/>
+<meta name="generated" content="2011-07-12 02:39:44 "/>
 <meta name="author" content="Maciej Pasternacki"/>
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
@@ -152,16 +152,15 @@ Original application is published at
 <li><a href="#sec-3_2_4">3.2.4 Function <code>CANCEL-RESPONSE-URI</code> <i>op</i> <i>message</i> ⇒ <i>uri</i> </a></li>
 <li><a href="#sec-3_2_5">3.2.5 Function <code>SUCCESSFUL-RESPONSE-URI</code> <i>op</i> <i>auth-request-message</i> ⇒ <i>uri</i> </a></li>
 <li><a href="#sec-3_2_6">3.2.6 Generic <code>HANDLE-CHECKID-IMMEDIATE</code> <i>op message</i> ⇒ <i>generalized-boolean</i> </a></li>
-<li><a href="#sec-3_2_7">3.2.7 Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i> </a></li>
-<li><a href="#sec-3_2_8">3.2.8 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </a></li>
-<li><a href="#sec-3_2_9">3.2.9 Protocol messages </a>
+<li><a href="#sec-3_2_7">3.2.7 Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </a></li>
+<li><a href="#sec-3_2_8">3.2.8 Protocol messages </a>
 <ul>
-<li><a href="#sec-3_2_9_1">3.2.9.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </a></li>
-<li><a href="#sec-3_2_9_2">3.2.9.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </a></li>
-<li><a href="#sec-3_2_9_3">3.2.9.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </a></li>
-<li><a href="#sec-3_2_9_4">3.2.9.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </a></li>
-<li><a href="#sec-3_2_9_5">3.2.9.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </a></li>
-<li><a href="#sec-3_2_9_6">3.2.9.6 Function <code>AUTH-REQUEST-REALM</code> <i>auth-request-message</i> ⇒ <i>string</i> </a></li>
+<li><a href="#sec-3_2_8_1">3.2.8.1 Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_8_2">3.2.8.2 Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_8_3">3.2.8.3 Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </a></li>
+<li><a href="#sec-3_2_8_4">3.2.8.4 Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </a></li>
+<li><a href="#sec-3_2_8_5">3.2.8.5 Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </a></li>
+<li><a href="#sec-3_2_8_6">3.2.8.6 Function <code>AUTH-REQUEST-REALM</code> <i>auth-request-message</i> ⇒ <i>string</i> </a></li>
 </ul>
 </li>
 </ul>
@@ -745,29 +744,8 @@ Default method always fails.
 </div>
 
 <div id="outline-container-3_2_7" class="outline-4">
-<h4 id="sec-3_2_7"><span class="section-number-4">3.2.7</span> Generic <code>USER-SETUP-URL</code> <i>op message</i> ⇒ <i>uri</i> </h4>
+<h4 id="sec-3_2_7"><span class="section-number-4">3.2.7</span> Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </h4>
 <div class="outline-text-4" id="text-3_2_7">
-
-<p>URI for user setup to return on failed immediate request.
-</p>
-<p>
-When NIL is returned, no user_setup_url is sent in setup_needed
-responses.
-</p>
-<p>
-This generic should be specialized on concrete Provider classes to
-provide entry point to user authentication dialogue.
-</p>
-<p>
-Default method always returns NIL.
-</p>
-</div>
-
-</div>
-
-<div id="outline-container-3_2_8" class="outline-4">
-<h4 id="sec-3_2_8"><span class="section-number-4">3.2.8</span> Generic <code>HANDLE-CHECKID-SETUP</code> <i>op message</i> ⇒ <i>response values</i> </h4>
-<div class="outline-text-4" id="text-3_2_8">
 
 <p>Handles checkid_setup requests.
 </p>
@@ -790,9 +768,9 @@ Default method just returns (VALUES <code>CANSEL-RESPONSE-URI</code> <code>+INDI
 
 </div>
 
-<div id="outline-container-3_2_9" class="outline-4">
-<h4 id="sec-3_2_9"><span class="section-number-4">3.2.9</span> Protocol messages </h4>
-<div class="outline-text-4" id="text-3_2_9">
+<div id="outline-container-3_2_8" class="outline-4">
+<h4 id="sec-3_2_8"><span class="section-number-4">3.2.8</span> Protocol messages </h4>
+<div class="outline-text-4" id="text-3_2_8">
 
 <p>Messages passed between OpenID Provider and the Relying Party are
 composed of key-value pairs.  Natural Lisp representation of
@@ -803,9 +781,9 @@ messages on cons level.
 
 </div>
 
-<div id="outline-container-3_2_9_1" class="outline-5">
-<h5 id="sec-3_2_9_1"><span class="section-number-5">3.2.9.1</span> Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </h5>
-<div class="outline-text-5" id="text-3_2_9_1">
+<div id="outline-container-3_2_8_1" class="outline-5">
+<h5 id="sec-3_2_8_1"><span class="section-number-5">3.2.8.1</span> Function <code>MAKE-MESSAGE</code> <i>&amp;rest parameters</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_8_1">
 
 <p>Make new message from arbitrary keyword parameters.
 </p>
@@ -827,9 +805,9 @@ If value is NIL, field won't be included in the message at all.
 
 </div>
 
-<div id="outline-container-3_2_9_2" class="outline-5">
-<h5 id="sec-3_2_9_2"><span class="section-number-5">3.2.9.2</span> Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </h5>
-<div class="outline-text-5" id="text-3_2_9_2">
+<div id="outline-container-3_2_8_2" class="outline-5">
+<h5 id="sec-3_2_8_2"><span class="section-number-5">3.2.8.2</span> Function <code>COPY-MESSAGE</code> <i>message &amp;rest parameters</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_8_2">
 
 <p>Create a copy of MESSAGE, updating PARAMETERS provided as keyword parameters.
 </p>
@@ -842,9 +820,9 @@ message.  PARAMETERS are interpreted as by MAKE-MESSAGE function.
 
 </div>
 
-<div id="outline-container-3_2_9_3" class="outline-5">
-<h5 id="sec-3_2_9_3"><span class="section-number-5">3.2.9.3</span> Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </h5>
-<div class="outline-text-5" id="text-3_2_9_3">
+<div id="outline-container-3_2_8_3" class="outline-5">
+<h5 id="sec-3_2_8_3"><span class="section-number-5">3.2.8.3</span> Function <code>IN-NS</code> <i>message &amp;optional namespace</i> ⇒ <i>message</i> </h5>
+<div class="outline-text-5" id="text-3_2_8_3">
 
 <p>Add openid.namespace <i>namespace</i> to <i>message</i>.
 </p>
@@ -855,9 +833,9 @@ Default namespace is OpenID v2.  Returns updated message alist.
 
 </div>
 
-<div id="outline-container-3_2_9_4" class="outline-5">
-<h5 id="sec-3_2_9_4"><span class="section-number-5">3.2.9.4</span> Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </h5>
-<div class="outline-text-5" id="text-3_2_9_4">
+<div id="outline-container-3_2_8_4" class="outline-5">
+<h5 id="sec-3_2_8_4"><span class="section-number-5">3.2.8.4</span> Function <code>MESSAGE-FIELD</code> <i>message field-name</i> ⇒ <i>value</i> </h5>
+<div class="outline-text-5" id="text-3_2_8_4">
 
 <p>Get value of <i>field-name</i> field from <i>message</i>.
 </p>
@@ -865,9 +843,9 @@ Default namespace is OpenID v2.  Returns updated message alist.
 
 </div>
 
-<div id="outline-container-3_2_9_5" class="outline-5">
-<h5 id="sec-3_2_9_5"><span class="section-number-5">3.2.9.5</span> Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </h5>
-<div class="outline-text-5" id="text-3_2_9_5">
+<div id="outline-container-3_2_8_5" class="outline-5">
+<h5 id="sec-3_2_8_5"><span class="section-number-5">3.2.8.5</span> Function <code>MESSAGE-V2-P</code> <i>message</i> ⇒ <i>boolean</i> </h5>
+<div class="outline-text-5" id="text-3_2_8_5">
 
 <p>True if <i>message</i> is an OpenID v2 message (namespace check).
 </p>
@@ -875,9 +853,9 @@ Default namespace is OpenID v2.  Returns updated message alist.
 
 </div>
 
-<div id="outline-container-3_2_9_6" class="outline-5">
-<h5 id="sec-3_2_9_6"><span class="section-number-5">3.2.9.6</span> Function <code>AUTH-REQUEST-REALM</code> <i>auth-request-message</i> ⇒ <i>string</i> </h5>
-<div class="outline-text-5" id="text-3_2_9_6">
+<div id="outline-container-3_2_8_6" class="outline-5">
+<h5 id="sec-3_2_8_6"><span class="section-number-5">3.2.8.6</span> Function <code>AUTH-REQUEST-REALM</code> <i>auth-request-message</i> ⇒ <i>string</i> </h5>
+<div class="outline-text-5" id="text-3_2_8_6">
 
 <p>Returns the realm of the OpenID authentication
 request <i>auth-request-message</i>.
@@ -892,7 +870,7 @@ request <i>auth-request-message</i>.
 <div id="postamble">
 <p class="author"> Author: Maciej Pasternacki
 </p>
-<p class="date"> Date: 2011-06-12 03:59:37 </p>
+<p class="date"> Date: 2011-07-12 02:39:44 </p>
 <p class="creator">HTML generated by org-mode 6.36c in emacs 23</p>
 </div>
 </div>

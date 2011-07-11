@@ -57,7 +57,7 @@
                  (:file "authproc" :depends-on ("suite"))
                  (:file "relying-party" :depends-on ("suite"))
                  (:file "provider" :depends-on ("suite")))))
-  :depends-on (#:cl-openid #:fiveam))
+  :depends-on (#:cl-openid #:fiveam #:flexi-streams))
 
 (defmethod perform ((op asdf:test-op)
                     (system (eql (find-system :cl-openid))))
