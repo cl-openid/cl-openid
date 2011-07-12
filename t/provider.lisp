@@ -266,8 +266,7 @@ FORM-URL-ENCODED-LIST is something like (\"key=value\" \"key2=value2\")."
     ;; Test it by querying the provider and ensuring the 
     ;; handle-openid-provider-requeest returns the value we return 
     ;; from handle-checkid-setup, which means our checkid-setup was called.
-    (let ((immediate-p t)
-          (claimed-id "test-claimed-id")
+    (let ((claimed-id "test-claimed-id")
           (op-local-id "test-op-local-id")
           (return-to "test-return-to")
           (protocol-version-major 1)
