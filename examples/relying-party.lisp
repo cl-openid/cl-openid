@@ -96,9 +96,8 @@
     ;; section 7.1 Initiation.
     ((get-parameter "openid_identifier")
      (redirect            
-      (princ-to-string
-       (initiate-authentication *relying-party* (get-parameter "openid_identifier")
-				:immediate-p (get-parameter "checkid_immediate")))))
+      (initiate-authentication *relying-party* (get-parameter "openid_identifier")
+                               :immediate-p (get-parameter "checkid_immediate"))))
 
     ;; When there are no parameters, or there are some unexpected
     ;; ones, we just assume it is an initial request and show the
@@ -115,4 +114,4 @@
   (push (create-prefix-dispatcher prefix 'handle-openid-request)
         *dispatch-table*))
 
-; (init-relying-party "http://example.com/" "/cl-openid/")
+(init-relying-party "http://localhost:4242/" "/cl-openid/")

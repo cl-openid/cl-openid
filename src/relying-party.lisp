@@ -132,23 +132,23 @@ The latter two values are useful if the client code needs to track the process."
   (gc-authprocs rp)
   (setf (timestamp authproc) (get-universal-time)
 
-        (return-to authproc)
-        (copy-uri (root-uri rp)
-                  :query (drakma::alist-to-url-encoded-string
-                          (acons +authproc-handle-parameter+ handle nil)
-                          :utf-8)))
+        (return-to authproc) (copy-uri (root-uri rp)
+                                       :query (drakma::alist-to-url-encoded-string
+                                               (acons +authproc-handle-parameter+ handle nil)
+                                               :utf-8)))
 
   (with-lock-held ((authprocs-lock rp))
     (setf (gethash handle (authprocs rp)) authproc))
 
   (values
+   (princ-to-string    
     (request-authentication-uri authproc
                                 :immediate-p immediate-p
                                 :realm (realm rp)
                                 :association (ap-association rp authproc)
-                                :extra-parameters extra-parameters)
-    handle
-    authproc))
+                                :extra-parameters extra-parameters))
+   handle
+   authproc))
 
 ;; Nonces
 (defun nonce-universal-time (nonce)
