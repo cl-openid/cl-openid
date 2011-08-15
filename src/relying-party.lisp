@@ -275,8 +275,8 @@ As second value, always returns AUTH-PROCESS object."
              (if (uri= (provider-endpoint-uri cap) (provider-endpoint-uri authproc))
                  (setf (claimed-id authproc) (claimed-id cap)) ; Accept claimed ID change
                  (err :invalid-claimed-id
-                      "Received Claimed ID ~A differs from user-supplied ~A, and discovery for received one did not find the same endpoint."
-                      (provider-endpoint-uri authproc) (provider-endpoint-uri cap)))))
+                      "Received Claimed ID ~A differs from user-supplied ~A, and discovery for the received Claimed ID did not find the same endpoint."
+                      (message-field message "openid.claimed_id") (claimed-id authproc)))))
 
          ;; 11.3.  Checking the Nonce
          (let ((nonce (message-field message "openid.response_nonce")))
