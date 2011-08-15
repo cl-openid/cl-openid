@@ -198,11 +198,16 @@ after some HTTP request-response cycles) end by redirecting the
 user's browser either to SUCCESSFUL-RESPONSE-URI, or to 
 CANCEL-RESPONSE-URI.
 
-This generic is called by HANDLE-OPENID-PROVIDER-REQUEST.
-The value(s) returned by this function are then returned by
-HANDLE-OPENID-PROVIDER-REQUEST.
+This generic is called by HANDLE-OPENID-PROVIDER-REQUEST, and
+the values returned by this function are then returned by
+HANDLE-OPENID-PROVIDER-REQUEST. I.e. it must return two values:
+response \"body\" and HTTP status code. That way HANDLE-CHECKID-SETUP
+can either redirect user's browser somewhere, or just show him
+something. (With hunchentoot, HUNCHNTOOT:REDIRECT
+may also be used, which is a non-local transfer control).
 
-Default method just returns (VALUES CANSEL-RESPONSE-URI +INDIRECT-RESPONSE-CODE+).")
+Default method just returns (VALUES (CANSEL-RESPONSE-URI ...) +INDIRECT-RESPONSE-CODE+).")
+
   (:method (op message)
     (if (message-field message "openid.return_to")
         (values (cancel-response-uri op message) +indirect-response-code+)
