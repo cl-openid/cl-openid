@@ -109,15 +109,14 @@ to FINISH-URI with different parameters."
 (defun provider-ht-handle ()
   (multiple-value-bind (body code)
       (handle-openid-provider-request *openid-provider*
-                                      (append (post-parameters)
-                                              (get-parameters))
+                                      (append (post-parameters*)
+                                              (get-parameters*))
                                       :allow-unencrypted-association-p (ssl-p))
-
     (cond
       ((<= 300 code 399) 			; Redirect, body is actually an URI
        (redirect body :code code))
 
-      (t (setf (return-code) code)	; Set return code
+      (t (setf (return-code*) code)	; Set return code
          body))))
 
 ;; Initialization
@@ -140,3 +139,4 @@ to FINISH-URI with different parameters."
   (pushnew 400 *approved-return-codes*))
 
 ; (init-provider "http://example.com/" "/cl-openid-op/")
+

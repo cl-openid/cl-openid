@@ -38,7 +38,7 @@
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
         (realm *relying-party*)
-        (alist-to-lol (get-parameters))
+        (alist-to-lol (get-parameters*))
         (root-uri *relying-party*)))
 
 (defun access-granted-screen (authproc)
@@ -49,7 +49,7 @@
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
         (escape-for-html (prin1-to-string authproc))
-        (alist-to-lol (get-parameters))
+        (alist-to-lol (get-parameters*))
         (root-uri *relying-party*)))
 
 (defun assertion-error-screen (err)
@@ -62,7 +62,7 @@
 <p style=\"text-align:right;\"><a href=\"~A\">return</a><p>"
                 (code err)
                 err
-                (alist-to-lol (get-parameters))
+                (alist-to-lol (get-parameters*))
                 (root-uri *relying-party*)))
 
 ;;; Actual handler
@@ -82,8 +82,8 @@
     ((get-parameter +authproc-handle-parameter+)
      (handler-case
 	 (let ((authproc (handle-indirect-response
-                          *relying-party* (get-parameters) ; The incoming message alist consists of GET parameters.
-                          (merge-uris (request-uri) (root-uri *relying-party*))))) ; Figuring out actual request URI may be more complicated with proxies
+                          *relying-party* (get-parameters*) ; The incoming message alist consists of GET parameters.
+                          (merge-uris (request-uri*) (root-uri *relying-party*))))) ; Figuring out actual request URI may be more complicated with proxies
 	   (if authproc	; On successful id_res, AUTH-PROCESS structure is returned; on cancel response, we get NIL.
 	       (access-granted-screen authproc)
 	       (access-denied-screen)))
