@@ -63,16 +63,18 @@ user, between initial checkid_setup request and final decision.")
 
 Presents request details and a simple choice consisting of two links
 to FINISH-URI with different parameters."
-  (html "Log in?"
-        "<h2>Message:</h2>
+  (values 
+   (html "Log in?"
+         "<h2>Message:</h2>
 <dl>~:{<dt>~A</dt><dd>~A</dd>~}</dl>
 <strong><a href=\"~A\">Log in</a> or <a href=\"~A\">cancel</a>?</strong>"
-        (mapcar #'(lambda (c)
-                    (list (car c) (cdr c)))
-                message)
-        (copy-uri (finish-uri op) :query (format nil "handle=~A&allow=1" handle))
-        (copy-uri (finish-uri op) :query (format nil "handle=~A&deny=1" handle))))
-
+         (mapcar #'(lambda (c)
+                     (list (car c) (cdr c)))
+                 message)
+         (copy-uri (finish-uri op) :query (format nil "handle=~A&allow=1" handle))
+         (copy-uri (finish-uri op) :query (format nil "handle=~A&deny=1" handle)))
+   200))
+  
 ;; FINISH-CHECKID-SETUP function is called on request to FINISH-URI,
 ;; by user clicking one of links presented in response from
 ;; HANDLE-CHECKID-SETUP.  Analyzes request parameters, and returns
