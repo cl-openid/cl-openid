@@ -185,7 +185,7 @@ authentication request message that was received from the Relying Party
 previously and passed to the HANDLE-CHECKID-SETUP."
   (declare (ignore op))
   (princ-to-string
-   (indirect-response (message-field message "openid.return_to")
+   (indirect-response (message-field auth-request-message "openid.return_to")
                       +cancel-response-message+)))
 
 
