@@ -268,7 +268,7 @@ ALLOW-UNENCRYPTED-ASSOCIATION-P specifies whether it is allowable
 to use unencrypted association method. Set it to NIL unless your
 OP endopoint uses HTTPS. See OpenID Authentication 2.0 - Final, section 
 8.4.1. No-Encryption Association Sessions
-(http://openid.net/specs/openid-authentication-2_0.html#assoc_sess_types).
+ (http://openid.net/specs/openid-authentication-2_0.html#assoc_sess_types).
 
 Returns two values: the first is body, and the second is an HTTP 
 status code.
