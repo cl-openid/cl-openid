@@ -353,7 +353,10 @@ the primary returned value will be an URI to redirect the user to."
                               (message-field message "openid.return_to"))
            (signal-indirect-error message "Realm does not match return_to URI.")))
 
-       (handle-checkid-setup op message)))
+       (multiple-value-bind (body http-code)
+           (handle-checkid-setup op message)
+         (assert http-code (http-code) "The function handle-checkid-setup hasn't returned the required second value - HTTP status code.")
+         (values body http-code))))
 
     ("check_authentication" ; FIXME: invalidate_handle flow, invalidate unknown/old handles, gc handles, separate place for private handles.
      (values
