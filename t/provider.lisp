@@ -254,7 +254,7 @@ FORM-URL-ENCODED-LIST is something like (\"key=value\" \"key2=value2\")."
                             :endpoint-uri "http://test-endpoint-uri.com/"
                             :handle-checkid-setup-impl (lambda (&rest ignored)
                                                          (declare (ignore ignored))
-                                                         "handle-checkid-setup-called"))))
+                                                         (values "handle-checkid-setup-called" 200)))))
     
     ;; Now request checkid-immediate from that provider
     ;; receive negative response and retrieve 
