@@ -40,7 +40,7 @@ Original application is published at
   Project Web page is [[http://common-lisp.net/project/cl-openid/]].  Most
   recent version of the code can be downloaded with [[http://www.darcs.net][darcs]]:
 
-  : darcs get http://common-lisp.net/project/cl-openid/
+  : darcs get http://common-lisp.net/project/cl-openid/darcs/cl-openid/
 
 ** Dependencies
    Project depends on following libraries:
