@@ -149,7 +149,7 @@ Usable for both indirect requests and responses."
                      (uri-query uri)
                      (when (uri-query uri)
                        "&")
-                     (drakma::alist-to-url-encoded-string message :utf-8))) ; FIXME:unexported
+                     (alist-to-url-encoded-string message :utf-8)))
   uri)
 
 (defun auth-request-realm (auth-request-message)

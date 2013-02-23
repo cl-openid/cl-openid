@@ -133,7 +133,7 @@ The latter two values are useful if the client code needs to track the process."
   (setf (timestamp authproc) (get-universal-time)
 
         (return-to authproc) (copy-uri (root-uri rp)
-                                       :query (drakma::alist-to-url-encoded-string
+                                       :query (alist-to-url-encoded-string
                                                (acons +authproc-handle-parameter+ handle nil)
                                                :utf-8)))
 

@@ -99,3 +99,21 @@ If U is already an URI object, return a copy; otherwise, return (URI U)."
   (if (eq #\/ (char path (1- (length path))))
       path
       (concatenate 'string path "/")))
+
+(defun alist-to-url-encoded-string (alist external-format)
+  ;; Copy/pasted from drakma
+  "ALIST is supposed to be an alist of name/value pairs where both
+names and values are strings \(or, for values, NIL).  This function
+returns a string where this list is represented as for the content
+type `application/x-www-form-urlencoded', i.e. the values are
+URL-encoded using the external format EXTERNAL-FORMAT, the pairs are
+joined with a #\\& character, and each name is separated from its
+value with a #\\= character.  If the value is NIL, no #\\= is used."
+  (with-output-to-string (out)
+    (loop for first = t then nil
+          for (name . value) in alist
+          unless first do (write-char #\& out)
+          do (format out "~A~:[~;=~A~]"
+                      (drakma:url-encode name external-format)
+                      value
+                      (drakma:url-encode value external-format)))))
