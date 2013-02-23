@@ -12,6 +12,7 @@
   (protocol-version-minor 0 :type (unsigned-byte 8))
   (claimed-id nil :type uri)
   (op-local-id nil :type (or uri null))
+  (immediate-p nil)
   (return-to nil :type (or uri null))
   (xrds-location nil :type (or uri null))
   (provider-endpoint-uri nil :type (or uri null))

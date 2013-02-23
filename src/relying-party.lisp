@@ -131,7 +131,7 @@ The latter two values are useful if the client code needs to track the process."
 
   (gc-authprocs rp)
   (setf (timestamp authproc) (get-universal-time)
-
+        (immediate-p authproc) immediate-p
         (return-to authproc) (copy-uri (root-uri rp)
                                        :query (alist-to-url-encoded-string
                                                (acons +authproc-handle-parameter+ handle nil)

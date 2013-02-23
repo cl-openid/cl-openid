@@ -17,7 +17,8 @@
    #:initiate-authentication #:+authproc-handle-parameter+ #:handle-indirect-response 
    ;; AUTH-PROCESS structure	   
    #:auth-process #:auth-process-p #:protocol-version-major #:protocol-version-minor 
-   #:protocol-version #:claimed-id #:op-local-id #:return-to #:xrds-location 
+   #:protocol-version #:claimed-id #:op-local-id #:immediate-p
+   #:return-to #:xrds-location 
    #:provider-endpoint-uri #:timestamp   
    ;; assertion error condition
    #:openid-assertion-error #:code #:reason #:authproc #:message
