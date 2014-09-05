@@ -81,9 +81,9 @@
                        ("http://common-lisp.net" . "http://common-lisp.net/")
                        ("http://common-lisp.net/" . "http://common-lisp.net/")
                        #+SSL ("https://openid.net/" . "https://openid.net/")
-                       
-                       ("http://lists.common-lisp.net/mailman/listinfo/cl-openid-devel" . "http://lists.common-lisp.net/mailman/listinfo/cl-openid-devel")
-                       ("http://lists.common-lisp.net/mailman/listinfo/cl-openid-devel/" . "http://lists.common-lisp.net/mailman/listinfo/cl-openid-devel/")
+
+                       ("http://trac.common-lisp.net/cl-openid" . "http://trac.common-lisp.net/cl-openid")
+                       ("http://trac.common-lisp.net/cl-openid/" . "http://trac.common-lisp.net/cl-openid/")
 
                        ("http://Common-Lisp.NET/../t/../project/./%63l-openi%64/./index.shtml" . "http://common-lisp.net/project/cl-openid/index.shtml")))
     (is (string= (princ-to-string (claimed-id (make-auth-process (car test-case))))
