@@ -73,14 +73,15 @@ PARAMETERS are interpreted as by MAKE-MESSAGE function."
 (defun parse-kv (array)
   "Parse key-value form message passed as an octet vector into parameter alist."
   (declare (type (vector (unsigned-byte 8)) array))
-  (loop
-     for start = 0 then (1+ end)
-     for end = (position 10 array :start start)
-     for colon = (position #.(char-code #\:) array :start start)
-     when colon collect
-       (cons (utf-8-bytes-to-string array :start start :end colon)
-             (utf-8-bytes-to-string array :start (1+ colon) :end (or end (length array))))
-     while end))
+  (let ((str (utf-8-bytes-to-string array)))
+    (loop
+       for start = 0 then (1+ end)
+       for end = (position #\Newline str :start start)
+       for colon = (position #\: str :start start)
+       when colon collect
+         (cons (subseq str start colon)
+               (subseq str (1+ colon) (or end (length str))))
+       while end)))
 
 ; FIXME: optimize, reduce consing
 (defun encode-kv (message)
