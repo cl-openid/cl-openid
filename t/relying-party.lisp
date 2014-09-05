@@ -7,8 +7,8 @@
          (nonce-universal-time "2007-11-09T17:42:23Zfoobar42"))))
 
 (test nonce-universal-time/random
-  (for-all ((sec (gen-integer :min 0 :max 60))
-            (min (gen-integer :min 0 :max 60))
+  (for-all ((sec (gen-integer :min 0 :max 59))
+            (min (gen-integer :min 0 :max 59))
             (hr (gen-integer :min 0 :max 23))
             (day (gen-integer :min 1 :max 28))
             (mon (gen-integer :min 1 :max 12))
